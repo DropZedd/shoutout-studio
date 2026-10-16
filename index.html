@@ -1,0 +1,774 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Twitch Shoutout Studio</title>
+<style>
+:root {
+  --accent: #a970ff;
+  --panel: #171225;
+  --width: 760px;
+  --heading-size: 34px;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  color: #fff;
+  background: #0c0913;
+}
+button, input, select { font: inherit; }
+button {
+  cursor: pointer;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  padding: 10px 14px;
+  font-weight: bold;
+}
+button:hover { filter: brightness(1.12); }
+input, select {
+  width: 100%;
+  padding: 10px;
+  color: white;
+  background: #211a30;
+  border: 1px solid #493761;
+  border-radius: 7px;
+}
+input[type="color"] { height: 42px; padding: 4px; }
+input[type="range"] { padding: 0; accent-color: var(--accent); }
+input[type="checkbox"] { accent-color: var(--accent); }
+label { display: block; margin: 12px 0 6px; }
+.small { color: #b9afc9; font-size: 12px; line-height: 1.5; }
+#panel { max-width: 1100px; margin: auto; padding: 24px; }
+.columns {
+  display: grid;
+  grid-template-columns: minmax(240px, 330px) minmax(0, 1fr);
+  gap: 24px;
+}
+.settings, .preview {
+  min-width: 0;
+  padding: 20px;
+  background: var(--panel);
+  border: 1px solid #382849;
+  border-radius: 14px;
+}
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.status {
+  min-height: 24px;
+  margin-top: 10px;
+  color: #d4c4f5;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.status.error { color: #ff9dba; }
+.status.success { color: #9ff0c1; }
+hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
+#overlay {
+  display: none;
+  width: 100%;
+  min-height: 100vh;
+  padding: 24px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: transparent;
+}
+#card {
+  width: min(100%, var(--width));
+  margin: auto;
+  opacity: 0;
+  transform: translateY(18px) scale(.97);
+  transition: opacity .45s, transform .45s;
+}
+#card.show { opacity: 1; transform: none; }
+#heading {
+  margin: 0 0 16px;
+  font-size: var(--heading-size);
+  font-weight: 900;
+  overflow-wrap: anywhere;
+  text-shadow: 0 3px 15px #000;
+}
+#player {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 180px;
+  overflow: hidden;
+  border: 2px solid var(--accent);
+  border-radius: 14px;
+  background: #09070d;
+  box-shadow: 0 8px 40px #0008;
+}
+#player iframe {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 180px;
+  border: 0;
+}
+#details {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 16px auto 0;
+  padding: 15px 22px;
+  max-width: 620px;
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px #0008;
+}
+#avatar {
+  flex: 0 0 76px;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--accent);
+  background: #30243f;
+}
+#name { font-size: 25px; font-weight: 800; overflow-wrap: anywhere; }
+#game { margin-top: 6px; color: #d4c4f5; overflow-wrap: anywhere; }
+#clipTitle { margin-top: 5px; color: #b9afc9; font-size: 13px; overflow-wrap: anywhere; }
+#clipTitle:empty { display: none; }
+#overlayStatus {
+  max-width: 620px;
+  margin: 12px auto 0;
+  color: #ffb7c8;
+  overflow-wrap: anywhere;
+  text-shadow: 0 2px 8px #000;
+  font-size: 13px;
+  line-height: 1.5;
+}
+#overlayStatus:empty { display: none; }
+@media(max-width: 750px) {
+  .columns { grid-template-columns: 1fr; }
+  #heading { font-size: 26px; }
+  #details { gap: 10px; padding: 12px; }
+  #avatar { flex-basis: 58px; width: 58px; height: 58px; }
+  #name { font-size: 20px; }
+}
+@media(prefers-reduced-motion: reduce) {
+  #card { transition: none; }
+}
+</style>
+</head>
+<body>
+<div id="panel">
+  <h1>Shoutout Studio</h1>
+  <p class="small">Customize your Twitch shoutout overlay.</p>
+  <div class="columns">
+    <section class="settings">
+      <h2>Appearance</h2>
+      <label for="accent">Accent color</label>
+      <input id="accent" type="color" value="#a970ff">
+      <label for="panelColor">Information card color</label>
+      <input id="panelColor" type="color" value="#171225">
+      <label for="fontSize">Heading size</label>
+      <input id="fontSize" type="range" min="20" max="52" value="34">
+      <label for="clipWidth">Maximum card width</label>
+      <input id="clipWidth" type="range" min="400" max="1000" step="20" value="760">
+      <label for="duration">Display duration (seconds)</label>
+      <input id="duration" type="number" min="10" max="120" value="30">
+      <label for="headingText">Heading text</label>
+      <input id="headingText" value="GO CHECK OUT">
+      <label for="fontFamily">Font</label>
+      <select id="fontFamily">
+        <option value="Arial, sans-serif">Arial</option>
+        <option value="Verdana, sans-serif">Verdana</option>
+        <option value="Georgia, serif">Georgia</option>
+        <option value="'Trebuchet MS', sans-serif">Trebuchet</option>
+      </select>
+      <label>
+        <input id="showTitle" type="checkbox" checked style="width:auto">
+        Show clip title
+      </label>
+      <div class="actions">
+        <button id="save" type="button">Save settings</button>
+        <button id="reset" type="button">Reset</button>
+      </div>
+      <hr>
+      <h2>Test shoutout</h2>
+      <label for="testUser">Twitch username</label>
+      <input id="testUser" value="dropzedd" placeholder="username">
+      <div class="actions">
+        <button id="test" type="button">Play preview</button>
+        <button id="openOverlay" type="button">Open overlay</button>
+      </div>
+      <p class="small">
+        Use the HTTPS overlay URL as an OBS Browser Source.
+        The page does not require a local server or Python.
+      </p>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+    </section>
+    <section class="preview">
+      <h2>Live preview</h2>
+      <iframe id="preview" title="Shoutout preview"
+        style="width:100%;height:620px;border:0;border-radius:10px;background:transparent"
+        allow="autoplay; fullscreen"></iframe>
+    </section>
+  </div>
+</div>
+<div id="overlay">
+  <main id="card">
+    <h1 id="heading">GO CHECK OUT</h1>
+    <div id="player"></div>
+    <section id="details">
+      <img id="avatar" alt="Creator profile picture">
+      <div style="text-align:left;min-width:0">
+        <div id="name"></div>
+        <div id="game"></div>
+        <div id="clipTitle"></div>
+      </div>
+    </section>
+    <div id="overlayStatus" role="status" aria-live="polite"></div>
+  </main>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const $ = id => document.getElementById(id);
+
+  const DEFAULTS = {
+    accent: "#a970ff",
+    panelColor: "#171225",
+    fontSize: 34,
+    clipWidth: 760,
+    duration: 30,
+    headingText: "GO CHECK OUT",
+    fontFamily: "Arial, sans-serif",
+    showTitle: true
+  };
+
+  const CLIP_API = "https://twitch-shoutout-clips.dropzedd.workers.dev/";
+  const SETTINGS_KEY = "soSettings";
+  const params = new URLSearchParams(location.search);
+  const mode = params.get("mode") || "panel";
+
+  let settings = loadSettings();
+  let hideTimer = null;
+  let cleanupTimer = null;
+  let requestId = 0;
+
+  function clampNumber(value, min, max, fallback) {
+    const number = Number(value);
+    return Number.isFinite(number)
+      ? Math.max(min, Math.min(max, number))
+      : fallback;
+  }
+
+  function loadSettings() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+      if (!saved || typeof saved !== "object" || Array.isArray(saved)) {
+        return { ...DEFAULTS };
+      }
+
+      const result = { ...DEFAULTS, ...saved };
+
+      if (!/^#[0-9a-f]{6}$/i.test(result.accent)) result.accent = DEFAULTS.accent;
+      if (!/^#[0-9a-f]{6}$/i.test(result.panelColor)) result.panelColor = DEFAULTS.panelColor;
+
+      result.fontSize = clampNumber(result.fontSize, 20, 52, 34);
+      result.clipWidth = clampNumber(result.clipWidth, 400, 1000, 760);
+      result.duration = clampNumber(result.duration, 10, 120, 30);
+
+      if (typeof result.headingText !== "string") result.headingText = DEFAULTS.headingText;
+      if (typeof result.showTitle !== "boolean") result.showTitle = DEFAULTS.showTitle;
+
+      const fonts = [
+        "Arial, sans-serif",
+        "Verdana, sans-serif",
+        "Georgia, serif",
+        "'Trebuchet MS', sans-serif"
+      ];
+
+      if (!fonts.includes(result.fontFamily)) result.fontFamily = DEFAULTS.fontFamily;
+
+      return result;
+    } catch (error) {
+      console.warn("Could not read settings:", error);
+      return { ...DEFAULTS };
+    }
+  }
+
+  function saveSettings(value) {
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(value));
+      return true;
+    } catch (error) {
+      console.error("Could not save settings:", error);
+      return false;
+    }
+  }
+
+  function readForm() {
+    return {
+      accent: $("accent").value,
+      panelColor: $("panelColor").value,
+      fontSize: clampNumber($("fontSize").value, 20, 52, 34),
+      clipWidth: clampNumber($("clipWidth").value, 400, 1000, 760),
+      duration: clampNumber($("duration").value, 10, 120, 30),
+      headingText: $("headingText").value,
+      fontFamily: $("fontFamily").value,
+      showTitle: $("showTitle").checked
+    };
+  }
+
+  function fillForm(value) {
+    for (const [key, val] of Object.entries(value)) {
+      const element = $(key);
+      if (!element) continue;
+      if (element.type === "checkbox") element.checked = Boolean(val);
+      else element.value = val;
+    }
+  }
+
+  function applySettings(value) {
+    const root = document.documentElement;
+    root.style.setProperty("--accent", value.accent);
+    root.style.setProperty("--panel", value.panelColor);
+    root.style.setProperty("--width", value.clipWidth + "px");
+    root.style.setProperty("--heading-size", value.fontSize + "px");
+
+    const heading = $("heading");
+    if (heading) {
+      heading.textContent = value.headingText;
+      heading.style.fontFamily = value.fontFamily;
+    }
+
+    const details = $("details");
+    if (details) details.style.background = value.panelColor;
+
+    const title = $("clipTitle");
+    if (title) title.style.display = value.showTitle ? "" : "none";
+  }
+
+  function setStatus(message, kind = "") {
+    const element = $("status");
+    if (!element) return;
+    element.textContent = message;
+    element.className = "status " + kind;
+  }
+
+  function setOverlayStatus(message) {
+    const element = $("overlayStatus");
+    if (element) element.textContent = message || "";
+  }
+
+  function validUsername(value) {
+    const username = String(value || "").trim().replace(/^@/, "");
+    if (!/^[a-zA-Z0-9_]{1,25}$/.test(username)) {
+      throw new Error("Enter a valid Twitch username.");
+    }
+    return username;
+  }
+
+  async function fetchWithTimeout(url, timeoutMs = 10000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      return await fetch(url, {
+        signal: controller.signal,
+        mode: "cors",
+        cache: "no-store"
+      });
+    } catch (error) {
+      if (error.name === "AbortError") {
+        throw new Error("Request timed out: " + new URL(url).hostname);
+      }
+      throw new Error(
+        "Network request failed for " + new URL(url).hostname +
+        ". Check connection, CORS, or service availability."
+      );
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async function fetchText(url) {
+    const response = await fetchWithTimeout(url);
+    if (!response.ok) {
+      throw new Error(new URL(url).hostname + " returned HTTP " + response.status);
+    }
+    return (await response.text()).trim();
+  }
+
+  async function fetchJSON(url) {
+    const response = await fetchWithTimeout(url);
+    if (!response.ok) {
+      throw new Error(new URL(url).hostname + " returned HTTP " + response.status);
+    }
+    try {
+      return await response.json();
+    } catch {
+      throw new Error("The clip service returned invalid JSON.");
+    }
+  }
+
+  function setAvatar(url) {
+    const avatar = $("avatar");
+    if (!avatar) return;
+
+    avatar.onerror = () => {
+      avatar.onerror = null;
+      avatar.removeAttribute("src");
+    };
+
+    if (url && /^https:\/\//i.test(url)) avatar.src = url;
+    else avatar.removeAttribute("src");
+  }
+
+  function getParentDomain() {
+    const configured = (params.get("parent") || "").trim();
+    const parent = configured || location.hostname;
+
+    if (
+      !parent ||
+      !/^[a-zA-Z0-9.-]+$/.test(parent) ||
+      parent.startsWith(".") ||
+      parent.endsWith(".") ||
+      parent.includes("..") ||
+      parent === "localhost" ||
+      parent === "127.0.0.1"
+    ) {
+      throw new Error(
+        "Twitch playback requires an HTTPS-hosted page with a valid parent domain. " +
+        "Open the hosted overlay, not a file:// URL."
+      );
+    }
+
+    if (location.protocol !== "https:") {
+      throw new Error("The overlay must be hosted over HTTPS for Twitch playback.");
+    }
+
+    return parent;
+  }
+
+  function makeClipPlayer(slug) {
+    if (typeof slug !== "string" || !/^[a-zA-Z0-9_-]+$/.test(slug)) {
+      throw new Error("The clip service returned an invalid clip slug.");
+    }
+
+    const iframe = document.createElement("iframe");
+    iframe.title = "Twitch shoutout clip";
+    iframe.allow = "autoplay; fullscreen";
+    iframe.allowFullscreen = true;
+    iframe.referrerPolicy = "origin";
+
+    const url = new URL("https://clips.twitch.tv/embed");
+    url.searchParams.set("clip", slug);
+    url.searchParams.set("parent", getParentDomain());
+    url.searchParams.set("autoplay", "true");
+    url.searchParams.set("muted", "false");
+
+    iframe.src = url.toString();
+    return iframe;
+  }
+
+  function clearTimers() {
+    clearTimeout(hideTimer);
+    clearTimeout(cleanupTimer);
+    hideTimer = null;
+    cleanupTimer = null;
+  }
+
+  function showFailure(message, myRequest) {
+    if (myRequest !== requestId) return;
+    console.error("Shoutout failed:", message);
+    $("game").textContent = "Creator information may be unavailable.";
+    setOverlayStatus(message);
+    $("card").classList.add("show");
+  }
+
+  function showOverlayError(error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Shoutout failed:", error);
+    $("heading").textContent = "SHOUTOUT ERROR";
+    $("player").replaceChildren();
+    setOverlayStatus(message);
+    $("card").classList.add("show");
+  }
+
+  async function shoutout(rawUsername) {
+    const username = validUsername(rawUsername);
+    const myRequest = ++requestId;
+
+    clearTimers();
+    settings = loadSettings();
+    applySettings(settings);
+
+    $("card").classList.remove("show");
+    $("player").replaceChildren();
+    $("name").textContent = "@" + username;
+    $("game").textContent = "Loading creator information...";
+    $("clipTitle").textContent = "";
+    setAvatar("");
+    setOverlayStatus("");
+
+    const encoded = encodeURIComponent(username);
+
+    const [clipResult, avatarResult, gameResult] = await Promise.allSettled([
+      fetchJSON(CLIP_API + "?username=" + encoded),
+      fetchText("https://decapi.me/twitch/avatar/" + encoded),
+      fetchText("https://decapi.me/twitch/game/" + encoded)
+    ]);
+
+    if (myRequest !== requestId) return;
+
+    const infoErrors = [];
+
+    if (avatarResult.status === "fulfilled") {
+      const avatarURL = avatarResult.value.trim();
+
+      if (/^https:\/\//i.test(avatarURL)) {
+        setAvatar(avatarURL);
+      } else {
+        infoErrors.push("avatar unavailable");
+      }
+    } else {
+      infoErrors.push("avatar lookup failed");
+      console.warn("Avatar lookup failed:", avatarResult.reason);
+    }
+
+    if (gameResult.status === "fulfilled") {
+      const game = gameResult.value.trim();
+
+      if (game && !/^(not found|error|no game|none|null)$/i.test(game)) {
+        $("game").textContent = "Playing: " + game;
+      } else {
+        $("game").textContent = "Game information unavailable";
+        infoErrors.push("game unavailable");
+      }
+    } else {
+      $("game").textContent = "Game information unavailable";
+      infoErrors.push("game lookup failed");
+      console.warn("Game lookup failed:", gameResult.reason);
+    }
+
+    if (clipResult.status !== "fulfilled") {
+      const reason = clipResult.reason;
+
+      showFailure(
+        "Clip lookup failed: " +
+        (reason instanceof Error ? reason.message : String(reason)),
+        myRequest
+      );
+      return;
+    }
+
+    const clip = clipResult.value;
+
+    if (!clip || typeof clip.slug !== "string" || !clip.slug.trim()) {
+      console.error("Unexpected clip API response:", clip);
+
+      showFailure(
+        "The clip service did not return a valid 'slug'. " +
+        "Check the worker response in the browser console.",
+        myRequest
+      );
+      return;
+    }
+
+    try {
+      const iframe = makeClipPlayer(clip.slug.trim());
+      $("player").replaceChildren(iframe);
+    } catch (error) {
+      showFailure(error.message, myRequest);
+      return;
+    }
+
+    $("name").textContent = "@" + username;
+    $("clipTitle").textContent =
+      settings.showTitle && typeof clip.title === "string"
+        ? clip.title
+        : "";
+
+    if (infoErrors.length) {
+      setOverlayStatus("Shoutout loaded; " + infoErrors.join(", ") + ".");
+    }
+
+    $("card").classList.add("show");
+
+    hideTimer = setTimeout(() => {
+      if (myRequest !== requestId) return;
+
+      $("card").classList.remove("show");
+
+      cleanupTimer = setTimeout(() => {
+        if (
+          myRequest === requestId &&
+          !$("card").classList.contains("show")
+        ) {
+          $("player").replaceChildren();
+        }
+      }, 500);
+    }, settings.duration * 1000);
+  }
+
+  function overlayURL(username) {
+    const url = new URL(location.href);
+    url.search = "";
+    url.hash = "";
+    url.searchParams.set("mode", "overlay");
+    url.searchParams.set("username", username);
+    return url.href;
+  }
+
+  // Overlay mode: hide the editor and show the requested shoutout.
+  if (mode === "overlay") {
+    $("panel").style.display = "none";
+    $("overlay").style.display = "flex";
+
+    settings = loadSettings();
+    applySettings(settings);
+
+    const username = params.get("username");
+
+    if (username) {
+      shoutout(username).catch(showOverlayError);
+    } else {
+      showOverlayError(new Error(
+        "No username supplied. Add ?mode=overlay&username=USERNAME to the URL."
+      ));
+    }
+
+    return;
+  }
+
+  fillForm(settings);
+  applySettings(settings);
+
+  function refreshPreview() {
+    let username;
+
+    try {
+      username = validUsername($("testUser").value || "dropzedd");
+    } catch {
+      username = "dropzedd";
+    }
+
+    $("preview").src = overlayURL(username);
+  }
+
+  $("save").addEventListener("click", () => {
+    settings = readForm();
+    const saved = saveSettings(settings);
+
+    applySettings(settings);
+    refreshPreview();
+
+    setStatus(
+      saved
+        ? "Settings saved."
+        : "Could not save settings. Check browser storage permissions.",
+      saved ? "success" : "error"
+    );
+  });
+
+  $("reset").addEventListener("click", () => {
+    settings = { ...DEFAULTS };
+    fillForm(settings);
+
+    const saved = saveSettings(settings);
+
+    applySettings(settings);
+    refreshPreview();
+
+    setStatus(
+      saved
+        ? "Settings reset."
+        : "Settings reset for this page, but could not be saved.",
+      saved ? "success" : "error"
+    );
+  });
+
+  $("test").addEventListener("click", () => {
+    let username;
+
+    try {
+      username = validUsername($("testUser").value);
+    } catch (error) {
+      setStatus(error.message, "error");
+      return;
+    }
+
+    settings = readForm();
+    saveSettings(settings);
+    applySettings(settings);
+    refreshPreview();
+
+    const opened = window.open(overlayURL(username), "_blank");
+
+    setStatus(
+      opened
+        ? "Opened the shoutout in a new tab. Check the overlay for errors."
+        : "Popup blocked. Allow popups for this page and try again.",
+      opened ? "success" : "error"
+    );
+  });
+
+  $("openOverlay").addEventListener("click", () => {
+    let username;
+
+    try {
+      username = validUsername($("testUser").value || "dropzedd");
+    } catch (error) {
+      setStatus(error.message, "error");
+      return;
+    }
+
+    const opened = window.open(overlayURL(username), "_blank");
+
+    setStatus(
+      opened
+        ? "Overlay opened for @" + username + "."
+        : "Popup blocked. Allow popups for this page.",
+      opened ? "success" : "error"
+    );
+  });
+
+  $("testUser").addEventListener("change", refreshPreview);
+
+  for (const id of [
+    "accent",
+    "panelColor",
+    "fontSize",
+    "clipWidth",
+    "duration",
+    "headingText",
+    "fontFamily",
+    "showTitle"
+  ]) {
+    $(id).addEventListener("input", () => {
+      settings = readForm();
+      applySettings(settings);
+    });
+  }
+
+  window.addEventListener("storage", event => {
+    if (event.key === SETTINGS_KEY) {
+      settings = loadSettings();
+      fillForm(settings);
+      applySettings(settings);
+      refreshPreview();
+    }
+  });
+
+  refreshPreview();
+
+})();
+</script>
+</body>
+</html>
