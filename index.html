@@ -392,6 +392,14 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       <h2>Test shoutout</h2>
       <label for="testUser">Twitch username</label>
       <input id="testUser" value="dropzedd" placeholder="username">
+      <label for="clipTimeframe">Clip timeframe</label>
+      <select id="clipTimeframe">
+        <option value="all">All time</option>
+        <option value="year">Past year</option>
+        <option value="30days">Past 30 days</option>
+        <option value="featured">Featured clips only</option>
+      </select>
+      <p class="small">The selected timeframe is sent with the clip request. Your clip API worker must support the <code>timeframe</code> parameter for filtering to take effect.</p>
       <div class="actions">
         <button id="test" type="button">Play preview</button>
         <button id="openOverlay" type="button">Open overlay</button>
@@ -440,6 +448,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     fontSize: 34,
     clipWidth: 760,
     duration: 30,
+    clipTimeframe: "all",
     headingText: "GO CHECK OUT",
     fontFamily: "Arial, sans-serif",
     showTitle: true,
@@ -486,6 +495,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       result.fontSize = clampNumber(result.fontSize, 20, 52, 34);
       result.clipWidth = clampNumber(result.clipWidth, 400, 1000, 760);
       result.duration = clampNumber(result.duration, 10, 120, 30);
+      if (!["all","year","30days","featured"].includes(result.clipTimeframe)) result.clipTimeframe = DEFAULTS.clipTimeframe;
 
       if (typeof result.headingText !== "string") result.headingText = DEFAULTS.headingText;
       if (typeof result.showTitle !== "boolean") result.showTitle = DEFAULTS.showTitle;
@@ -532,6 +542,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       fontSize: clampNumber($("fontSize").value, 20, 52, 34),
       clipWidth: clampNumber($("clipWidth").value, 400, 1000, 760),
       duration: clampNumber($("duration").value, 10, 120, 30),
+      clipTimeframe: $("clipTimeframe").value,
       headingText: $("headingText").value,
       fontFamily: $("fontFamily").value,
       showTitle: $("showTitle").checked,
@@ -832,7 +843,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 
     $("card").classList.remove("show");
     clearPlayerMedia();
-    setText("name", "@" + username);
+    setText("name", username);
     setText("game", "Loading creator information...");
     setText("clipTitle", "");
     setAvatar("");
@@ -840,8 +851,15 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 
     const encoded = encodeURIComponent(username);
 
+    const clipTimeframe = ["all","year","30days","featured"].includes(settings.clipTimeframe)
+      ? settings.clipTimeframe
+      : "all";
+    const clipURL = new URL(CLIP_API);
+    clipURL.searchParams.set("username", username);
+    clipURL.searchParams.set("timeframe", clipTimeframe);
+
     const [clipResult, avatarResult, gameResult] = await Promise.allSettled([
-      fetchJSON(CLIP_API + "?username=" + encoded),
+      fetchJSON(clipURL.toString()),
       fetchText("https://decapi.me/twitch/avatar/" + encoded),
       fetchGameWithRetry(username)
     ]);
@@ -910,7 +928,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       return;
     }
 
-    setText("name", "@" + username);
+    setText("name", username);
     setText("clipTitle",
       settings.showTitle && typeof clip.title === "string"
         ? clip.title
@@ -1105,6 +1123,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     "fontSize",
     "clipWidth",
     "duration",
+    "clipTimeframe",
     "headingText",
     "fontFamily",
     "showTitle",
