@@ -922,22 +922,63 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     const card = $("card");
     card.classList.add("show");
 
+    // If the direct MP4 endpoint fails to decode or start, fall back to
+    // Twitch's hosted clip player instead of leaving the overlay on a black frame.
+    let playbackFallbackTimer = null;
+    let didFallbackToEmbed = false;
+
+    function fallbackToTwitchEmbed(reason) {
+      if (myRequest !== requestId || didFallbackToEmbed || !card.classList.contains("show")) return;
+      if (!media || media.tagName !== "VIDEO") return;
+      didFallbackToEmbed = true;
+      clearTimeout(playbackFallbackTimer);
+      console.warn("Direct clip playback failed; falling back to Twitch embed:", reason || "no playback detected");
+      let iframe;
+      try {
+        iframe = makeClipPlayer({ slug: clip.slug });
+      } catch (error) {
+        setOverlayStatus("Clip playback failed: " + error.message);
+        return;
+      }
+      media.pause();
+      setPlayerMedia(iframe);
+      media = iframe;
+      setOverlayStatus("Loading clip player…");
+      if (iframe.dataset.clipSrc) {
+        iframe.src = iframe.dataset.clipSrc;
+        delete iframe.dataset.clipSrc;
+      }
+    }
+
     // Wait for the card's entrance transition before starting media playback.
-    // Muted native-video autoplay is more reliable than the Twitch iframe.
     setTimeout(() => {
       if (myRequest !== requestId || !card.classList.contains("show")) return;
       if (!media.isConnected) return;
 
       if (media.tagName === "VIDEO" && media.dataset.videoSrc) {
+        media.addEventListener("playing", () => {
+          clearTimeout(playbackFallbackTimer);
+          setOverlayStatus("");
+        }, { once: true });
+        media.addEventListener("error", () => fallbackToTwitchEmbed("video element error"), { once: true });
+        media.addEventListener("stalled", () => {
+          // Give transient network stalls a moment before switching players.
+          clearTimeout(playbackFallbackTimer);
+          playbackFallbackTimer = setTimeout(() => {
+            if (media.tagName === "VIDEO" && media.paused) fallbackToTwitchEmbed("video stalled");
+          }, 2500);
+        });
         media.src = media.dataset.videoSrc;
         delete media.dataset.videoSrc;
         media.load();
+        playbackFallbackTimer = setTimeout(() => {
+          if (media.tagName === "VIDEO" && (media.paused || media.readyState < 2 || media.currentTime < 0.1)) {
+            fallbackToTwitchEmbed("video did not start within 5 seconds");
+          }
+        }, 5000);
         const playPromise = media.play();
         if (playPromise && typeof playPromise.catch === "function") {
-          playPromise.catch(error => {
-            console.warn("Clip autoplay was blocked:", error);
-            setOverlayStatus("Autoplay was blocked. Try enabling autoplay for this source in OBS/browser settings.");
-          });
+          playPromise.catch(error => fallbackToTwitchEmbed(error && error.message ? error.message : "autoplay rejected"));
         }
       } else if (media.tagName === "IFRAME" && media.dataset.clipSrc) {
         media.src = media.dataset.clipSrc;
@@ -949,6 +990,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       if (myRequest !== requestId) return;
 
       $("card").classList.remove("show");
+      clearTimeout(playbackFallbackTimer);
 
       cleanupTimer = setTimeout(() => {
         if (
