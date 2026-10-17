@@ -36,9 +36,9 @@
     }
 
     button {
+      padding: 10px 14px;
       border: 0;
       border-radius: 9px;
-      padding: 10px 14px;
       color: #fff;
       background: var(--accent);
       cursor: pointer;
@@ -257,11 +257,7 @@
       display: none !important;
     }
 
-    /*
-      OBS OVERLAY FIX:
-      Do not hide .app. It is the parent of the entire preview.
-      Hide only the editor controls and keep the preview card visible.
-    */
+    /* OBS overlay: hide editor UI, never hide the app or preview itself. */
     body.overlay-mode {
       padding: 0;
       overflow: hidden;
@@ -369,6 +365,7 @@
             <label for="accent">Accent color</label>
             <input id="accent" type="color" value="#9147ff">
           </div>
+
           <div class="field">
             <label for="cardBg">Card background</label>
             <input id="cardBg" type="color" value="#18181b">
@@ -380,28 +377,35 @@
             <label for="textColor">Text color</label>
             <input id="textColor" type="color" value="#ffffff">
           </div>
+
           <div class="field">
             <label for="cardWidth">Card width (px)</label>
-            <input id="cardWidth" type="number" min="240" max="1000" value="520">
+            <input id="cardWidth" type="number"
+              min="240" max="1000" value="520">
           </div>
         </div>
 
         <div class="field-row">
           <div class="field">
             <label for="avatarSize">Avatar size (px)</label>
-            <input id="avatarSize" type="number" min="32" max="140" value="64">
+            <input id="avatarSize" type="number"
+              min="32" max="140" value="64">
           </div>
+
           <div class="field">
             <label for="radius">Corner radius (px)</label>
-            <input id="radius" type="number" min="0" max="40" value="16">
+            <input id="radius" type="number"
+              min="0" max="40" value="16">
           </div>
         </div>
 
         <div class="field-row">
           <div class="field">
             <label for="border">Border width (px)</label>
-            <input id="border" type="number" min="0" max="10" value="2">
+            <input id="border" type="number"
+              min="0" max="10" value="2">
           </div>
+
           <div class="field">
             <label for="layoutStyle">Layout</label>
             <select id="layoutStyle">
@@ -431,8 +435,7 @@
         <div class="preview-wrap">
           <article id="shoutout" class="shoutout classic">
             <div class="identity">
-              <img id="avatar" class="avatar"
-                alt="Streamer profile picture">
+              <img id="avatar" class="avatar" alt="Streamer profile picture">
 
               <div class="identity-text">
                 <div class="eyebrow">Go check them out</div>
@@ -462,16 +465,22 @@
       const params = new URLSearchParams(window.location.search);
       const isOverlay = params.get("overlay") === "1";
 
-      const defaultSettings = {
-        accent: "#9147ff",
-        cardBg: "#18181b",
-        textColor: "#ffffff",
-        cardWidth: 520,
-        avatarSize: 64,
-        radius: 16,
-        border: 2,
-        layoutStyle: "classic"
-      };
+      const designIds = [
+        "accent",
+        "cardBg",
+        "textColor",
+        "cardWidth",
+        "avatarSize",
+        "radius",
+        "border",
+        "layoutStyle"
+      ];
+
+      const overlaySettingIds = [
+        ...designIds,
+        "timeframe",
+        "workerUrl"
+      ];
 
       function cleanUsername(value) {
         return (value || "")
@@ -481,9 +490,9 @@
       }
 
       function safeNumber(value, fallback, min, max) {
-        const number = Number(value);
-        return Number.isFinite(number)
-          ? Math.max(min, Math.min(max, number))
+        const n = Number(value);
+        return Number.isFinite(n)
+          ? Math.max(min, Math.min(max, n))
           : fallback;
       }
 
@@ -496,63 +505,40 @@
       }
 
       function applyDesign() {
-        const values = {
-          accent: $("accent")?.value || defaultSettings.accent,
-          cardBg: $("cardBg")?.value || defaultSettings.cardBg,
-          textColor: $("textColor")?.value || defaultSettings.textColor,
-          cardWidth: safeNumber(
-            $("cardWidth")?.value, 520, 240, 1000
-          ),
-          avatarSize: safeNumber(
-            $("avatarSize")?.value, 64, 32, 140
-          ),
-          radius: safeNumber(
-            $("radius")?.value, 16, 0, 40
-          ),
-          border: safeNumber(
-            $("border")?.value, 2, 0, 10
-          ),
-          layoutStyle: $("layoutStyle")?.value || "classic"
-        };
+        const accent = $("accent").value || "#9147ff";
+        const cardBg = $("cardBg").value || "#18181b";
+        const textColor = $("textColor").value || "#ffffff";
 
-        document.documentElement.style.setProperty(
-          "--accent", values.accent
-        );
-        document.documentElement.style.setProperty(
-          "--card-bg", values.cardBg
-        );
-        document.documentElement.style.setProperty(
-          "--text-color", values.textColor
-        );
-        document.documentElement.style.setProperty(
-          "--card-width", values.cardWidth + "px"
-        );
-        document.documentElement.style.setProperty(
-          "--avatar-size", values.avatarSize + "px"
-        );
-        document.documentElement.style.setProperty(
-          "--card-radius", values.radius + "px"
-        );
-        document.documentElement.style.setProperty(
-          "--card-border", values.border + "px"
-        );
+        const cardWidth = safeNumber($("cardWidth").value, 520, 240, 1000);
+        const avatarSize = safeNumber($("avatarSize").value, 64, 32, 140);
+        const radius = safeNumber($("radius").value, 16, 0, 40);
+        const border = safeNumber($("border").value, 2, 0, 10);
+        const layoutStyle = $("layoutStyle").value || "classic";
+
+        document.documentElement.style.setProperty("--accent", accent);
+        document.documentElement.style.setProperty("--card-bg", cardBg);
+        document.documentElement.style.setProperty("--text-color", textColor);
+        document.documentElement.style.setProperty("--card-width", cardWidth + "px");
+        document.documentElement.style.setProperty("--avatar-size", avatarSize + "px");
+        document.documentElement.style.setProperty("--card-radius", radius + "px");
+        document.documentElement.style.setProperty("--card-border", border + "px");
 
         const card = $("shoutout");
         card.classList.remove("classic", "compact", "horizontal");
-        card.classList.add(values.layoutStyle);
+        card.classList.add(layoutStyle);
       }
 
       function saveSettings() {
         if (isOverlay) return;
 
-        const ids = [
-          "username", "workerUrl", "timeframe", "accent", "cardBg",
-          "textColor", "cardWidth", "avatarSize", "radius", "border",
-          "layoutStyle"
-        ];
-
         const settings = {};
-        ids.forEach(id => {
+
+        [
+          "username",
+          "workerUrl",
+          "timeframe",
+          ...designIds
+        ].forEach(id => {
           if ($(id)) settings[id] = $(id).value;
         });
 
@@ -574,12 +560,14 @@
         } catch (_) {}
 
         Object.entries(saved).forEach(([id, value]) => {
-          if ($(id) && value != null) $(id).value = value;
+          if ($(id) && value != null) {
+            $(id).value = value;
+          }
         });
       }
 
       function getWorkerUrl(username) {
-        const base = ($("workerUrl")?.value || "").trim();
+        const base = ($("workerUrl").value || "").trim();
 
         if (!base) {
           throw new Error("Enter your Cloudflare Worker URL.");
@@ -587,7 +575,7 @@
 
         const url = new URL(base);
         url.searchParams.set("username", username);
-        url.searchParams.set("timeframe", $("timeframe")?.value || "year");
+        url.searchParams.set("timeframe", $("timeframe").value || "year");
 
         return url.toString();
       }
@@ -638,8 +626,11 @@
         if (direct) return String(direct).trim();
 
         const candidates = [
-          clip.url, clip.clip_url, clip.clipUrl,
-          clip.embed_url, clip.embedUrl
+          clip.url,
+          clip.clip_url,
+          clip.clipUrl,
+          clip.embed_url,
+          clip.embedUrl
         ];
 
         for (const candidate of candidates) {
@@ -730,7 +721,7 @@
 
       async function loadShoutout() {
         const username = cleanUsername(
-          $("username")?.value || params.get("user") || ""
+          $("username").value || params.get("user") || ""
         );
 
         if (!username) {
@@ -738,7 +729,7 @@
           return;
         }
 
-        if ($("username")) $("username").value = username;
+        $("username").value = username;
 
         const button = $("loadBtn");
 
@@ -815,9 +806,14 @@
         }
       }
 
+      /*
+        NEW FIX:
+        Embed all selected design settings in the OBS URL.
+        This avoids relying on OBS sharing dashboard localStorage.
+      */
       function buildOverlayUrl() {
         const username = cleanUsername(
-          $("username")?.value || params.get("user") || ""
+          $("username").value || params.get("user") || ""
         );
 
         if (!username) {
@@ -829,8 +825,21 @@
         const url = new URL(window.location.href);
         url.search = "";
         url.hash = "";
+
         url.searchParams.set("overlay", "1");
         url.searchParams.set("user", username);
+
+        [
+          ...designIds,
+          "timeframe",
+          "workerUrl"
+        ].forEach(id => {
+          const element = $(id);
+
+          if (element) {
+            url.searchParams.set(id, element.value);
+          }
+        });
 
         return url.toString();
       }
@@ -861,19 +870,38 @@
           }
 
           setStatus(
-            "OBS overlay link copied. Add it to an OBS Browser Source."
+            "OBS link copied with your current design settings. " +
+            "Replace the old URL in OBS."
           );
         } catch (error) {
           setStatus(error.message, true);
         }
       }
 
+      /*
+        NEW FIX:
+        Apply URL settings before rendering the overlay.
+        URL settings take priority over stored dashboard settings.
+      */
       function setupOverlayMode() {
         document.body.classList.add("overlay-mode");
 
+        restoreSettings();
+
+        overlaySettingIds.forEach(id => {
+          const value = params.get(id);
+          const element = $(id);
+
+          if (value !== null && element) {
+            element.value = value;
+          }
+        });
+
         const username = cleanUsername(params.get("user") || "");
 
-        if ($("username")) $("username").value = username;
+        if ($("username")) {
+          $("username").value = username;
+        }
 
         applyDesign();
 
@@ -887,32 +915,29 @@
       restoreSettings();
       applyDesign();
 
-      [
-        "accent", "cardBg", "textColor", "cardWidth", "avatarSize",
-        "radius", "border", "layoutStyle"
-      ].forEach(id => {
-        $(id)?.addEventListener("input", () => {
+      designIds.forEach(id => {
+        $(id).addEventListener("input", () => {
           applyDesign();
           saveSettings();
         });
 
-        $(id)?.addEventListener("change", () => {
+        $(id).addEventListener("change", () => {
           applyDesign();
           saveSettings();
         });
       });
 
       ["username", "workerUrl", "timeframe"].forEach(id => {
-        $(id)?.addEventListener("change", saveSettings);
+        $(id).addEventListener("change", saveSettings);
       });
 
-      $("loadBtn")?.addEventListener("click", loadShoutout);
-      $("copyBtn")?.addEventListener("click", copyOverlayLink);
+      $("loadBtn").addEventListener("click", loadShoutout);
+      $("copyBtn").addEventListener("click", copyOverlayLink);
 
       if (isOverlay) {
         setupOverlayMode();
       } else {
-        const username = cleanUsername($("username")?.value || "");
+        const username = cleanUsername($("username").value || "");
 
         if (username) {
           loadShoutout();
