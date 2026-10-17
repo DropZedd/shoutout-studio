@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -182,7 +181,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   background: #30243f;
 }
 #name { font-size: 25px; font-weight: 800; overflow-wrap: anywhere; }
-#game { margin-top: 6px; color: #d4c4f5; overflow-wrap: anywhere; }
+#game { display: inline-block; margin-top: 6px; color: #d4c4f5; overflow-wrap: anywhere; }
 #clipTitle { margin-top: 5px; color: #b9afc9; font-size: 13px; overflow-wrap: anywhere; }
 #clipTitle:empty { display: none; }
 #overlayStatus {
@@ -685,36 +684,6 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     }
   }
 
-  async function fetchText(url) {
-    const response = await fetchWithTimeout(url);
-    if (!response.ok) {
-      throw new Error(new URL(url).hostname + " returned HTTP " + response.status);
-    }
-    return (await response.text()).trim();
-  }
-
-  function isBadLookupResponse(value) {
-    const text = String(value || "").trim();
-    return !text || /^(?:not found|error|no game|none|null|n\/?a|unknown)$/i.test(text) ||
-      /error occurred retrieving data from the api|internal server error|service unavailable|rate.?limit|too many requests|temporarily unavailable/i.test(text);
-  }
-
-  async function fetchGameWithRetry(username) {
-    const url = "https://decapi.me/twitch/game/" + encodeURIComponent(username);
-    let lastError = null;
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        const value = await fetchText(url);
-        if (!isBadLookupResponse(value)) return value;
-        lastError = new Error("The game lookup service returned an error response.");
-      } catch (error) {
-        lastError = error;
-      }
-      if (attempt === 0) await new Promise(resolve => setTimeout(resolve, 350));
-    }
-    throw lastError || new Error("Game lookup failed.");
-  }
-
   async function fetchJSON(url) {
     const response = await fetchWithTimeout(url);
     if (!response.ok) {
@@ -819,7 +788,6 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   function showFailure(message, myRequest) {
     if (myRequest !== requestId) return;
     console.error("Shoutout failed:", message);
-    setText("game", "Creator information may be unavailable.");
     setOverlayStatus(message);
     $("card").classList.add("show");
   }
@@ -844,12 +812,10 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     $("card").classList.remove("show");
     clearPlayerMedia();
     setText("name", username);
-    setText("game", "Loading creator information...");
+    setText("game", "https://www.twitch.tv/" + username);
     setText("clipTitle", "");
     setAvatar("");
     setOverlayStatus("");
-
-    const encoded = encodeURIComponent(username);
 
     const clipTimeframe = ["all","year","30days","featured"].includes(settings.clipTimeframe)
       ? settings.clipTimeframe
@@ -858,43 +824,11 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     clipURL.searchParams.set("username", username);
     clipURL.searchParams.set("timeframe", clipTimeframe);
 
-    const [clipResult, avatarResult, gameResult] = await Promise.allSettled([
-      fetchJSON(clipURL.toString()),
-      fetchText("https://decapi.me/twitch/avatar/" + encoded),
-      fetchGameWithRetry(username)
-    ]);
+    const clipResult = await Promise.allSettled([
+      fetchJSON(clipURL.toString())
+    ]).then(results => results[0]);
 
     if (myRequest !== requestId) return;
-
-    const infoErrors = [];
-
-    if (avatarResult.status === "fulfilled") {
-      const avatarURL = avatarResult.value.trim();
-
-      if (/^https:\/\//i.test(avatarURL)) {
-        setAvatar(avatarURL);
-      } else {
-        infoErrors.push("avatar unavailable");
-      }
-    } else {
-      infoErrors.push("avatar lookup failed");
-      console.warn("Avatar lookup failed:", avatarResult.reason);
-    }
-
-    if (gameResult.status === "fulfilled") {
-      const game = gameResult.value.trim();
-
-      if (!isBadLookupResponse(game)) {
-        setText("game", "Playing: " + game);
-      } else {
-        setText("game", "Game information temporarily unavailable");
-        infoErrors.push("game unavailable");
-      }
-    } else {
-      setText("game", "Game information temporarily unavailable");
-      infoErrors.push("game lookup failed");
-      console.warn("Game lookup failed:", gameResult.reason);
-    }
 
     if (clipResult.status !== "fulfilled") {
       const reason = clipResult.reason;
@@ -908,6 +842,15 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     }
 
     const clip = clipResult.value;
+
+    // Creator information comes from the same Worker response as the clip.
+    if (typeof clip.profile_image_url === "string" && /^https:\/\//i.test(clip.profile_image_url)) {
+      setAvatar(clip.profile_image_url);
+    }
+
+    if (typeof clip.broadcaster_name === "string" && clip.broadcaster_name.trim()) {
+      setText("name", clip.broadcaster_name.trim().replace(/^@+/, ""));
+    }
 
     if (!clip || typeof clip.slug !== "string" || !clip.slug.trim()) {
       console.error("Unexpected clip API response:", clip);
@@ -928,7 +871,9 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       return;
     }
 
-    setText("name", username);
+    if (!(typeof clip.broadcaster_name === "string" && clip.broadcaster_name.trim())) {
+      setText("name", username.replace(/^@+/, ""));
+    }
     setText("clipTitle",
       settings.showTitle && typeof clip.title === "string"
         ? clip.title
