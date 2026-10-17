@@ -181,7 +181,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   background: #30243f;
 }
 #name { font-size: 25px; font-weight: 800; overflow-wrap: anywhere; }
-#game { display: inline-block; margin-top: 6px; color: #d4c4f5; overflow-wrap: anywhere; }
+#channelUrl { display: inline-block; margin-top: 6px; color: #d4c4f5; overflow-wrap: anywhere; user-select: text; }
 #clipTitle { margin-top: 5px; color: #b9afc9; font-size: 13px; overflow-wrap: anywhere; }
 #clipTitle:empty { display: none; }
 #overlayStatus {
@@ -425,7 +425,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       <img id="avatar" alt="Creator profile picture">
       <div style="text-align:left;min-width:0">
         <div id="name"></div>
-        <div id="game"></div>
+        <div id="channelUrl"></div>
         <div id="clipTitle"></div>
       </div>
     </section>
@@ -812,7 +812,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     $("card").classList.remove("show");
     clearPlayerMedia();
     setText("name", username);
-    setText("game", "https://www.twitch.tv/" + username);
+    setText("channelUrl", "https://www.twitch.tv/" + username);
     setText("clipTitle", "");
     setAvatar("");
     setOverlayStatus("");
@@ -878,10 +878,6 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       settings.showTitle && typeof clip.title === "string"
         ? clip.title
         : "");
-
-    if (infoErrors.length) {
-      setOverlayStatus("Shoutout loaded; " + infoErrors.join(", ") + ".");
-    }
 
     $("card").classList.add("show");
 
