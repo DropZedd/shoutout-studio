@@ -580,7 +580,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     url.searchParams.set('clip', slug);
     url.searchParams.set('parent', location.hostname);
     url.searchParams.set('autoplay', 'true');
-    url.searchParams.set('muted', 'true');
+    url.searchParams.set('muted', 'false'); // Allow clip audio; autoplay with sound may be blocked by browser policy.
     const iframe = document.createElement('iframe');
     iframe.className = 'shoutout-clip-embed';
     iframe.title = 'Twitch shoutout clip';
