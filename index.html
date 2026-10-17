@@ -98,7 +98,8 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  min-height: 180px;
+  min-height: 300px;
+  min-width: 400px;
   overflow: hidden;
   border: 2px solid var(--accent);
   border-radius: 14px;
@@ -112,7 +113,8 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   display: block;
   width: 100%;
   height: 100%;
-  min-height: 180px;
+  min-width: 400px;
+  min-height: 300px;
   border: 0;
 }
 #player video { object-fit: contain; background: #09070d; }
@@ -565,24 +567,31 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     if(id!==requestNumber)return;
     overlayStatus(message); const card=$('card'); if(card)card.classList.add('show');
   }
-  function createVideo(clip) {
-    const slug=String(clip.slug||'').trim();
-    if(!/^[a-zA-Z0-9_-]+$/.test(slug)) throw new Error('The clip service did not return a valid clip ID.');
-    let src=typeof clip.video_url==='string'&&clip.video_url.trim()?clip.video_url.trim():'https://twitch.so/pclips/'+encodeURIComponent(slug);
-    const parsed=new URL(src); if(parsed.protocol!=='https:') throw new Error('Clip video URL must use HTTPS.');
-    const video=document.createElement('video');
-    video.className='shoutout-video'; video.setAttribute('playsinline',''); video.setAttribute('webkit-playsinline','');
-    video.autoplay=true; video.muted=true; video.defaultMuted=true; video.controls=false; video.preload='auto'; video.loop=false;
-    video.style.cssText='position:absolute;inset:0;width:100%;height:100%;min-height:180px;object-fit:contain;background:#09070d;display:block;';
-    if(typeof clip.thumbnail_url==='string'&&/^https:\/\//i.test(clip.thumbnail_url)) video.poster=clip.thumbnail_url;
-    video.addEventListener('playing',()=>overlayStatus(''));
-    video.addEventListener('error',()=>{
-      const e=video.error;
-      showError('Clip video failed (media error '+(e?e.code:'unknown')+'). Try opening the clip URL directly: '+src,requestNumber);
-    });
-    video.addEventListener('ended',()=>{if(settings.duration>0){$('card').classList.remove('show');}});
-    video.dataset.pendingSrc=src;
-    return video;
+  function createClipEmbed(clip) {
+    const slug = String(clip.slug || '').trim();
+    if (!/^[a-zA-Z0-9_-]+$/.test(slug)) {
+      throw new Error('The clip service did not return a valid Twitch clip ID.');
+    }
+    if (location.protocol !== 'https:' || !location.hostname) {
+      throw new Error('Twitch clips require the overlay to be hosted on HTTPS.');
+    }
+    // Twitch's supported Clips embed. Do not fabricate an MP4 URL.
+    const url = new URL('https://clips.twitch.tv/embed');
+    url.searchParams.set('clip', slug);
+    url.searchParams.set('parent', location.hostname);
+    url.searchParams.set('autoplay', 'true');
+    url.searchParams.set('muted', 'true');
+    const iframe = document.createElement('iframe');
+    iframe.className = 'shoutout-clip-embed';
+    iframe.title = 'Twitch shoutout clip';
+    iframe.allow = 'autoplay; fullscreen; encrypted-media; picture-in-picture';
+    iframe.allowFullscreen = true;
+    iframe.referrerPolicy = 'origin';
+    iframe.loading = 'eager';
+    iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;min-width:400px;min-height:300px;border:0;display:block;background:#09070d;';
+    iframe.dataset.pendingSrc = url.toString();
+    iframe.addEventListener('load', () => overlayStatus(''));
+    return iframe;
   }
   async function shoutout(rawUser) {
     let user; try{user=usernameOf(rawUser);}catch(e){overlayStatus(e.message);$('card').classList.add('show');return;}
@@ -597,21 +606,14 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     if(clip.broadcaster_name) $('name').textContent=String(clip.broadcaster_name).replace(/^@+/, '');
     $('channelUrl').textContent='https://www.twitch.tv/'+(clip.username||user);
     $('clipTitle').textContent=settings.showTitle&&clip.title?clip.title:'';
-    let video;try{video=createVideo(clip);}catch(e){showError(e.message,id);return;}
-    activeVideo=video;
+    let media;try{media=createClipEmbed(clip);}catch(e){showError(e.message,id);return;}
     const player=$('player'), details=$('details');
-    if(details&&details.parentElement===player) player.insertBefore(video,details); else player.appendChild(video);
-    const card=$('card');card.classList.add('show');overlayStatus('Starting clip…');
-    // Assign source only after the video is attached and the card is visible.
+    if(details&&details.parentElement===player) player.insertBefore(media,details); else player.appendChild(media);
+    const card=$('card');card.classList.add('show');overlayStatus('Loading Twitch clip…');
+    // Set the iframe URL only after it is attached to the visible overlay.
     requestAnimationFrame(()=>{
-      if(id!==requestNumber||!video.isConnected)return;
-      const src=video.dataset.pendingSrc;delete video.dataset.pendingSrc;video.src=src;video.load();
-      const p=video.play();
-      if(p&&typeof p.catch==='function')p.catch(()=>{
-        if(id!==requestNumber)return;
-        video.controls=true;
-        overlayStatus('Autoplay was blocked. Click the video play control to start it.');
-      });
+      if(id!==requestNumber||!media.isConnected)return;
+      const src=media.dataset.pendingSrc;delete media.dataset.pendingSrc;media.src=src;
     });
     const duration=Number(clip.duration)>0?Math.max(10,Number(clip.duration)+2):settings.duration;
     hideTimer=setTimeout(()=>{
