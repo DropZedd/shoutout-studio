@@ -743,7 +743,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 
     const iframe = document.createElement("iframe");
     iframe.title = "Twitch shoutout clip";
-    iframe.allow = "autoplay; encrypted-media; fullscreen; picture-in-picture";
+    iframe.allow = "autoplay *; encrypted-media *; fullscreen *; picture-in-picture *";
     iframe.allowFullscreen = true;
     iframe.referrerPolicy = "origin";
     iframe.loading = "eager";
@@ -756,9 +756,9 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     // Twitch's clip embed does not expose a supported API to unmute on start.
     url.searchParams.set("muted", "true");
 
-    // Assign the embed URL when the shoutout is activated. The caller attaches
-    // the iframe and reveals the card before this navigation is started.
-    iframe.dataset.clipSrc = url.toString();
+    // Set the URL before inserting the iframe so Twitch receives the autoplay
+    // parameters as part of the initial player navigation.
+    iframe.src = url.toString();
     return iframe;
   }
 
@@ -887,13 +887,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 
     $("card").classList.add("show");
 
-    // Navigate to Twitch immediately after attaching the iframe and revealing
-    // the card. Avoid a delayed src assignment, which can leave the player on
-    // its thumbnail in some browser/OBS overlay contexts.
-    const clipFrame = $("player").querySelector("iframe");
-    if (clipFrame && clipFrame.dataset.clipSrc && myRequest === requestId) {
-      clipFrame.src = clipFrame.dataset.clipSrc;
-    }
+    // The iframe already has its Twitch URL before it is attached to the page.
 
     hideTimer = setTimeout(() => {
       if (myRequest !== requestId) return;
