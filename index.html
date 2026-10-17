@@ -14,6 +14,7 @@
   --text-color:#ffffff;
   --border-color:#9147ff;
   --card-width:520px;
+  --card-height:480px;
   --avatar-size:64px;
   --card-radius:16px;
   --card-border:2px;
@@ -101,7 +102,7 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
   justify-content:center;
   min-height:240px;
   padding:22px;
-  overflow:hidden;
+  overflow:auto;
   border-radius:10px;
   background:#09090b;
 }
@@ -109,6 +110,10 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
 /* WIDGET CARD */
 .shoutout {
   width:min(var(--card-width),100%);
+  height:var(--card-height);
+  min-height:0;
+  display:flex;
+  flex-direction:column;
   overflow:hidden;
   border:var(--card-border) solid var(--border-color);
   border-radius:var(--card-radius);
@@ -117,6 +122,7 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
   box-shadow:var(--shadow);
   position:relative;
   isolation:isolate;
+  flex-shrink:0;
 }
 
 .shoutout::before {
@@ -221,28 +227,35 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
   50% {transform:translateY(-4px)}
 }
 
-/* VIDEO ABOVE STREAMER INFORMATION */
+/* VIDEO AREA: automatically fills remaining card height */
 .video-frame {
   position:relative;
   width:100%;
-  aspect-ratio:16/9;
+  flex:1 1 0;
+  min-height:0;
+  aspect-ratio:auto;
   background:#000;
+  overflow:hidden;
 }
 
 .video-frame iframe {
   display:block;
   width:100%;
   height:100%;
+  min-height:0;
   border:0;
 }
 
 .video-placeholder {
   display:grid;
-  min-height:180px;
-  padding:25px;
+  width:100%;
+  height:100%;
+  min-height:0;
+  padding:20px;
   place-items:center;
   color:#a1a1aa;
   text-align:center;
+  overflow-wrap:anywhere;
 }
 
 .identity {
@@ -251,6 +264,8 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
   gap:13px;
   padding:15px 17px;
   background:rgba(0,0,0,.12);
+  flex:0 0 auto;
+  min-width:0;
 }
 
 .avatar {
@@ -293,21 +308,27 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
   color:color-mix(in srgb,var(--text-color) 75%,transparent);
   font-size:12px;
   text-align:center;
+  overflow-wrap:anywhere;
+  flex:0 0 auto;
 }
 
 .compact .identity {gap:10px;padding:10px 12px}
 .compact .footer {padding:7px 12px 9px}
 
+/* HORIZONTAL LAYOUT */
 .horizontal {
   display:grid;
   grid-template-columns:minmax(0,1fr) 180px;
+  grid-template-rows:minmax(0,1fr) auto;
 }
 
 .horizontal .video-frame {
   grid-column:1;
   grid-row:1;
+  min-height:0;
+  height:auto;
   aspect-ratio:auto;
-  min-height:140px;
+  flex:none;
 }
 
 .horizontal .identity {
@@ -316,12 +337,14 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
   align-items:flex-start;
   flex-direction:column;
   justify-content:center;
+  overflow:hidden;
 }
 
-.horizontal .footer {grid-column:1 / -1}
+.horizontal .footer {grid-column:1 / -1;grid-row:2}
+
 .hidden {display:none!important}
 
-/* OBS MODE: keep widget visible, hide editor */
+/* OBS MODE */
 body.overlay-mode {
   padding:0;
   overflow:hidden;
@@ -354,6 +377,10 @@ body.overlay-mode .preview-panel {
 
 body.overlay-mode .preview-wrap {
   display:flex;
+  align-items:flex-start;
+  justify-content:flex-start;
+  width:100%;
+  height:auto;
   min-height:0;
   padding:0;
   overflow:visible;
@@ -363,6 +390,7 @@ body.overlay-mode .preview-wrap {
 
 body.overlay-mode .shoutout {
   width:min(var(--card-width),100%);
+  height:var(--card-height);
   box-shadow:none;
 }
 
@@ -501,6 +529,20 @@ body.overlay-mode .shoutout {
           </div>
         </div>
 
+        <!-- NEW: CARD HEIGHT CONTROL -->
+        <div class="field">
+          <label for="cardHeight">Card height (px)</label>
+          <input
+            id="cardHeight"
+            type="number"
+            min="180"
+            max="1200"
+            step="10"
+            value="480"
+          >
+          <small>Controls the total widget height, including video, streamer information, and footer.</small>
+        </div>
+
         <div class="field-row">
           <div class="field">
             <label for="avatarSize">Avatar size (px)</label>
@@ -588,7 +630,7 @@ body.overlay-mode .shoutout {
     <section class="panel preview-panel">
       <h2>Live preview</h2>
       <p class="muted">
-        The classic design places the video first and the streamer information card directly underneath.
+        Adjust the width and height to fit your OBS layout. The video automatically fills the available space.
       </p>
 
       <div class="preview-wrap">
@@ -628,7 +670,7 @@ body.overlay-mode .shoutout {
     "eyebrowText","nameOverride","handlePrefix","footerText","placeholderText",
     "showAvatar","showName","showHandle","showEyebrow","showFooter",
     "accent","cardBg","cardBg2","textColor","borderColor",
-    "cardWidth","avatarSize","radius","border","layoutStyle",
+    "cardWidth","cardHeight","avatarSize","radius","border","layoutStyle",
     "backgroundStyle","borderStyle","animationStyle"
   ];
 
@@ -654,6 +696,7 @@ body.overlay-mode .shoutout {
     textColor:"#ffffff",
     borderColor:"#9147ff",
     cardWidth:520,
+    cardHeight:480,
     avatarSize:64,
     radius:16,
     border:2,
@@ -737,7 +780,6 @@ body.overlay-mode .shoutout {
     } catch (_) {}
   }
 
-  // Save a separate approved snapshot, without replacing it during ordinary edits.
   function savePreview() {
     if (isOverlay) return;
 
@@ -795,6 +837,8 @@ body.overlay-mode .shoutout {
 
     if (override) {
       $("streamerName").textContent = override;
+    } else if (!$("streamerName").dataset.loadedName) {
+      $("streamerName").textContent = "Streamer Name";
     }
 
     const username = cleanUsername(
@@ -820,14 +864,32 @@ body.overlay-mode .shoutout {
     root.style.setProperty("--card-bg2",bg2);
     root.style.setProperty("--text-color",text);
     root.style.setProperty("--border-color",borderColor);
-    root.style.setProperty("--card-width",
-      bounded($("cardWidth").value,520,240,1200)+"px");
-    root.style.setProperty("--avatar-size",
-      bounded($("avatarSize").value,64,24,180)+"px");
-    root.style.setProperty("--card-radius",
-      bounded($("radius").value,16,0,60)+"px");
-    root.style.setProperty("--card-border",
-      bounded($("border").value,2,0,16)+"px");
+
+    root.style.setProperty(
+      "--card-width",
+      bounded($("cardWidth").value,520,240,1200)+"px"
+    );
+
+    // NEW: apply adjustable card height
+    root.style.setProperty(
+      "--card-height",
+      bounded($("cardHeight").value,480,180,1200)+"px"
+    );
+
+    root.style.setProperty(
+      "--avatar-size",
+      bounded($("avatarSize").value,64,24,180)+"px"
+    );
+
+    root.style.setProperty(
+      "--card-radius",
+      bounded($("radius").value,16,0,60)+"px"
+    );
+
+    root.style.setProperty(
+      "--card-border",
+      bounded($("border").value,2,0,16)+"px"
+    );
 
     card.className = "shoutout";
 
@@ -868,7 +930,6 @@ body.overlay-mode .shoutout {
     $("eyebrow").textContent = $("eyebrowText").value;
     $("footer").textContent = $("footerText").value;
 
-    // The placeholder is removed when the Twitch iframe is inserted.
     const placeholder = $("videoFrame").querySelector(".video-placeholder");
     if (placeholder) {
       placeholder.textContent = $("placeholderText").value;
@@ -1062,6 +1123,7 @@ body.overlay-mode .shoutout {
       const avatar = getProfileImage(data,clip);
 
       $("streamerName").textContent = displayName;
+      $("streamerName").dataset.loadedName = displayName;
       $("streamerHandle").textContent = $("handlePrefix").value + username;
 
       if (avatar) {
@@ -1149,7 +1211,7 @@ body.overlay-mode .shoutout {
       }
 
       setStatus(
-        "OBS URL generated and copied with your current design. Update the URL in OBS Browser Source."
+        "OBS URL generated and copied with your current design, including the card height. Update the URL in OBS Browser Source."
       );
     } catch (error) {
       setStatus(error.message,true);
@@ -1170,7 +1232,6 @@ body.overlay-mode .shoutout {
       }
     });
 
-    // Keep the current streamer selected when resetting the design.
     $("username").value = currentUsername;
 
     applyDesign();
@@ -1185,7 +1246,6 @@ body.overlay-mode .shoutout {
   function setupOverlayMode() {
     document.body.classList.add("overlay-mode");
 
-    // Use URL settings first; local settings are only a fallback.
     restoreSettings();
     applyOverlaySettingsFromUrl();
 
@@ -1202,7 +1262,6 @@ body.overlay-mode .shoutout {
     }
   }
 
-  // Restore the dashboard's working settings before attaching listeners.
   restoreSettings();
   applyDesign();
   updateIdentityText();
