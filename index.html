@@ -96,6 +96,7 @@ h1 {margin:0 0 6px;font-size:clamp(24px,3vw,34px)}
 details {border-top:1px solid #3f3f46;padding-top:12px;margin-top:15px}
 summary {cursor:pointer;font-weight:700;margin-bottom:14px}
 
+/* PREVIEW */
 .preview-wrap {
   display:flex;
   align-items:flex-start;
@@ -182,9 +183,7 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
   );
 }
 
-.shoutout.anim-border {
-  animation:borderPulse 3s ease-in-out infinite;
-}
+.shoutout.anim-border {animation:borderPulse 3s ease-in-out infinite}
 
 .shoutout.anim-rainbow {
   border-color:transparent;
@@ -195,39 +194,28 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
   animation:rainbowMove 6s linear infinite;
 }
 
-.shoutout.anim-pulse {
-  animation:cardPulse 2.5s ease-in-out infinite;
-}
-
-.shoutout.anim-float {
-  animation:cardFloat 4s ease-in-out infinite;
-}
+.shoutout.anim-pulse {animation:cardPulse 2.5s ease-in-out infinite}
+.shoutout.anim-float {animation:cardFloat 4s ease-in-out infinite}
 
 @keyframes gradientMove {
   0%,100% {background-position:0% 50%}
   50% {background-position:100% 50%}
 }
-
 @keyframes borderPulse {
   0%,100% {box-shadow:0 0 4px var(--border-color)}
   50% {box-shadow:0 0 22px var(--border-color)}
 }
-
-@keyframes rainbowMove {
-  to {background-position:0 0,300% 0}
-}
-
+@keyframes rainbowMove {to {background-position:0 0,300% 0}}
 @keyframes cardPulse {
   0%,100% {box-shadow:0 0 5px color-mix(in srgb,var(--accent) 20%,transparent)}
   50% {box-shadow:0 0 24px color-mix(in srgb,var(--accent) 65%,transparent)}
 }
-
 @keyframes cardFloat {
   0%,100% {transform:translateY(0)}
   50% {transform:translateY(-4px)}
 }
 
-/* VIDEO AREA: automatically fills remaining card height */
+/* VIDEO AREA */
 .video-frame {
   position:relative;
   width:100%;
@@ -471,22 +459,18 @@ body.overlay-mode .shoutout {
           <input id="showAvatar" type="checkbox" checked>
           <label for="showAvatar">Show profile picture</label>
         </div>
-
         <div class="check-row">
           <input id="showName" type="checkbox" checked>
           <label for="showName">Show streamer name</label>
         </div>
-
         <div class="check-row">
           <input id="showHandle" type="checkbox" checked>
           <label for="showHandle">Show username</label>
         </div>
-
         <div class="check-row">
           <input id="showEyebrow" type="checkbox" checked>
           <label for="showEyebrow">Show heading text</label>
         </div>
-
         <div class="check-row">
           <input id="showFooter" type="checkbox" checked>
           <label for="showFooter">Show footer message</label>
@@ -529,17 +513,9 @@ body.overlay-mode .shoutout {
           </div>
         </div>
 
-        <!-- NEW: CARD HEIGHT CONTROL -->
         <div class="field">
           <label for="cardHeight">Card height (px)</label>
-          <input
-            id="cardHeight"
-            type="number"
-            min="180"
-            max="1200"
-            step="10"
-            value="480"
-          >
+          <input id="cardHeight" type="number" min="180" max="1200" step="10" value="480">
           <small>Controls the total widget height, including video, streamer information, and footer.</small>
         </div>
 
@@ -609,12 +585,10 @@ body.overlay-mode .shoutout {
         <button id="loadBtn" type="button">Load shoutout</button>
         <button id="savePreviewBtn" type="button">Save Preview</button>
       </div>
-
       <div class="button-row">
         <button id="loadSavedBtn" class="secondary" type="button">Load Saved Preview</button>
         <button id="discardBtn" class="secondary" type="button">Discard Changes</button>
       </div>
-
       <div class="button-row">
         <button id="copyBtn" class="secondary" type="button">Generate / Copy OBS URL</button>
         <button id="resetBtn" class="secondary" type="button">Reset Design</button>
@@ -726,33 +700,27 @@ body.overlay-mode .shoutout {
 
   function collectSettings() {
     const values = {};
-
     settingsIds.forEach(id => {
       const element = $(id);
       if (!element) return;
-
       values[id] = element.type === "checkbox"
         ? element.checked
         : element.value;
     });
-
     return values;
   }
 
   function applySettings(values) {
     if (!values || typeof values !== "object") return;
-
     Object.entries(values).forEach(([id,value]) => {
       const element = $(id);
       if (!element || value == null) return;
-
       if (element.type === "checkbox") {
         element.checked = value === true || value === "true";
       } else {
         element.value = String(value);
       }
     });
-
     $("username").value = cleanUsername($("username").value);
     updateIdentityText();
     applyDesign();
@@ -760,70 +728,48 @@ body.overlay-mode .shoutout {
 
   function saveSettings() {
     if (isOverlay) return;
-
     try {
-      localStorage.setItem(
-        SAVED_SETTINGS_KEY,
-        JSON.stringify(collectSettings())
-      );
+      localStorage.setItem(SAVED_SETTINGS_KEY,JSON.stringify(collectSettings()));
     } catch (_) {}
   }
 
   function restoreSettings() {
     if (isOverlay) return;
-
     try {
-      const saved = JSON.parse(
-        localStorage.getItem(SAVED_SETTINGS_KEY) || "{}"
-      );
+      const saved = JSON.parse(localStorage.getItem(SAVED_SETTINGS_KEY) || "{}");
       applySettings(saved);
     } catch (_) {}
   }
 
   function savePreview() {
     if (isOverlay) return;
-
     try {
-      const snapshot = collectSettings();
-
-      localStorage.setItem(
-        SAVED_PREVIEW_KEY,
-        JSON.stringify(snapshot)
-      );
-
+      localStorage.setItem(SAVED_PREVIEW_KEY,JSON.stringify(collectSettings()));
       saveSettings();
       setStatus("Preview saved! Your approved design is stored in this browser.");
-    } catch (error) {
+    } catch (_) {
       setStatus("Could not save the preview. Check your browser storage settings.",true);
     }
   }
 
   async function loadSavedPreview() {
     if (isOverlay) return;
-
-    let snapshot;
-
     try {
       const saved = localStorage.getItem(SAVED_PREVIEW_KEY);
-
       if (!saved) {
         setStatus("No saved preview found yet. Customize your design and click Save Preview first.",true);
         return;
       }
-
-      snapshot = JSON.parse(saved);
-      applySettings(snapshot);
+      applySettings(JSON.parse(saved));
       saveSettings();
-
       const username = cleanUsername($("username").value);
-
       if (username) {
         await loadShoutout({quiet:true});
         setStatus("Saved preview restored. Review it before generating your OBS URL.");
       } else {
         setStatus("Saved preview restored. Enter a Twitch username to load a clip.");
       }
-    } catch (error) {
+    } catch (_) {
       setStatus("Could not restore the saved preview.",true);
     }
   }
@@ -834,19 +780,13 @@ body.overlay-mode .shoutout {
 
   function updateIdentityText() {
     const override = $("nameOverride").value.trim();
-
     if (override) {
       $("streamerName").textContent = override;
     } else if (!$("streamerName").dataset.loadedName) {
       $("streamerName").textContent = "Streamer Name";
     }
-
-    const username = cleanUsername(
-      $("username").value || params.get("user") || ""
-    );
-
-    $("streamerHandle").textContent =
-      $("handlePrefix").value + username;
+    const username = cleanUsername($("username").value || params.get("user") || "");
+    $("streamerHandle").textContent = $("handlePrefix").value + username;
   }
 
   function applyDesign() {
@@ -864,39 +804,16 @@ body.overlay-mode .shoutout {
     root.style.setProperty("--card-bg2",bg2);
     root.style.setProperty("--text-color",text);
     root.style.setProperty("--border-color",borderColor);
-
-    root.style.setProperty(
-      "--card-width",
-      bounded($("cardWidth").value,520,240,1200)+"px"
-    );
-
-    // NEW: apply adjustable card height
-    root.style.setProperty(
-      "--card-height",
-      bounded($("cardHeight").value,480,180,1200)+"px"
-    );
-
-    root.style.setProperty(
-      "--avatar-size",
-      bounded($("avatarSize").value,64,24,180)+"px"
-    );
-
-    root.style.setProperty(
-      "--card-radius",
-      bounded($("radius").value,16,0,60)+"px"
-    );
-
-    root.style.setProperty(
-      "--card-border",
-      bounded($("border").value,2,0,16)+"px"
-    );
+    root.style.setProperty("--card-width",bounded($("cardWidth").value,520,240,1200)+"px");
+    root.style.setProperty("--card-height",bounded($("cardHeight").value,480,180,1200)+"px");
+    root.style.setProperty("--avatar-size",bounded($("avatarSize").value,64,24,180)+"px");
+    root.style.setProperty("--card-radius",bounded($("radius").value,16,0,60)+"px");
+    root.style.setProperty("--card-border",bounded($("border").value,2,0,16)+"px");
 
     card.className = "shoutout";
 
     const layout = $("layoutStyle").value;
-    if (["classic","compact","horizontal"].includes(layout)) {
-      card.classList.add(layout);
-    }
+    if (["classic","compact","horizontal"].includes(layout)) card.classList.add(layout);
 
     const backgroundClasses = {
       solid:"",
@@ -907,7 +824,6 @@ body.overlay-mode .shoutout {
       stars:"bg-stars",
       scanlines:"bg-scanlines"
     };
-
     const backgroundClass = backgroundClasses[$("backgroundStyle").value];
     if (backgroundClass) card.classList.add(backgroundClass);
 
@@ -923,7 +839,6 @@ body.overlay-mode .shoutout {
       pulse:"anim-pulse",
       float:"anim-float"
     };
-
     const animationClass = animationClasses[$("animationStyle").value];
     if (animationClass) card.classList.add(animationClass);
 
@@ -931,9 +846,7 @@ body.overlay-mode .shoutout {
     $("footer").textContent = $("footerText").value;
 
     const placeholder = $("videoFrame").querySelector(".video-placeholder");
-    if (placeholder) {
-      placeholder.textContent = $("placeholderText").value;
-    }
+    if (placeholder) placeholder.textContent = $("placeholderText").value;
 
     $("avatar").classList.toggle("hidden",!$("showAvatar").checked);
     $("streamerName").classList.toggle("hidden",!$("showName").checked);
@@ -945,12 +858,9 @@ body.overlay-mode .shoutout {
   function applyOverlaySettingsFromUrl() {
     settingsIds.forEach(id => {
       if (!params.has(id)) return;
-
       const element = $(id);
       if (!element) return;
-
       const value = params.get(id);
-
       if (element.type === "checkbox") {
         element.checked = value === "true";
       } else {
@@ -962,7 +872,6 @@ body.overlay-mode .shoutout {
   function getWorkerUrl(username) {
     const base = ($("workerUrl").value || "").trim();
     if (!base) throw new Error("Enter your Cloudflare Worker URL.");
-
     const url = new URL(base);
     url.searchParams.set("username",username);
     url.searchParams.set("timeframe",$("timeframe").value || "year");
@@ -971,35 +880,20 @@ body.overlay-mode .shoutout {
 
   function normalizeClip(data) {
     if (!data) return null;
-    if (Array.isArray(data)) {
-      return data.length ? normalizeClip(data[0]) : null;
-    }
+    if (Array.isArray(data)) return data.length ? normalizeClip(data[0]) : null;
 
     if (data.error) {
-      throw new Error(typeof data.error === "string"
-        ? data.error
-        : "The clip service returned an error.");
+      throw new Error(typeof data.error === "string" ? data.error : "The clip service returned an error.");
     }
-
     if (data.clip) return normalizeClip(data.clip);
-
-    if (Array.isArray(data.clips)) {
-      return data.clips.length ? normalizeClip(data.clips[0]) : null;
-    }
-
-    if (Array.isArray(data.data)) {
-      return data.data.length ? normalizeClip(data.data[0]) : null;
-    }
-
-    if (data.data && typeof data.data === "object") {
-      return normalizeClip(data.data);
-    }
+    if (Array.isArray(data.clips)) return data.clips.length ? normalizeClip(data.clips[0]) : null;
+    if (Array.isArray(data.data)) return data.data.length ? normalizeClip(data.data[0]) : null;
+    if (data.data && typeof data.data === "object") return normalizeClip(data.data);
 
     if (data.slug || data.id || data.embed_url || data.embedUrl ||
         data.video_url || data.videoUrl || data.clip_url || data.url) {
       return data;
     }
-
     return null;
   }
 
@@ -1007,18 +901,14 @@ body.overlay-mode .shoutout {
     const direct = clip.slug || clip.id || clip.clip_slug || clip.clipSlug;
     if (direct) return String(direct).trim();
 
-    for (const candidate of [
-      clip.url,clip.clip_url,clip.clipUrl,clip.embed_url,clip.embedUrl
-    ]) {
+    for (const candidate of [clip.url,clip.clip_url,clip.clipUrl,clip.embed_url,clip.embedUrl]) {
       if (!candidate) continue;
-
       try {
         const url = new URL(candidate);
         const parts = url.pathname.split("/").filter(Boolean);
         if (parts.length) return parts[parts.length-1];
       } catch (_) {}
     }
-
     return "";
   }
 
@@ -1041,13 +931,12 @@ body.overlay-mode .shoutout {
   function showPlaceholder(message) {
     const frame = $("videoFrame");
     const placeholder = document.createElement("div");
-
     placeholder.className = "video-placeholder";
     placeholder.textContent = message || $("placeholderText").value;
-
     frame.replaceChildren(placeholder);
   }
 
+  /* AUDIO FIX: request autoplay with sound enabled */
   function showClipEmbed(slug) {
     if (!slug) {
       showPlaceholder("No usable Twitch clip ID was returned by the clip service.");
@@ -1055,11 +944,8 @@ body.overlay-mode .shoutout {
     }
 
     const host = window.location.hostname;
-
     if (!host) {
-      showPlaceholder(
-        "Open this page through GitHub Pages or a web server to display Twitch clips."
-      );
+      showPlaceholder("Open this page through GitHub Pages or a web server to display Twitch clips.");
       return;
     }
 
@@ -1067,38 +953,35 @@ body.overlay-mode .shoutout {
     iframe.title = "Twitch clip";
     iframe.allow = "autoplay; fullscreen";
     iframe.allowFullscreen = true;
-    iframe.src = "https://clips.twitch.tv/embed?clip=" +
-      encodeURIComponent(slug) +
-      "&parent=" + encodeURIComponent(host) +
-      "&autoplay=true&muted=true";
 
+    const clipUrl = new URL("https://clips.twitch.tv/embed");
+    clipUrl.searchParams.set("clip",slug);
+    clipUrl.searchParams.set("parent",host);
+    clipUrl.searchParams.set("autoplay","true");
+    clipUrl.searchParams.set("muted","false");
+
+    iframe.src = clipUrl.toString();
     $("videoFrame").replaceChildren(iframe);
   }
 
   async function loadShoutout(options={}) {
-    const username = cleanUsername(
-      $("username").value || params.get("user") || ""
-    );
-
+    const username = cleanUsername($("username").value || params.get("user") || "");
     if (!username) {
       if (!options.quiet) setStatus("Enter a Twitch username first.",true);
       return;
     }
 
     $("username").value = username;
-
     const button = $("loadBtn");
     if (button) {
       button.disabled = true;
       button.textContent = "Loading…";
     }
-
     if (!options.quiet) setStatus("Loading clip and profile information…");
 
     try {
       const response = await fetch(getWorkerUrl(username));
       let data;
-
       try {
         data = await response.json();
       } catch (_) {
@@ -1110,16 +993,12 @@ body.overlay-mode .shoutout {
       }
 
       const clip = normalizeClip(data);
-
       if (!clip) {
-        throw new Error(
-          data.message || "No clips were returned for this username and timeframe."
-        );
+        throw new Error(data.message || "No clips were returned for this username and timeframe.");
       }
 
       const slug = getClipSlug(clip);
-      const displayName = $("nameOverride").value.trim() ||
-        getDisplayName(data,clip,username);
+      const displayName = $("nameOverride").value.trim() || getDisplayName(data,clip,username);
       const avatar = getProfileImage(data,clip);
 
       $("streamerName").textContent = displayName;
@@ -1137,22 +1016,13 @@ body.overlay-mode .shoutout {
       showClipEmbed(slug);
 
       if (!options.quiet) {
-        setStatus(slug
-          ? `Loaded shoutout for ${displayName}.`
-          : "Loaded profile, but no usable clip ID was found.",!slug);
+        setStatus(slug ? `Loaded shoutout for ${displayName}.` : "Loaded profile, but no usable clip ID was found.",!slug);
       }
-
       saveSettings();
     } catch (error) {
       console.error(error);
-
-      if (!options.quiet) {
-        setStatus(error.message || "Unable to load shoutout.",true);
-      }
-
-      showPlaceholder(
-        "Could not load a clip. Check the username, Worker URL, and Worker response."
-      );
+      if (!options.quiet) setStatus(error.message || "Unable to load shoutout.",true);
+      showPlaceholder("Could not load a clip. Check the username, Worker URL, and Worker response.");
     } finally {
       if (button) {
         button.disabled = false;
@@ -1162,27 +1032,19 @@ body.overlay-mode .shoutout {
   }
 
   function buildOverlayUrl() {
-    const username = cleanUsername(
-      $("username").value || params.get("user") || ""
-    );
-
-    if (!username) {
-      throw new Error("Enter a Twitch username before generating the OBS URL.");
-    }
+    const username = cleanUsername($("username").value || params.get("user") || "");
+    if (!username) throw new Error("Enter a Twitch username before generating the OBS URL.");
 
     const url = new URL(window.location.href);
     url.search = "";
     url.hash = "";
-
     url.searchParams.set("overlay","1");
     url.searchParams.set("user",username);
 
     const values = collectSettings();
-
     Object.entries(values).forEach(([key,value]) => {
       url.searchParams.set(key,String(value));
     });
-
     return url.toString();
   }
 
@@ -1199,20 +1061,12 @@ body.overlay-mode .shoutout {
         temporary.style.opacity = "0";
         document.body.appendChild(temporary);
         temporary.select();
-
         const copied = document.execCommand("copy");
         temporary.remove();
-
-        if (!copied) {
-          throw new Error(
-            "Clipboard access failed. Copy this link manually: " + link
-          );
-        }
+        if (!copied) throw new Error("Clipboard access failed. Copy this link manually: " + link);
       }
 
-      setStatus(
-        "OBS URL generated and copied with your current design, including the card height. Update the URL in OBS Browser Source."
-      );
+      setStatus("OBS URL generated and copied with your current design, including the card height. Update the URL in OBS Browser Source.");
     } catch (error) {
       setStatus(error.message,true);
     }
@@ -1220,46 +1074,31 @@ body.overlay-mode .shoutout {
 
   function resetDesign() {
     const currentUsername = cleanUsername($("username").value);
-
     Object.entries(defaults).forEach(([id,value]) => {
       const element = $(id);
       if (!element) return;
-
-      if (element.type === "checkbox") {
-        element.checked = Boolean(value);
-      } else {
-        element.value = String(value);
-      }
+      if (element.type === "checkbox") element.checked = Boolean(value);
+      else element.value = String(value);
     });
-
     $("username").value = currentUsername;
-
     applyDesign();
     updateIdentityText();
     saveSettings();
-
-    setStatus(
-      "Working design reset to defaults. Your separately saved preview was not changed."
-    );
+    setStatus("Working design reset to defaults. Your separately saved preview was not changed.");
   }
 
   function setupOverlayMode() {
     document.body.classList.add("overlay-mode");
-
     restoreSettings();
     applyOverlaySettingsFromUrl();
 
     const username = cleanUsername(params.get("user") || "");
     $("username").value = username;
-
     updateIdentityText();
     applyDesign();
 
-    if (username) {
-      loadShoutout({quiet:true});
-    } else {
-      showPlaceholder("The OBS URL is missing a Twitch username.");
-    }
+    if (username) loadShoutout({quiet:true});
+    else showPlaceholder("The OBS URL is missing a Twitch username.");
   }
 
   restoreSettings();
@@ -1272,7 +1111,6 @@ body.overlay-mode .shoutout {
       updateIdentityText();
       saveSettings();
     });
-
     $(id).addEventListener("change",() => {
       applyDesign();
       updateIdentityText();
