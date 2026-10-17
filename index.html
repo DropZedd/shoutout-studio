@@ -742,57 +742,47 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   }
 
   function makeClipPlayer(clip) {
-    // Prefer the direct MP4 URL supplied by the Worker. The URL has been
-    // tested in a native <video> element in the browser.
-    if (typeof clip.video_url === "string" && clip.video_url.trim()) {
-      let videoURL;
-      try {
-        videoURL = new URL(clip.video_url);
-      } catch {
-        throw new Error("The clip service returned an invalid video URL.");
-      }
-      if (videoURL.protocol !== "https:") {
-        throw new Error("The clip video URL must use HTTPS.");
-      }
-
-      const video = document.createElement("video");
-      video.title = "Twitch shoutout clip";
-      video.autoplay = true;
-      video.muted = true;
-      video.defaultMuted = true;
-      video.playsInline = true;
-      video.preload = "auto";
-      video.controls = false;
-      video.setAttribute("webkit-playsinline", "");
-      if (typeof clip.thumbnail_url === "string" && /^https:\/\//i.test(clip.thumbnail_url)) {
-        video.poster = clip.thumbnail_url;
-      }
-      video.dataset.videoSrc = videoURL.toString();
-      video.addEventListener("error", () => {
-        setOverlayStatus("The clip MP4 could not be played. The video provider may be unavailable.");
-      });
-      video.addEventListener("playing", () => setOverlayStatus(""));
-      return video;
+    const slug = typeof clip.slug === "string" ? clip.slug.trim() : "";
+    if (!/^[a-zA-Z0-9_-]+$/.test(slug)) {
+      throw new Error("The clip service did not return a valid clip slug.");
     }
 
-    // Backward-compatible fallback for Workers that have not added video_url.
-    const slug = clip.slug;
-    if (typeof slug !== "string" || !/^[a-zA-Z0-9_-]+$/.test(slug)) {
-      throw new Error("The clip service returned neither a valid video URL nor a clip slug.");
+    // The Worker may not include video_url. Build the known clip MP4 endpoint
+    // from the slug so we don't silently use the Twitch iframe, which was
+    // showing the thumbnail and then turning black.
+    const suppliedVideoURL =
+      typeof clip.video_url === "string" && clip.video_url.trim()
+        ? clip.video_url.trim()
+        : "https://twitch.so/pclips/" + encodeURIComponent(slug);
+
+    let videoURL;
+    try {
+      videoURL = new URL(suppliedVideoURL);
+    } catch {
+      throw new Error("The clip service returned an invalid video URL.");
     }
-    const iframe = document.createElement("iframe");
-    iframe.title = "Twitch shoutout clip";
-    iframe.allow = "autoplay *; encrypted-media *; fullscreen *; picture-in-picture *";
-    iframe.allowFullscreen = true;
-    iframe.referrerPolicy = "origin";
-    iframe.loading = "eager";
-    const url = new URL("https://clips.twitch.tv/embed");
-    url.searchParams.set("clip", slug);
-    url.searchParams.set("parent", getParentDomain());
-    url.searchParams.set("autoplay", "true");
-    url.searchParams.set("muted", "true");
-    iframe.dataset.clipSrc = url.toString();
-    return iframe;
+    if (videoURL.protocol !== "https:") {
+      throw new Error("The clip video URL must use HTTPS.");
+    }
+
+    const video = document.createElement("video");
+    video.title = "Twitch shoutout clip";
+    video.autoplay = true;
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    video.controls = false;
+    video.setAttribute("webkit-playsinline", "");
+    if (typeof clip.thumbnail_url === "string" && /^https:\/\//i.test(clip.thumbnail_url)) {
+      video.poster = clip.thumbnail_url;
+    }
+    video.dataset.videoSrc = videoURL.toString();
+    video.addEventListener("error", () => {
+      setOverlayStatus("Direct clip playback failed; trying Twitch's embedded player…");
+    });
+    video.addEventListener("playing", () => setOverlayStatus(""));
+    return video;
   }
 
   function clearTimers() {
