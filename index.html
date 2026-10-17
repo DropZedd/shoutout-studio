@@ -42,6 +42,7 @@ button {
   cursor:pointer;
   font-weight:650;
 }
+
 button.secondary {background:#3f3f46}
 button.danger {background:#7f1d1d}
 button:disabled {opacity:.55;cursor:wait}
@@ -55,6 +56,7 @@ input,select {
   border:1px solid #3f3f46;
   border-radius:8px;
 }
+
 input[type="color"] {height:42px;padding:4px}
 input[type="checkbox"] {width:auto;accent-color:var(--accent)}
 
@@ -65,7 +67,7 @@ label {
   font-size:13px;
 }
 
-small,.muted {color:#a1a1aa}
+small,.d,.muted {color:#a1a1aa}
 .app {max-width:1280px;margin:0 auto}
 .top {margin-bottom:22px}
 h1 {margin:0 0 6px;font-size:clamp(24px,3vw,34px)}
@@ -96,7 +98,15 @@ h1 {margin:0 0 6px;font-size:clamp(24px,3vw,34px)}
 details {border-top:1px solid #3f3f46;padding-top:12px;margin-top:15px}
 summary {cursor:pointer;font-weight:700;margin-bottom:14px}
 
+.hint {
+  margin-top:6px;
+  font-size:12px;
+  line-height:1.5;
+  color:#a1a1aa;
+}
+
 /* PREVIEW */
+
 .preview-wrap {
   display:flex;
   align-items:flex-start;
@@ -109,6 +119,7 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
 }
 
 /* WIDGET CARD */
+
 .shoutout {
   width:min(var(--card-width),100%);
   height:var(--card-height);
@@ -201,37 +212,49 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
   0%,100% {background-position:0% 50%}
   50% {background-position:100% 50%}
 }
+
 @keyframes borderPulse {
   0%,100% {box-shadow:0 0 4px var(--border-color)}
   50% {box-shadow:0 0 22px var(--border-color)}
 }
+
 @keyframes rainbowMove {to {background-position:0 0,300% 0}}
+
 @keyframes cardPulse {
   0%,100% {box-shadow:0 0 5px color-mix(in srgb,var(--accent) 20%,transparent)}
   50% {box-shadow:0 0 24px color-mix(in srgb,var(--accent) 65%,transparent)}
 }
+
 @keyframes cardFloat {
   0%,100% {transform:translateY(0)}
   50% {transform:translateY(-4px)}
 }
 
-/* VIDEO AREA */
+/* VIDEO FRAME */
+
 .video-frame {
   position:relative;
   width:100%;
   flex:1 1 0;
   min-height:0;
-  aspect-ratio:auto;
   background:#000;
   overflow:hidden;
 }
 
-.video-frame iframe {
+.video-frame iframe,
+.video-frame video {
   display:block;
+  position:absolute;
+  inset:0;
   width:100%;
   height:100%;
   min-height:0;
   border:0;
+  background:#000;
+}
+
+.video-frame video {
+  object-fit:contain;
 }
 
 .video-placeholder {
@@ -245,6 +268,16 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
   text-align:center;
   overflow-wrap:anywhere;
 }
+
+.video-error {
+  color:#fca5a5;
+  font-size:13px;
+  padding:18px;
+  text-align:center;
+  overflow-wrap:anywhere;
+}
+
+/* STREAMER INFORMATION */
 
 .identity {
   display:flex;
@@ -304,6 +337,7 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
 .compact .footer {padding:7px 12px 9px}
 
 /* HORIZONTAL LAYOUT */
+
 .horizontal {
   display:grid;
   grid-template-columns:minmax(0,1fr) 180px;
@@ -333,6 +367,7 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
 .hidden {display:none!important}
 
 /* OBS MODE */
+
 body.overlay-mode {
   padding:0;
   overflow:hidden;
@@ -396,14 +431,16 @@ body.overlay-mode .shoutout {
 
 <body>
 <main class="app">
+
   <header class="top">
     <h1>🎮 Twitch Shoutout Studio</h1>
     <div class="muted">
-      Customize your shoutout card, save an approved preview, and use the generated URL as an OBS Browser Source.
+      Paste a video or embed URL, customize your shoutout, and use the generated URL as an OBS Browser Source.
     </div>
   </header>
 
   <div class="layout">
+
     <section class="panel" id="settings">
       <h2>Shoutout settings</h2>
 
@@ -413,12 +450,20 @@ body.overlay-mode .shoutout {
       </div>
 
       <div class="field">
-        <label for="workerUrl">Cloudflare Worker URL</label>
+        <label for="videoUrl">Video / Embed URL</label>
+        <input id="videoUrl" type="url" placeholder="Paste a video, YouTube, or embed URL" autocomplete="url">
+        <div class="hint">
+          A supplied URL takes priority over the Twitch clip Worker. Direct MP4/WebM/OGG links use the native video player. YouTube and Twitch clip links are converted to embed URLs where recognized. Other URLs open in an iframe if the website permits embedding.
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="workerUrl">Cloudflare Worker URL (fallback)</label>
         <input id="workerUrl" type="url" value="https://twitch-shoutout-clips.dropzedd.workers.dev/">
       </div>
 
       <div class="field">
-        <label for="timeframe">Clip timeframe</label>
+        <label for="timeframe">Clip timeframe (Worker fallback)</label>
         <select id="timeframe">
           <option value="all">All time</option>
           <option value="year" selected>Past year</option>
@@ -459,18 +504,22 @@ body.overlay-mode .shoutout {
           <input id="showAvatar" type="checkbox" checked>
           <label for="showAvatar">Show profile picture</label>
         </div>
+
         <div class="check-row">
           <input id="showName" type="checkbox" checked>
           <label for="showName">Show streamer name</label>
         </div>
+
         <div class="check-row">
           <input id="showHandle" type="checkbox" checked>
           <label for="showHandle">Show username</label>
         </div>
+
         <div class="check-row">
           <input id="showEyebrow" type="checkbox" checked>
           <label for="showEyebrow">Show heading text</label>
         </div>
+
         <div class="check-row">
           <input id="showFooter" type="checkbox" checked>
           <label for="showFooter">Show footer message</label>
@@ -516,7 +565,7 @@ body.overlay-mode .shoutout {
         <div class="field">
           <label for="cardHeight">Card height (px)</label>
           <input id="cardHeight" type="number" min="180" max="1200" step="10" value="480">
-          <small>Controls the total widget height, including video, streamer information, and footer.</small>
+          <small>Controls total widget height, including the video and information.</small>
         </div>
 
         <div class="field-row">
@@ -585,10 +634,12 @@ body.overlay-mode .shoutout {
         <button id="loadBtn" type="button">Load shoutout</button>
         <button id="savePreviewBtn" type="button">Save Preview</button>
       </div>
+
       <div class="button-row">
         <button id="loadSavedBtn" class="secondary" type="button">Load Saved Preview</button>
         <button id="discardBtn" class="secondary" type="button">Discard Changes</button>
       </div>
+
       <div class="button-row">
         <button id="copyBtn" class="secondary" type="button">Generate / Copy OBS URL</button>
         <button id="resetBtn" class="secondary" type="button">Reset Design</button>
@@ -597,14 +648,14 @@ body.overlay-mode .shoutout {
       <div id="status" class="status" role="status" aria-live="polite"></div>
 
       <small>
-        Your working settings save automatically in this browser. Save Preview keeps a separate approved version. Generate a fresh OBS URL after approving your design.
+        Settings save automatically in this browser. Save Preview stores a separate approved version. Generate a fresh OBS URL after approving your design.
       </small>
     </section>
 
     <section class="panel preview-panel">
       <h2>Live preview</h2>
       <p class="muted">
-        Adjust the width and height to fit your OBS layout. The video automatically fills the available space.
+        Paste a URL above and click Load shoutout. The video fills the available space within your chosen widget dimensions.
       </p>
 
       <div class="preview-wrap">
@@ -628,11 +679,14 @@ body.overlay-mode .shoutout {
         </article>
       </div>
     </section>
+
   </div>
 </main>
 
 <script>
 (() => {
+  "use strict";
+
   const $ = id => document.getElementById(id);
   const params = new URLSearchParams(window.location.search);
   const isOverlay = params.get("overlay") === "1";
@@ -648,10 +702,13 @@ body.overlay-mode .shoutout {
     "backgroundStyle","borderStyle","animationStyle"
   ];
 
-  const settingsIds = ["username","workerUrl","timeframe",...designIds];
+  const settingsIds = [
+    "username","videoUrl","workerUrl","timeframe",...designIds
+  ];
 
   const defaults = {
     username:"",
+    videoUrl:"",
     workerUrl:"https://twitch-shoutout-clips.dropzedd.workers.dev/",
     timeframe:"year",
     eyebrowText:"Go check them out",
@@ -681,7 +738,8 @@ body.overlay-mode .shoutout {
   };
 
   function cleanUsername(value) {
-    return (value || "").trim().replace(/^@+/,"")
+    return (value || "").trim()
+      .replace(/^@+/,"")
       .replace(/[^a-zA-Z0-9_]/g,"");
   }
 
@@ -693,58 +751,77 @@ body.overlay-mode .shoutout {
   }
 
   function setStatus(message,isError=false) {
-    if (!$("status")) return;
     $("status").textContent = message;
     $("status").style.color = isError ? "#fca5a5" : "#c4b5fd";
   }
 
   function collectSettings() {
     const values = {};
+
     settingsIds.forEach(id => {
       const element = $(id);
       if (!element) return;
+
       values[id] = element.type === "checkbox"
         ? element.checked
         : element.value;
     });
+
     return values;
   }
 
   function applySettings(values) {
     if (!values || typeof values !== "object") return;
+
     Object.entries(values).forEach(([id,value]) => {
       const element = $(id);
       if (!element || value == null) return;
+
       if (element.type === "checkbox") {
         element.checked = value === true || value === "true";
       } else {
         element.value = String(value);
       }
     });
+
     $("username").value = cleanUsername($("username").value);
+
     updateIdentityText();
     applyDesign();
   }
 
   function saveSettings() {
     if (isOverlay) return;
+
     try {
-      localStorage.setItem(SAVED_SETTINGS_KEY,JSON.stringify(collectSettings()));
+      localStorage.setItem(
+        SAVED_SETTINGS_KEY,
+        JSON.stringify(collectSettings())
+      );
     } catch (_) {}
   }
 
   function restoreSettings() {
     if (isOverlay) return;
+
     try {
-      const saved = JSON.parse(localStorage.getItem(SAVED_SETTINGS_KEY) || "{}");
+      const saved = JSON.parse(
+        localStorage.getItem(SAVED_SETTINGS_KEY) || "{}"
+      );
+
       applySettings(saved);
     } catch (_) {}
   }
 
   function savePreview() {
     if (isOverlay) return;
+
     try {
-      localStorage.setItem(SAVED_PREVIEW_KEY,JSON.stringify(collectSettings()));
+      localStorage.setItem(
+        SAVED_PREVIEW_KEY,
+        JSON.stringify(collectSettings())
+      );
+
       saveSettings();
       setStatus("Preview saved! Your approved design is stored in this browser.");
     } catch (_) {
@@ -754,20 +831,29 @@ body.overlay-mode .shoutout {
 
   async function loadSavedPreview() {
     if (isOverlay) return;
+
     try {
       const saved = localStorage.getItem(SAVED_PREVIEW_KEY);
+
       if (!saved) {
-        setStatus("No saved preview found yet. Customize your design and click Save Preview first.",true);
+        setStatus(
+          "No saved preview found. Customize your design and click Save Preview first.",
+          true
+        );
         return;
       }
+
       applySettings(JSON.parse(saved));
       saveSettings();
+
+      const videoUrl = $("videoUrl").value.trim();
       const username = cleanUsername($("username").value);
-      if (username) {
+
+      if (videoUrl || username) {
         await loadShoutout({quiet:true});
         setStatus("Saved preview restored. Review it before generating your OBS URL.");
       } else {
-        setStatus("Saved preview restored. Enter a Twitch username to load a clip.");
+        setStatus("Saved preview restored. Paste a video URL or enter a Twitch username.");
       }
     } catch (_) {
       setStatus("Could not restore the saved preview.",true);
@@ -780,13 +866,19 @@ body.overlay-mode .shoutout {
 
   function updateIdentityText() {
     const override = $("nameOverride").value.trim();
+
     if (override) {
       $("streamerName").textContent = override;
     } else if (!$("streamerName").dataset.loadedName) {
       $("streamerName").textContent = "Streamer Name";
     }
-    const username = cleanUsername($("username").value || params.get("user") || "");
-    $("streamerHandle").textContent = $("handlePrefix").value + username;
+
+    const username = cleanUsername(
+      $("username").value || params.get("user") || ""
+    );
+
+    $("streamerHandle").textContent =
+      $("handlePrefix").value + username;
   }
 
   function applyDesign() {
@@ -804,16 +896,39 @@ body.overlay-mode .shoutout {
     root.style.setProperty("--card-bg2",bg2);
     root.style.setProperty("--text-color",text);
     root.style.setProperty("--border-color",borderColor);
-    root.style.setProperty("--card-width",bounded($("cardWidth").value,520,240,1200)+"px");
-    root.style.setProperty("--card-height",bounded($("cardHeight").value,480,180,1200)+"px");
-    root.style.setProperty("--avatar-size",bounded($("avatarSize").value,64,24,180)+"px");
-    root.style.setProperty("--card-radius",bounded($("radius").value,16,0,60)+"px");
-    root.style.setProperty("--card-border",bounded($("border").value,2,0,16)+"px");
+
+    root.style.setProperty(
+      "--card-width",
+      bounded($("cardWidth").value,520,240,1200)+"px"
+    );
+
+    root.style.setProperty(
+      "--card-height",
+      bounded($("cardHeight").value,480,180,1200)+"px"
+    );
+
+    root.style.setProperty(
+      "--avatar-size",
+      bounded($("avatarSize").value,64,24,180)+"px"
+    );
+
+    root.style.setProperty(
+      "--card-radius",
+      bounded($("radius").value,16,0,60)+"px"
+    );
+
+    root.style.setProperty(
+      "--card-border",
+      bounded($("border").value,2,0,16)+"px"
+    );
 
     card.className = "shoutout";
 
     const layout = $("layoutStyle").value;
-    if (["classic","compact","horizontal"].includes(layout)) card.classList.add(layout);
+
+    if (["classic","compact","horizontal"].includes(layout)) {
+      card.classList.add(layout);
+    }
 
     const backgroundClasses = {
       solid:"",
@@ -824,10 +939,14 @@ body.overlay-mode .shoutout {
       stars:"bg-stars",
       scanlines:"bg-scanlines"
     };
-    const backgroundClass = backgroundClasses[$("backgroundStyle").value];
+
+    const backgroundClass =
+      backgroundClasses[$("backgroundStyle").value];
+
     if (backgroundClass) card.classList.add(backgroundClass);
 
     const borderStyle = $("borderStyle").value;
+
     if (["solid","dashed","dotted","double","none"].includes(borderStyle)) {
       card.classList.add("border-"+borderStyle);
     }
@@ -839,14 +958,20 @@ body.overlay-mode .shoutout {
       pulse:"anim-pulse",
       float:"anim-float"
     };
-    const animationClass = animationClasses[$("animationStyle").value];
+
+    const animationClass =
+      animationClasses[$("animationStyle").value];
+
     if (animationClass) card.classList.add(animationClass);
 
     $("eyebrow").textContent = $("eyebrowText").value;
     $("footer").textContent = $("footerText").value;
 
     const placeholder = $("videoFrame").querySelector(".video-placeholder");
-    if (placeholder) placeholder.textContent = $("placeholderText").value;
+
+    if (placeholder) {
+      placeholder.textContent = $("placeholderText").value;
+    }
 
     $("avatar").classList.toggle("hidden",!$("showAvatar").checked);
     $("streamerName").classList.toggle("hidden",!$("showName").checked);
@@ -858,9 +983,12 @@ body.overlay-mode .shoutout {
   function applyOverlaySettingsFromUrl() {
     settingsIds.forEach(id => {
       if (!params.has(id)) return;
+
       const element = $(id);
       if (!element) return;
+
       const value = params.get(id);
+
       if (element.type === "checkbox") {
         element.checked = value === "true";
       } else {
@@ -871,44 +999,80 @@ body.overlay-mode .shoutout {
 
   function getWorkerUrl(username) {
     const base = ($("workerUrl").value || "").trim();
-    if (!base) throw new Error("Enter your Cloudflare Worker URL.");
+
+    if (!base) {
+      throw new Error("Enter your Cloudflare Worker URL.");
+    }
+
     const url = new URL(base);
+
     url.searchParams.set("username",username);
     url.searchParams.set("timeframe",$("timeframe").value || "year");
+
     return url.toString();
   }
 
   function normalizeClip(data) {
     if (!data) return null;
-    if (Array.isArray(data)) return data.length ? normalizeClip(data[0]) : null;
+
+    if (Array.isArray(data)) {
+      return data.length ? normalizeClip(data[0]) : null;
+    }
 
     if (data.error) {
-      throw new Error(typeof data.error === "string" ? data.error : "The clip service returned an error.");
+      throw new Error(
+        typeof data.error === "string"
+          ? data.error
+          : "The clip service returned an error."
+      );
     }
-    if (data.clip) return normalizeClip(data.clip);
-    if (Array.isArray(data.clips)) return data.clips.length ? normalizeClip(data.clips[0]) : null;
-    if (Array.isArray(data.data)) return data.data.length ? normalizeClip(data.data[0]) : null;
-    if (data.data && typeof data.data === "object") return normalizeClip(data.data);
 
-    if (data.slug || data.id || data.embed_url || data.embedUrl ||
-        data.video_url || data.videoUrl || data.clip_url || data.url) {
+    if (data.clip) return normalizeClip(data.clip);
+
+    if (Array.isArray(data.clips)) {
+      return data.clips.length ? normalizeClip(data.clips[0]) : null;
+    }
+
+    if (Array.isArray(data.data)) {
+      return data.data.length ? normalizeClip(data.data[0]) : null;
+    }
+
+    if (data.data && typeof data.data === "object") {
+      return normalizeClip(data.data);
+    }
+
+    if (
+      data.slug || data.id || data.embed_url || data.embedUrl ||
+      data.video_url || data.videoUrl || data.clip_url || data.url
+    ) {
       return data;
     }
+
     return null;
   }
 
   function getClipSlug(clip) {
     const direct = clip.slug || clip.id || clip.clip_slug || clip.clipSlug;
+
     if (direct) return String(direct).trim();
 
-    for (const candidate of [clip.url,clip.clip_url,clip.clipUrl,clip.embed_url,clip.embedUrl]) {
+    for (const candidate of [
+      clip.url,
+      clip.clip_url,
+      clip.clipUrl,
+      clip.embed_url,
+      clip.embedUrl
+    ]) {
       if (!candidate) continue;
+
       try {
         const url = new URL(candidate);
         const parts = url.pathname.split("/").filter(Boolean);
+
         if (parts.length) return parts[parts.length-1];
       } catch (_) {}
     }
+
     return "";
   }
 
@@ -929,100 +1093,423 @@ body.overlay-mode .shoutout {
   }
 
   function showPlaceholder(message) {
-    const frame = $("videoFrame");
     const placeholder = document.createElement("div");
+
     placeholder.className = "video-placeholder";
     placeholder.textContent = message || $("placeholderText").value;
-    frame.replaceChildren(placeholder);
+
+    $("videoFrame").replaceChildren(placeholder);
   }
 
-  /* AUDIO FIX: request autoplay with sound enabled */
-  function showClipEmbed(slug) {
-    if (!slug) {
-      showPlaceholder("No usable Twitch clip ID was returned by the clip service.");
-      return;
+  function showVideoError(message) {
+    const error = document.createElement("div");
+
+    error.className = "video-placeholder video-error";
+    error.textContent = message;
+
+    $("videoFrame").replaceChildren(error);
+  }
+
+  function safeHttpUrl(value) {
+    let url;
+
+    try {
+      url = new URL(value);
+    } catch (_) {
+      throw new Error("Enter a complete URL beginning with https:// or http://.");
     }
 
-    const host = window.location.hostname;
-    if (!host) {
-      showPlaceholder("Open this page through GitHub Pages or a web server to display Twitch clips.");
-      return;
+    if (!["http:","https:"].includes(url.protocol)) {
+      throw new Error("Only HTTP and HTTPS URLs are supported.");
     }
 
+    return url;
+  }
+
+  function getYouTubeEmbed(url) {
+    const host = url.hostname.toLowerCase().replace(/^www\./,"");
+    let videoId = "";
+    let listId = url.searchParams.get("list") || "";
+
+    if (host === "youtu.be") {
+      videoId = url.pathname.split("/").filter(Boolean)[0] || "";
+    } else if (
+      host === "youtube.com" ||
+      host === "m.youtube.com" ||
+      host === "youtube-nocookie.com"
+    ) {
+      if (url.pathname === "/watch") {
+        videoId = url.searchParams.get("v") || "";
+      } else {
+        const match = url.pathname.match(
+          /^\/(?:embed|shorts|live)\/([^/?]+)/
+        );
+
+        if (match) videoId = match[1];
+      }
+    } else {
+      return null;
+    }
+
+    if (!videoId && !listId) {
+      throw new Error("That YouTube URL does not contain a recognizable video or playlist.");
+    }
+
+    if (!/^[a-zA-Z0-9_-]{6,}$/.test(videoId) && videoId) {
+      throw new Error("The YouTube video ID is not valid.");
+    }
+
+    const embed = new URL(
+      videoId
+        ? "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(videoId)
+        : "https://www.youtube-nocookie.com/embed/videoseries"
+    );
+
+    if (listId) embed.searchParams.set("list",listId);
+
+    embed.searchParams.set("autoplay","1");
+    embed.searchParams.set("playsinline","1");
+
+    if (url.searchParams.has("start")) {
+      embed.searchParams.set("start",url.searchParams.get("start"));
+    }
+
+    return embed.toString();
+  }
+
+  function getTwitchEmbed(url) {
+    const host = url.hostname.toLowerCase().replace(/^www\./,"");
+
+    const isTwitch =
+      host === "clips.twitch.tv" ||
+      host === "twitch.tv" ||
+      host === "m.twitch.tv";
+
+    if (!isTwitch) return null;
+
+    const parts = url.pathname.split("/").filter(Boolean);
+    let slug = "";
+
+    if (host === "clips.twitch.tv") {
+      slug = parts[0] || "";
+    } else {
+      const clipIndex = parts.findIndex(
+        part => part.toLowerCase() === "clip"
+      );
+
+      if (clipIndex >= 0) {
+        slug = parts[clipIndex+1] || "";
+      }
+    }
+
+    if (slug) {
+      const parent = window.location.hostname;
+
+      if (!parent) {
+        throw new Error("Twitch embeds require the widget to be hosted on a website.");
+      }
+
+      const embed = new URL("https://clips.twitch.tv/embed");
+
+      embed.searchParams.set("clip",slug);
+      embed.searchParams.set("parent",parent);
+      embed.searchParams.set("autoplay","true");
+      embed.searchParams.set("muted","false");
+
+      return embed.toString();
+    }
+
+    // Twitch channel/video pages are embedded as supplied.
+    // They may require login or may reject embedding.
+    return url.toString();
+  }
+
+  function isDirectVideo(url) {
+    const path = url.pathname.toLowerCase();
+
+    return /\.(mp4|webm|ogg|ogv|m4v|mov)(?:$)/i.test(path);
+  }
+
+  function showDirectVideo(url) {
+    const video = document.createElement("video");
+
+    video.controls = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    video.src = url.toString();
+
+    video.addEventListener("error",() => {
+      showVideoError(
+        "The video could not be played. Check the link, file format, and the server's access permissions."
+      );
+    },{once:true});
+
+    $("videoFrame").replaceChildren(video);
+
+    // Autoplay with sound is subject to browser policy.
+    const playPromise = video.play();
+
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch(() => {
+        // Keep the native controls visible so the viewer can press Play.
+      });
+    }
+  }
+
+  function showIframe(url,title="Embedded video") {
     const iframe = document.createElement("iframe");
-    iframe.title = "Twitch clip";
-    iframe.allow = "autoplay; fullscreen";
+
+    iframe.title = title;
+    iframe.allow = "autoplay; fullscreen; picture-in-picture; encrypted-media";
     iframe.allowFullscreen = true;
+    iframe.referrerPolicy = "strict-origin-when-cross-origin";
 
-    const clipUrl = new URL("https://clips.twitch.tv/embed");
-    clipUrl.searchParams.set("clip",slug);
-    clipUrl.searchParams.set("parent",host);
-    clipUrl.searchParams.set("autoplay","true");
-    clipUrl.searchParams.set("muted","false");
+    // No sandbox is applied because many video providers need their
+    // own scripts, cookies, and player permissions to function.
+    iframe.src = url;
 
-    iframe.src = clipUrl.toString();
     $("videoFrame").replaceChildren(iframe);
   }
 
+  function showExternalVideo(rawUrl) {
+    const url = safeHttpUrl(rawUrl);
+
+    // 1. Direct video files use the browser's video element.
+    if (isDirectVideo(url)) {
+      showDirectVideo(url);
+      return "direct";
+    }
+
+    // 2. YouTube URLs are changed to the provider's embed URL.
+    const youtubeEmbed = getYouTubeEmbed(url);
+
+    if (youtubeEmbed) {
+      showIframe(youtubeEmbed,"YouTube video");
+      return "youtube";
+    }
+
+    // 3. Twitch clip URLs are converted to the Twitch clip embed.
+    const twitchEmbed = getTwitchEmbed(url);
+
+    if (twitchEmbed) {
+      showIframe(twitchEmbed,"Twitch video or clip");
+      return "twitch";
+    }
+
+    // 4. Other URLs are loaded as supplied in a generic iframe.
+    showIframe(url.toString(),"External video or website");
+    return "iframe";
+  }
+
+  function applyProfile(data,clip,username) {
+    const displayName =
+      $("nameOverride").value.trim() ||
+      getDisplayName(data,clip,username);
+
+    const avatar = getProfileImage(data,clip);
+
+    $("streamerName").textContent = displayName;
+    $("streamerName").dataset.loadedName = displayName;
+
+    $("streamerHandle").textContent =
+      $("handlePrefix").value + username;
+
+    if (avatar) {
+      $("avatar").src = avatar;
+      $("avatar").alt = displayName + " profile picture";
+    } else {
+      $("avatar").removeAttribute("src");
+    }
+
+    applyDesign();
+  }
+
+  async function loadWorkerProfile(username,options={}) {
+    const response = await fetch(getWorkerUrl(username));
+
+    let data;
+
+    try {
+      data = await response.json();
+    } catch (_) {
+      throw new Error("The Worker did not return valid JSON.");
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        data.error || `Worker request failed (${response.status}).`
+      );
+    }
+
+    const clip = normalizeClip(data);
+
+    if (!clip) {
+      throw new Error(
+        data.message || "No clips were returned for this username and timeframe."
+      );
+    }
+
+    applyProfile(data,clip,username);
+
+    return {
+      slug:getClipSlug(clip),
+      displayName:$("streamerName").textContent
+    };
+  }
+
   async function loadShoutout(options={}) {
-    const username = cleanUsername($("username").value || params.get("user") || "");
+    const username = cleanUsername(
+      $("username").value || params.get("user") || ""
+    );
+
+    const videoUrl = $("videoUrl").value.trim();
+
+    // A manually supplied URL takes priority. No Twitch Worker is
+    // required just to load this video.
+    if (videoUrl) {
+      $("username").value = username;
+
+      const button = $("loadBtn");
+
+      if (button) {
+        button.disabled = true;
+        button.textContent = "Loading…";
+      }
+
+      if (!options.quiet) {
+        setStatus("Loading your supplied video URL…");
+      }
+
+      try {
+        const type = showExternalVideo(videoUrl);
+
+        if (username) {
+          // Profile information is optional when a custom URL is used.
+          // Failure here must not replace or interrupt the video.
+          try {
+            await loadWorkerProfile(username);
+          } catch (profileError) {
+            console.warn("Optional profile lookup failed:",profileError);
+            updateIdentityText();
+          }
+        } else {
+          const override = $("nameOverride").value.trim();
+
+          if (override) {
+            $("streamerName").textContent = override;
+          } else {
+            $("streamerName").textContent = "Video";
+          }
+
+          $("streamerName").dataset.loadedName =
+            $("streamerName").textContent;
+
+          $("streamerHandle").textContent = "";
+          $("avatar").removeAttribute("src");
+        }
+
+        applyDesign();
+        saveSettings();
+
+        if (!options.quiet) {
+          const descriptions = {
+            direct:"direct video player",
+            youtube:"YouTube embed",
+            twitch:"Twitch embed",
+            iframe:"external iframe"
+          };
+
+          setStatus(
+            "Video URL loaded using the " +
+            (descriptions[type] || "video player") +
+            ". Autoplay may require viewer interaction."
+          );
+        }
+      } catch (error) {
+        console.error(error);
+
+        showVideoError(error.message || "Unable to load this video URL.");
+
+        if (!options.quiet) {
+          setStatus(error.message || "Unable to load video URL.",true);
+        }
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = "Load shoutout";
+        }
+      }
+
+      return;
+    }
+
+    // No custom URL: use the original Twitch clip Worker workflow.
     if (!username) {
-      if (!options.quiet) setStatus("Enter a Twitch username first.",true);
+      if (!options.quiet) {
+        setStatus(
+          "Paste a Video / Embed URL or enter a Twitch username.",
+          true
+        );
+      }
+
       return;
     }
 
     $("username").value = username;
+
     const button = $("loadBtn");
+
     if (button) {
       button.disabled = true;
       button.textContent = "Loading…";
     }
-    if (!options.quiet) setStatus("Loading clip and profile information…");
+
+    if (!options.quiet) {
+      setStatus("Loading Twitch clip and profile information…");
+    }
 
     try {
-      const response = await fetch(getWorkerUrl(username));
-      let data;
-      try {
-        data = await response.json();
-      } catch (_) {
-        throw new Error("The Worker did not return valid JSON.");
+      const result = await loadWorkerProfile(username);
+
+      if (!result.slug) {
+        throw new Error("No usable Twitch clip ID was found.");
       }
 
-      if (!response.ok) {
-        throw new Error(data.error || `Worker request failed (${response.status}).`);
+      const host = window.location.hostname;
+
+      if (!host) {
+        throw new Error(
+          "Twitch clips require the widget to be hosted on a website."
+        );
       }
 
-      const clip = normalizeClip(data);
-      if (!clip) {
-        throw new Error(data.message || "No clips were returned for this username and timeframe.");
-      }
+      const clipUrl = new URL("https://clips.twitch.tv/embed");
 
-      const slug = getClipSlug(clip);
-      const displayName = $("nameOverride").value.trim() || getDisplayName(data,clip,username);
-      const avatar = getProfileImage(data,clip);
+      clipUrl.searchParams.set("clip",result.slug);
+      clipUrl.searchParams.set("parent",host);
+      clipUrl.searchParams.set("autoplay","true");
+      clipUrl.searchParams.set("muted","false");
 
-      $("streamerName").textContent = displayName;
-      $("streamerName").dataset.loadedName = displayName;
-      $("streamerHandle").textContent = $("handlePrefix").value + username;
-
-      if (avatar) {
-        $("avatar").src = avatar;
-        $("avatar").alt = displayName + " profile picture";
-      } else {
-        $("avatar").removeAttribute("src");
-      }
-
-      applyDesign();
-      showClipEmbed(slug);
+      showIframe(clipUrl.toString(),"Twitch clip");
 
       if (!options.quiet) {
-        setStatus(slug ? `Loaded shoutout for ${displayName}.` : "Loaded profile, but no usable clip ID was found.",!slug);
+        setStatus(
+          `Loaded Twitch shoutout for ${result.displayName}.`
+        );
       }
+
       saveSettings();
     } catch (error) {
       console.error(error);
-      if (!options.quiet) setStatus(error.message || "Unable to load shoutout.",true);
-      showPlaceholder("Could not load a clip. Check the username, Worker URL, and Worker response.");
+
+      if (!options.quiet) {
+        setStatus(error.message || "Unable to load shoutout.",true);
+      }
+
+      showPlaceholder(
+        "Could not load a clip. Check the username, Worker URL, and Worker response."
+      );
     } finally {
       if (button) {
         button.disabled = false;
@@ -1032,19 +1519,35 @@ body.overlay-mode .shoutout {
   }
 
   function buildOverlayUrl() {
-    const username = cleanUsername($("username").value || params.get("user") || "");
-    if (!username) throw new Error("Enter a Twitch username before generating the OBS URL.");
+    const username = cleanUsername(
+      $("username").value || params.get("user") || ""
+    );
+
+    const videoUrl = $("videoUrl").value.trim();
+
+    if (!username && !videoUrl) {
+      throw new Error(
+        "Enter a Twitch username or paste a video URL before generating the OBS URL."
+      );
+    }
 
     const url = new URL(window.location.href);
+
     url.search = "";
     url.hash = "";
+
     url.searchParams.set("overlay","1");
-    url.searchParams.set("user",username);
+
+    if (username) {
+      url.searchParams.set("user",username);
+    }
 
     const values = collectSettings();
+
     Object.entries(values).forEach(([key,value]) => {
       url.searchParams.set(key,String(value));
     });
+
     return url.toString();
   }
 
@@ -1056,17 +1559,28 @@ body.overlay-mode .shoutout {
         await navigator.clipboard.writeText(link);
       } else {
         const temporary = document.createElement("textarea");
+
         temporary.value = link;
         temporary.style.position = "fixed";
         temporary.style.opacity = "0";
+
         document.body.appendChild(temporary);
         temporary.select();
+
         const copied = document.execCommand("copy");
+
         temporary.remove();
-        if (!copied) throw new Error("Clipboard access failed. Copy this link manually: " + link);
+
+        if (!copied) {
+          throw new Error(
+            "Clipboard access failed. Copy this link manually: " + link
+          );
+        }
       }
 
-      setStatus("OBS URL generated and copied with your current design, including the card height. Update the URL in OBS Browser Source.");
+      setStatus(
+        "OBS URL generated and copied. Your video URL and current design are included."
+      );
     } catch (error) {
       setStatus(error.message,true);
     }
@@ -1074,43 +1588,69 @@ body.overlay-mode .shoutout {
 
   function resetDesign() {
     const currentUsername = cleanUsername($("username").value);
+    const currentVideoUrl = $("videoUrl").value.trim();
+
     Object.entries(defaults).forEach(([id,value]) => {
       const element = $(id);
       if (!element) return;
-      if (element.type === "checkbox") element.checked = Boolean(value);
-      else element.value = String(value);
+
+      if (element.type === "checkbox") {
+        element.checked = Boolean(value);
+      } else {
+        element.value = String(value);
+      }
     });
+
     $("username").value = currentUsername;
+    $("videoUrl").value = currentVideoUrl;
+
     applyDesign();
     updateIdentityText();
     saveSettings();
-    setStatus("Working design reset to defaults. Your separately saved preview was not changed.");
+
+    setStatus(
+      "Design reset to defaults. Your username, video URL, and separately saved preview were preserved."
+    );
   }
 
   function setupOverlayMode() {
     document.body.classList.add("overlay-mode");
-    restoreSettings();
+
+    // URL parameters define the OBS overlay. Do not replace them
+    // with local editor settings.
     applyOverlaySettingsFromUrl();
 
-    const username = cleanUsername(params.get("user") || "");
+    const username = cleanUsername(
+      params.get("user") || $("username").value || ""
+    );
+
     $("username").value = username;
+
     updateIdentityText();
     applyDesign();
 
-    if (username) loadShoutout({quiet:true});
-    else showPlaceholder("The OBS URL is missing a Twitch username.");
+    if ($("videoUrl").value.trim() || username) {
+      loadShoutout({quiet:true});
+    } else {
+      showPlaceholder(
+        "The OBS URL needs a video URL or Twitch username."
+      );
+    }
   }
 
+  // Restore local settings for the editor, then initialize the preview.
   restoreSettings();
   applyDesign();
   updateIdentityText();
 
+  // Design controls update the preview immediately.
   designIds.forEach(id => {
     $(id).addEventListener("input",() => {
       applyDesign();
       updateIdentityText();
       saveSettings();
     });
+
     $(id).addEventListener("change",() => {
       applyDesign();
       updateIdentityText();
@@ -1118,7 +1658,13 @@ body.overlay-mode .shoutout {
     });
   });
 
-  ["username","workerUrl","timeframe"].forEach(id => {
+  // Save URL inputs without automatically reloading the video on every keystroke.
+  ["username","videoUrl","workerUrl","timeframe"].forEach(id => {
+    $(id).addEventListener("input",() => {
+      if (id === "username") updateIdentityText();
+      saveSettings();
+    });
+
     $(id).addEventListener("change",() => {
       if (id === "username") updateIdentityText();
       saveSettings();
@@ -1135,8 +1681,12 @@ body.overlay-mode .shoutout {
   if (isOverlay) {
     setupOverlayMode();
   } else {
-    const username = cleanUsername($("username").value || "");
-    if (username) loadShoutout({quiet:true});
+    const videoUrl = $("videoUrl").value.trim();
+    const username = cleanUsername($("username").value);
+
+    if (videoUrl || username) {
+      loadShoutout({quiet:true});
+    }
   }
 })();
 </script>
