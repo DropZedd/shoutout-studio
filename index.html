@@ -756,9 +756,9 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     // Twitch's clip embed does not expose a supported API to unmute on start.
     url.searchParams.set("muted", "true");
 
-    // Load the clip directly, as in Twitch's standalone embed. Explicitly delegate
-    // autoplay permission to this cross-origin frame inside OBS's browser source.
-    iframe.src = url.toString();
+    // Keep the URL off the iframe until the shoutout card is visible. Starting
+    // Twitch navigation while the card is opacity:0 can cause autoplay to stall.
+    iframe.dataset.clipSrc = url.toString();
     return iframe;
   }
 
@@ -886,6 +886,17 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
         : "");
 
     $("card").classList.add("show");
+
+    // Start Twitch only after the iframe is attached and the card has begun
+    // becoming visible. Guard against a newer shoutout replacing this one.
+    const clipFrame = $("player").querySelector("iframe");
+    if (clipFrame && clipFrame.dataset.clipSrc) {
+      setTimeout(() => {
+        if (myRequest === requestId && clipFrame.isConnected && $("card").classList.contains("show")) {
+          clipFrame.src = clipFrame.dataset.clipSrc;
+        }
+      }, 150);
+    }
 
     hideTimer = setTimeout(() => {
       if (myRequest !== requestId) return;
