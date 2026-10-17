@@ -18,7 +18,6 @@
   --card-radius:16px;
   --card-border:2px;
   --shadow:0 12px 35px rgba(0,0,0,.32);
-  --gradient-angle:135deg;
 }
 
 * {box-sizing:border-box}
@@ -31,7 +30,8 @@ body {
   font:15px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 
-button,input,select,textarea {font:inherit}
+button,input,select {font:inherit}
+
 button {
   border:0;
   border-radius:9px;
@@ -42,9 +42,10 @@ button {
   font-weight:650;
 }
 button.secondary {background:#3f3f46}
+button.danger {background:#7f1d1d}
 button:disabled {opacity:.55;cursor:wait}
 
-input,select,textarea {
+input,select {
   width:100%;
   min-width:0;
   padding:10px 11px;
@@ -55,22 +56,26 @@ input,select,textarea {
 }
 input[type="color"] {height:42px;padding:4px}
 input[type="checkbox"] {width:auto;accent-color:var(--accent)}
+
 label {
   display:block;
   margin-bottom:6px;
   color:#d4d4d8;
   font-size:13px;
 }
+
 small,.muted {color:#a1a1aa}
 .app {max-width:1280px;margin:0 auto}
 .top {margin-bottom:22px}
 h1 {margin:0 0 6px;font-size:clamp(24px,3vw,34px)}
+
 .layout {
   display:grid;
   grid-template-columns:minmax(290px,390px) minmax(0,1fr);
   gap:20px;
   align-items:start;
 }
+
 .panel {
   min-width:0;
   padding:18px;
@@ -78,16 +83,18 @@ h1 {margin:0 0 6px;font-size:clamp(24px,3vw,34px)}
   border-radius:14px;
   background:#18181b;
 }
+
 .panel h2 {margin:0 0 15px;font-size:18px}
 .panel h3 {margin:20px 0 12px;font-size:15px;color:#ddd}
 .field {margin-bottom:13px}
 .field-row {display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .button-row {display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}
-.status {min-height:22px;margin-top:10px;color:#c4b5fd;overflow-wrap:anywhere}
+.status {min-height:22px;margin-top:12px;color:#c4b5fd;overflow-wrap:anywhere}
 .check-row {display:flex;align-items:center;gap:9px;margin:10px 0}
 .check-row label {margin:0}
 details {border-top:1px solid #3f3f46;padding-top:12px;margin-top:15px}
 summary {cursor:pointer;font-weight:700;margin-bottom:14px}
+
 .preview-wrap {
   display:flex;
   align-items:flex-start;
@@ -111,6 +118,7 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
   position:relative;
   isolation:isolate;
 }
+
 .shoutout::before {
   content:"";
   position:absolute;
@@ -120,6 +128,7 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
   background:var(--background-effect,transparent);
   opacity:var(--effect-opacity,1);
 }
+
 .shoutout.border-solid {border-style:solid}
 .shoutout.border-dashed {border-style:dashed}
 .shoutout.border-dotted {border-style:dotted}
@@ -127,24 +136,28 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
 .shoutout.border-none {border-color:transparent}
 
 .shoutout.bg-gradient {
-  background:linear-gradient(var(--gradient-angle),var(--card-bg),var(--card-bg2));
+  background:linear-gradient(135deg,var(--card-bg),var(--card-bg2));
 }
+
 .shoutout.bg-animated {
   background:linear-gradient(270deg,var(--card-bg),var(--card-bg2),var(--accent),var(--card-bg));
   background-size:400% 400%;
   animation:gradientMove 12s ease infinite;
 }
+
 .shoutout.bg-glow {
   background:var(--card-bg);
   box-shadow:0 0 18px color-mix(in srgb,var(--accent) 45%,transparent),
              0 0 42px color-mix(in srgb,var(--accent) 22%,transparent);
 }
+
 .shoutout.bg-glass {
   background:linear-gradient(135deg,
     color-mix(in srgb,var(--card-bg) 83%,white),
     color-mix(in srgb,var(--card-bg2) 88%,transparent));
   backdrop-filter:blur(12px);
 }
+
 .shoutout.bg-stars::before {
   opacity:.65;
   background-image:
@@ -154,6 +167,7 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
     radial-gradient(circle at 30% 85%,var(--accent) 1px,transparent 2px);
   background-size:80px 80px,110px 110px,130px 130px,100px 100px;
 }
+
 .shoutout.bg-scanlines::before {
   opacity:.2;
   background:repeating-linear-gradient(
@@ -165,6 +179,7 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
 .shoutout.anim-border {
   animation:borderPulse 3s ease-in-out infinite;
 }
+
 .shoutout.anim-rainbow {
   border-color:transparent;
   background:
@@ -173,9 +188,11 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
   background-size:auto,300% 300%;
   animation:rainbowMove 6s linear infinite;
 }
+
 .shoutout.anim-pulse {
   animation:cardPulse 2.5s ease-in-out infinite;
 }
+
 .shoutout.anim-float {
   animation:cardFloat 4s ease-in-out infinite;
 }
@@ -184,30 +201,41 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
   0%,100% {background-position:0% 50%}
   50% {background-position:100% 50%}
 }
+
 @keyframes borderPulse {
   0%,100% {box-shadow:0 0 4px var(--border-color)}
   50% {box-shadow:0 0 22px var(--border-color)}
 }
+
 @keyframes rainbowMove {
   to {background-position:0 0,300% 0}
 }
+
 @keyframes cardPulse {
   0%,100% {box-shadow:0 0 5px color-mix(in srgb,var(--accent) 20%,transparent)}
   50% {box-shadow:0 0 24px color-mix(in srgb,var(--accent) 65%,transparent)}
 }
+
 @keyframes cardFloat {
   0%,100% {transform:translateY(0)}
   50% {transform:translateY(-4px)}
 }
 
-/* CLASSIC DESIGN: VIDEO FIRST, INFORMATION CARD UNDERNEATH */
+/* VIDEO ABOVE STREAMER INFORMATION */
 .video-frame {
   position:relative;
   width:100%;
   aspect-ratio:16/9;
   background:#000;
 }
-.video-frame iframe {display:block;width:100%;height:100%;border:0}
+
+.video-frame iframe {
+  display:block;
+  width:100%;
+  height:100%;
+  border:0;
+}
+
 .video-placeholder {
   display:grid;
   min-height:180px;
@@ -224,6 +252,7 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
   padding:15px 17px;
   background:rgba(0,0,0,.12);
 }
+
 .avatar {
   width:var(--avatar-size);
   height:var(--avatar-size);
@@ -233,7 +262,9 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
   background:#3f3f46;
   object-fit:cover;
 }
+
 .identity-text {min-width:0;flex:1}
+
 .eyebrow {
   margin-bottom:3px;
   color:var(--accent);
@@ -242,17 +273,20 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
   letter-spacing:.12em;
   text-transform:uppercase;
 }
+
 .streamer-name {
   font-size:clamp(18px,2.5vw,25px);
   font-weight:800;
   line-height:1.15;
   overflow-wrap:anywhere;
 }
+
 .streamer-handle {
   color:color-mix(in srgb,var(--text-color) 65%,transparent);
   font-size:13px;
   overflow-wrap:anywhere;
 }
+
 .footer {
   padding:10px 16px 13px;
   border-top:1px solid color-mix(in srgb,var(--text-color) 15%,transparent);
@@ -260,31 +294,77 @@ summary {cursor:pointer;font-weight:700;margin-bottom:14px}
   font-size:12px;
   text-align:center;
 }
+
 .compact .identity {gap:10px;padding:10px 12px}
 .compact .footer {padding:7px 12px 9px}
-.horizontal {display:grid;grid-template-columns:minmax(0,1fr) 180px}
-.horizontal .video-frame {grid-column:1;grid-row:1;aspect-ratio:auto;min-height:140px}
-.horizontal .identity {grid-column:2;grid-row:1;align-items:flex-start;flex-direction:column;justify-content:center}
+
+.horizontal {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 180px;
+}
+
+.horizontal .video-frame {
+  grid-column:1;
+  grid-row:1;
+  aspect-ratio:auto;
+  min-height:140px;
+}
+
+.horizontal .identity {
+  grid-column:2;
+  grid-row:1;
+  align-items:flex-start;
+  flex-direction:column;
+  justify-content:center;
+}
+
 .horizontal .footer {grid-column:1 / -1}
 .hidden {display:none!important}
 
-/* OBS: keep the app and preview visible, hide editor controls only */
-body.overlay-mode {padding:0;overflow:hidden;background:transparent}
-body.overlay-mode .app {width:100%;max-width:none;margin:0}
+/* OBS MODE: keep widget visible, hide editor */
+body.overlay-mode {
+  padding:0;
+  overflow:hidden;
+  background:transparent;
+}
+
+body.overlay-mode .app {
+  width:100%;
+  max-width:none;
+  margin:0;
+}
+
 body.overlay-mode .top,
 body.overlay-mode #settings,
 body.overlay-mode .preview-panel > h2,
-body.overlay-mode .preview-panel > p {display:none!important}
+body.overlay-mode .preview-panel > p {
+  display:none!important;
+}
+
 body.overlay-mode .layout {display:block}
+
 body.overlay-mode .preview-panel {
   display:block!important;
-  margin:0;padding:0;border:0;border-radius:0;background:transparent;
+  margin:0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
 }
+
 body.overlay-mode .preview-wrap {
-  display:flex;min-height:0;padding:0;overflow:visible;
-  border-radius:0;background:transparent;
+  display:flex;
+  min-height:0;
+  padding:0;
+  overflow:visible;
+  border-radius:0;
+  background:transparent;
 }
-body.overlay-mode .shoutout {width:min(var(--card-width),100%);box-shadow:none}
+
+body.overlay-mode .shoutout {
+  width:min(var(--card-width),100%);
+  box-shadow:none;
+}
 
 @media (max-width:800px) {
   body:not(.overlay-mode) {padding:14px}
@@ -302,7 +382,9 @@ body.overlay-mode .shoutout {width:min(var(--card-width),100%);box-shadow:none}
 <main class="app">
   <header class="top">
     <h1>🎮 Twitch Shoutout Studio</h1>
-    <div class="muted">Customize your shoutout card, preview it, and use the generated URL as an OBS Browser Source.</div>
+    <div class="muted">
+      Customize your shoutout card, save an approved preview, and use the generated URL as an OBS Browser Source.
+    </div>
   </header>
 
   <div class="layout">
@@ -483,20 +565,31 @@ body.overlay-mode .shoutout {width:min(var(--card-width),100%);box-shadow:none}
 
       <div class="button-row">
         <button id="loadBtn" type="button">Load shoutout</button>
-        <button id="copyBtn" class="secondary" type="button">Copy OBS link</button>
+        <button id="savePreviewBtn" type="button">Save Preview</button>
       </div>
 
       <div class="button-row">
-        <button id="resetBtn" class="secondary" type="button">Reset design</button>
+        <button id="loadSavedBtn" class="secondary" type="button">Load Saved Preview</button>
+        <button id="discardBtn" class="secondary" type="button">Discard Changes</button>
+      </div>
+
+      <div class="button-row">
+        <button id="copyBtn" class="secondary" type="button">Generate / Copy OBS URL</button>
+        <button id="resetBtn" class="secondary" type="button">Reset Design</button>
       </div>
 
       <div id="status" class="status" role="status" aria-live="polite"></div>
-      <small>Changes are saved in this browser. Copy a fresh OBS link after changing the design.</small>
+
+      <small>
+        Your working settings save automatically in this browser. Save Preview keeps a separate approved version. Generate a fresh OBS URL after approving your design.
+      </small>
     </section>
 
     <section class="panel preview-panel">
       <h2>Live preview</h2>
-      <p class="muted">The classic design places the video first and the streamer information card directly underneath.</p>
+      <p class="muted">
+        The classic design places the video first and the streamer information card directly underneath.
+      </p>
 
       <div class="preview-wrap">
         <article id="shoutout" class="shoutout">
@@ -528,6 +621,9 @@ body.overlay-mode .shoutout {width:min(var(--card-width),100%);box-shadow:none}
   const params = new URLSearchParams(window.location.search);
   const isOverlay = params.get("overlay") === "1";
 
+  const SAVED_SETTINGS_KEY = "twitchShoutoutStudioSettings";
+  const SAVED_PREVIEW_KEY = "twitchShoutoutStudioSavedPreview";
+
   const designIds = [
     "eyebrowText","nameOverride","handlePrefix","footerText","placeholderText",
     "showAvatar","showName","showHandle","showEyebrow","showFooter",
@@ -536,9 +632,7 @@ body.overlay-mode .shoutout {width:min(var(--card-width),100%);box-shadow:none}
     "backgroundStyle","borderStyle","animationStyle"
   ];
 
-  const settingsIds = [
-    "username","workerUrl","timeframe",...designIds
-  ];
+  const settingsIds = ["username","workerUrl","timeframe",...designIds];
 
   const defaults = {
     username:"",
@@ -576,7 +670,9 @@ body.overlay-mode .shoutout {width:min(var(--card-width),100%);box-shadow:none}
 
   function bounded(value,fallback,min,max) {
     const n = Number(value);
-    return Number.isFinite(n) ? Math.max(min,Math.min(max,n)) : fallback;
+    return Number.isFinite(n)
+      ? Math.max(min,Math.min(max,n))
+      : fallback;
   }
 
   function setStatus(message,isError=false) {
@@ -585,36 +681,128 @@ body.overlay-mode .shoutout {width:min(var(--card-width),100%);box-shadow:none}
     $("status").style.color = isError ? "#fca5a5" : "#c4b5fd";
   }
 
-  function saveSettings() {
-    if (isOverlay) return;
+  function collectSettings() {
     const values = {};
 
     settingsIds.forEach(id => {
       const element = $(id);
       if (!element) return;
+
       values[id] = element.type === "checkbox"
-        ? element.checked : element.value;
+        ? element.checked
+        : element.value;
     });
 
+    return values;
+  }
+
+  function applySettings(values) {
+    if (!values || typeof values !== "object") return;
+
+    Object.entries(values).forEach(([id,value]) => {
+      const element = $(id);
+      if (!element || value == null) return;
+
+      if (element.type === "checkbox") {
+        element.checked = value === true || value === "true";
+      } else {
+        element.value = String(value);
+      }
+    });
+
+    $("username").value = cleanUsername($("username").value);
+    updateIdentityText();
+    applyDesign();
+  }
+
+  function saveSettings() {
+    if (isOverlay) return;
+
     try {
-      localStorage.setItem("twitchShoutoutStudioSettings",JSON.stringify(values));
+      localStorage.setItem(
+        SAVED_SETTINGS_KEY,
+        JSON.stringify(collectSettings())
+      );
     } catch (_) {}
   }
 
   function restoreSettings() {
-    let saved = {};
-    try {
-      saved = JSON.parse(
-        localStorage.getItem("twitchShoutoutStudioSettings") || "{}"
-      );
-    } catch (_) {}
+    if (isOverlay) return;
 
-    Object.entries(saved).forEach(([id,value]) => {
-      const element = $(id);
-      if (!element || value == null) return;
-      if (element.type === "checkbox") element.checked = Boolean(value);
-      else element.value = value;
-    });
+    try {
+      const saved = JSON.parse(
+        localStorage.getItem(SAVED_SETTINGS_KEY) || "{}"
+      );
+      applySettings(saved);
+    } catch (_) {}
+  }
+
+  // Save a separate approved snapshot, without replacing it during ordinary edits.
+  function savePreview() {
+    if (isOverlay) return;
+
+    try {
+      const snapshot = collectSettings();
+
+      localStorage.setItem(
+        SAVED_PREVIEW_KEY,
+        JSON.stringify(snapshot)
+      );
+
+      saveSettings();
+      setStatus("Preview saved! Your approved design is stored in this browser.");
+    } catch (error) {
+      setStatus("Could not save the preview. Check your browser storage settings.",true);
+    }
+  }
+
+  async function loadSavedPreview() {
+    if (isOverlay) return;
+
+    let snapshot;
+
+    try {
+      const saved = localStorage.getItem(SAVED_PREVIEW_KEY);
+
+      if (!saved) {
+        setStatus("No saved preview found yet. Customize your design and click Save Preview first.",true);
+        return;
+      }
+
+      snapshot = JSON.parse(saved);
+      applySettings(snapshot);
+      saveSettings();
+
+      const username = cleanUsername($("username").value);
+
+      if (username) {
+        await loadShoutout({quiet:true});
+        setStatus("Saved preview restored. Review it before generating your OBS URL.");
+      } else {
+        setStatus("Saved preview restored. Enter a Twitch username to load a clip.");
+      }
+    } catch (error) {
+      setStatus("Could not restore the saved preview.",true);
+    }
+  }
+
+  function discardChanges() {
+    loadSavedPreview();
+  }
+
+  function updateIdentityText() {
+    const override = $("nameOverride").value.trim();
+
+    if (override) {
+      $("streamerName").textContent = override;
+    }
+
+    const username = cleanUsername(
+      $("username").value || params.get("user") || ""
+    );
+
+    $("streamerHandle").textContent =
+      $("handlePrefix").value + username;
   }
 
   function applyDesign() {
@@ -648,7 +836,6 @@ body.overlay-mode .shoutout {width:min(var(--card-width),100%);box-shadow:none}
       card.classList.add(layout);
     }
 
-    const background = $("backgroundStyle").value;
     const backgroundClasses = {
       solid:"",
       gradient:"bg-gradient",
@@ -658,16 +845,15 @@ body.overlay-mode .shoutout {width:min(var(--card-width),100%);box-shadow:none}
       stars:"bg-stars",
       scanlines:"bg-scanlines"
     };
-    if (backgroundClasses[background]) {
-      card.classList.add(backgroundClasses[background]);
-    }
+
+    const backgroundClass = backgroundClasses[$("backgroundStyle").value];
+    if (backgroundClass) card.classList.add(backgroundClass);
 
     const borderStyle = $("borderStyle").value;
     if (["solid","dashed","dotted","double","none"].includes(borderStyle)) {
       card.classList.add("border-"+borderStyle);
     }
 
-    const animation = $("animationStyle").value;
     const animationClasses = {
       none:"",
       border:"anim-border",
@@ -675,13 +861,18 @@ body.overlay-mode .shoutout {width:min(var(--card-width),100%);box-shadow:none}
       pulse:"anim-pulse",
       float:"anim-float"
     };
-    if (animationClasses[animation]) {
-      card.classList.add(animationClasses[animation]);
-    }
+
+    const animationClass = animationClasses[$("animationStyle").value];
+    if (animationClass) card.classList.add(animationClass);
 
     $("eyebrow").textContent = $("eyebrowText").value;
     $("footer").textContent = $("footerText").value;
-    $("placeholder").textContent = $("placeholderText").value;
+
+    // The placeholder is removed when the Twitch iframe is inserted.
+    const placeholder = $("videoFrame").querySelector(".video-placeholder");
+    if (placeholder) {
+      placeholder.textContent = $("placeholderText").value;
+    }
 
     $("avatar").classList.toggle("hidden",!$("showAvatar").checked);
     $("streamerName").classList.toggle("hidden",!$("showName").checked);
@@ -690,22 +881,10 @@ body.overlay-mode .shoutout {width:min(var(--card-width),100%);box-shadow:none}
     $("footer").classList.toggle("hidden",!$("showFooter").checked);
   }
 
-  function getOverlaySettings() {
-    const values = {};
-
-    settingsIds.forEach(id => {
-      const element = $(id);
-      if (!element) return;
-      values[id] = element.type === "checkbox"
-        ? element.checked : element.value;
-    });
-
-    return values;
-  }
-
   function applyOverlaySettingsFromUrl() {
     settingsIds.forEach(id => {
       if (!params.has(id)) return;
+
       const element = $(id);
       if (!element) return;
 
@@ -731,20 +910,26 @@ body.overlay-mode .shoutout {width:min(var(--card-width),100%);box-shadow:none}
 
   function normalizeClip(data) {
     if (!data) return null;
-    if (Array.isArray(data)) return data.length ? normalizeClip(data[0]) : null;
+    if (Array.isArray(data)) {
+      return data.length ? normalizeClip(data[0]) : null;
+    }
 
     if (data.error) {
       throw new Error(typeof data.error === "string"
-        ? data.error : "The clip service returned an error.");
+        ? data.error
+        : "The clip service returned an error.");
     }
 
     if (data.clip) return normalizeClip(data.clip);
+
     if (Array.isArray(data.clips)) {
       return data.clips.length ? normalizeClip(data.clips[0]) : null;
     }
+
     if (Array.isArray(data.data)) {
       return data.data.length ? normalizeClip(data.data[0]) : null;
     }
+
     if (data.data && typeof data.data === "object") {
       return normalizeClip(data.data);
     }
@@ -765,6 +950,7 @@ body.overlay-mode .shoutout {width:min(var(--card-width),100%);box-shadow:none}
       clip.url,clip.clip_url,clip.clipUrl,clip.embed_url,clip.embedUrl
     ]) {
       if (!candidate) continue;
+
       try {
         const url = new URL(candidate);
         const parts = url.pathname.split("/").filter(Boolean);
@@ -793,12 +979,12 @@ body.overlay-mode .shoutout {width:min(var(--card-width),100%);box-shadow:none}
 
   function showPlaceholder(message) {
     const frame = $("videoFrame");
-    frame.replaceChildren();
-
     const placeholder = document.createElement("div");
+
     placeholder.className = "video-placeholder";
     placeholder.textContent = message || $("placeholderText").value;
-    frame.appendChild(placeholder);
+
+    frame.replaceChildren(placeholder);
   }
 
   function showClipEmbed(slug) {
@@ -808,6 +994,7 @@ body.overlay-mode .shoutout {width:min(var(--card-width),100%);box-shadow:none}
     }
 
     const host = window.location.hostname;
+
     if (!host) {
       showPlaceholder(
         "Open this page through GitHub Pages or a web server to display Twitch clips."
@@ -827,25 +1014,25 @@ body.overlay-mode .shoutout {width:min(var(--card-width),100%);box-shadow:none}
     $("videoFrame").replaceChildren(iframe);
   }
 
-  async function loadShoutout() {
+  async function loadShoutout(options={}) {
     const username = cleanUsername(
       $("username").value || params.get("user") || ""
     );
 
     if (!username) {
-      setStatus("Enter a Twitch username first.",true);
+      if (!options.quiet) setStatus("Enter a Twitch username first.",true);
       return;
     }
 
     $("username").value = username;
-    const button = $("loadBtn");
 
+    const button = $("loadBtn");
     if (button) {
       button.disabled = true;
       button.textContent = "Loading…";
     }
 
-    setStatus("Loading clip and profile information…");
+    if (!options.quiet) setStatus("Loading clip and profile information…");
 
     try {
       const response = await fetch(getWorkerUrl(username));
@@ -862,6 +1049,7 @@ body.overlay-mode .shoutout {width:min(var(--card-width),100%);box-shadow:none}
       }
 
       const clip = normalizeClip(data);
+
       if (!clip) {
         throw new Error(
           data.message || "No clips were returned for this username and timeframe."
@@ -886,15 +1074,23 @@ body.overlay-mode .shoutout {width:min(var(--card-width),100%);box-shadow:none}
       applyDesign();
       showClipEmbed(slug);
 
-      setStatus(slug
-        ? `Loaded shoutout for ${displayName}.`
-        : "Loaded profile, but no usable clip ID was found.",!slug);
+      if (!options.quiet) {
+        setStatus(slug
+          ? `Loaded shoutout for ${displayName}.`
+          : "Loaded profile, but no usable clip ID was found.",!slug);
+      }
 
       saveSettings();
     } catch (error) {
       console.error(error);
-      setStatus(error.message || "Unable to load shoutout.",true);
-      showPlaceholder("Could not load a clip. Check the username, Worker URL, and Worker response.");
+
+      if (!options.quiet) {
+        setStatus(error.message || "Unable to load shoutout.",true);
+      }
+
+      showPlaceholder(
+        "Could not load a clip. Check the username, Worker URL, and Worker response."
+      );
     } finally {
       if (button) {
         button.disabled = false;
@@ -909,7 +1105,7 @@ body.overlay-mode .shoutout {width:min(var(--card-width),100%);box-shadow:none}
     );
 
     if (!username) {
-      throw new Error("Enter a Twitch username before copying the OBS link.");
+      throw new Error("Enter a Twitch username before generating the OBS URL.");
     }
 
     const url = new URL(window.location.href);
@@ -919,7 +1115,8 @@ body.overlay-mode .shoutout {width:min(var(--card-width),100%);box-shadow:none}
     url.searchParams.set("overlay","1");
     url.searchParams.set("user",username);
 
-    const values = getOverlaySettings();
+    const values = collectSettings();
+
     Object.entries(values).forEach(([key,value]) => {
       url.searchParams.set(key,String(value));
     });
@@ -945,78 +1142,96 @@ body.overlay-mode .shoutout {width:min(var(--card-width),100%);box-shadow:none}
         temporary.remove();
 
         if (!copied) {
-          throw new Error("Clipboard access failed. Copy this link manually: " + link);
+          throw new Error(
+            "Clipboard access failed. Copy this link manually: " + link
+          );
         }
       }
 
-      setStatus("OBS link copied with your current text and design settings. Replace the old URL in OBS.");
+      setStatus(
+        "OBS URL generated and copied with your current design. Update the URL in OBS Browser Source."
+      );
     } catch (error) {
       setStatus(error.message,true);
     }
   }
 
   function resetDesign() {
+    const currentUsername = cleanUsername($("username").value);
+
     Object.entries(defaults).forEach(([id,value]) => {
       const element = $(id);
       if (!element) return;
 
-      if (element.type === "checkbox") element.checked = Boolean(value);
-      else element.value = String(value);
+      if (element.type === "checkbox") {
+        element.checked = Boolean(value);
+      } else {
+        element.value = String(value);
+      }
     });
 
-    $("username").value = cleanUsername(params.get("user") || "");
+    // Keep the current streamer selected when resetting the design.
+    $("username").value = currentUsername;
+
     applyDesign();
+    updateIdentityText();
     saveSettings();
-    setStatus("Design settings reset to defaults. Copy a new OBS link to apply them.");
+
+    setStatus(
+      "Working design reset to defaults. Your separately saved preview was not changed."
+    );
   }
 
   function setupOverlayMode() {
     document.body.classList.add("overlay-mode");
 
-    // Restore browser-local settings as fallback, then override with URL settings.
+    // Use URL settings first; local settings are only a fallback.
     restoreSettings();
     applyOverlaySettingsFromUrl();
 
     const username = cleanUsername(params.get("user") || "");
     $("username").value = username;
 
+    updateIdentityText();
     applyDesign();
 
-    if (username) loadShoutout();
-    else showPlaceholder("The OBS link is missing a Twitch username.");
+    if (username) {
+      loadShoutout({quiet:true});
+    } else {
+      showPlaceholder("The OBS URL is missing a Twitch username.");
+    }
   }
 
+  // Restore the dashboard's working settings before attaching listeners.
   restoreSettings();
   applyDesign();
+  updateIdentityText();
 
   designIds.forEach(id => {
     $(id).addEventListener("input",() => {
       applyDesign();
+      updateIdentityText();
       saveSettings();
     });
 
     $(id).addEventListener("change",() => {
       applyDesign();
+      updateIdentityText();
       saveSettings();
     });
   });
 
   ["username","workerUrl","timeframe"].forEach(id => {
-    $(id).addEventListener("change",saveSettings);
+    $(id).addEventListener("change",() => {
+      if (id === "username") updateIdentityText();
+      saveSettings();
+    });
   });
 
-  $("nameOverride").addEventListener("input",() => {
-    const override = $("nameOverride").value.trim();
-    if (override) $("streamerName").textContent = override;
-    applyDesign();
-  });
-
-  $("handlePrefix").addEventListener("input",() => {
-    const username = cleanUsername($("username").value || params.get("user") || "");
-    $("streamerHandle").textContent = $("handlePrefix").value + username;
-  });
-
-  $("loadBtn").addEventListener("click",loadShoutout);
+  $("loadBtn").addEventListener("click",() => loadShoutout());
+  $("savePreviewBtn").addEventListener("click",savePreview);
+  $("loadSavedBtn").addEventListener("click",loadSavedPreview);
+  $("discardBtn").addEventListener("click",discardChanges);
   $("copyBtn").addEventListener("click",copyOverlayLink);
   $("resetBtn").addEventListener("click",resetDesign);
 
@@ -1024,7 +1239,7 @@ body.overlay-mode .shoutout {width:min(var(--card-width),100%);box-shadow:none}
     setupOverlayMode();
   } else {
     const username = cleanUsername($("username").value || "");
-    if (username) loadShoutout();
+    if (username) loadShoutout({quiet:true});
   }
 })();
 </script>
