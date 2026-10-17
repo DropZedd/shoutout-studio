@@ -5,22 +5,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Twitch Shoutout Studio</title>
+
 <style>
 :root {
   --accent: #a970ff;
   --panel: #171225;
   --width: 760px;
   --heading-size: 34px;
-  --overlay-opacity: .92;
 }
+
 * { box-sizing: border-box; }
+
 body {
   margin: 0;
   font-family: Arial, sans-serif;
   color: #fff;
   background: #0c0913;
 }
+
 button, input, select { font: inherit; }
+
 button {
   cursor: pointer;
   border: 0;
@@ -30,7 +34,9 @@ button {
   padding: 10px 14px;
   font-weight: bold;
 }
+
 button:hover { filter: brightness(1.12); }
+
 input, select {
   width: 100%;
   padding: 10px;
@@ -39,17 +45,42 @@ input, select {
   border: 1px solid #493761;
   border-radius: 7px;
 }
-input[type="color"] { height: 42px; padding: 4px; }
-input[type="range"] { padding: 0; accent-color: var(--accent); }
+
+input[type="color"] {
+  height: 42px;
+  padding: 4px;
+}
+
+input[type="range"] {
+  padding: 0;
+  accent-color: var(--accent);
+}
+
 input[type="checkbox"] { accent-color: var(--accent); }
-label { display: block; margin: 12px 0 6px; }
-.small { color: #b9afc9; font-size: 12px; line-height: 1.5; }
-#panel { max-width: 1100px; margin: auto; padding: 24px; }
+
+label {
+  display: block;
+  margin: 12px 0 6px;
+}
+
+.small {
+  color: #b9afc9;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+#panel {
+  max-width: 1100px;
+  margin: auto;
+  padding: 24px;
+}
+
 .columns {
   display: grid;
   grid-template-columns: minmax(240px, 330px) minmax(0, 1fr);
   gap: 24px;
 }
+
 .settings, .preview {
   min-width: 0;
   padding: 20px;
@@ -57,7 +88,14 @@ label { display: block; margin: 12px 0 6px; }
   border: 1px solid #382849;
   border-radius: 14px;
 }
-.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
 .status {
   min-height: 24px;
   margin-top: 10px;
@@ -66,9 +104,18 @@ label { display: block; margin: 12px 0 6px; }
   font-size: 13px;
   line-height: 1.5;
 }
+
 .status.error { color: #ff9dba; }
 .status.success { color: #9ff0c1; }
-hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
+
+hr {
+  border: 0;
+  border-top: 1px solid #382849;
+  margin-top: 20px;
+}
+
+/* Overlay */
+
 #overlay {
   display: none;
   width: 100%;
@@ -79,14 +126,20 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   text-align: center;
   background: transparent;
 }
+
 #card {
   width: min(100%, var(--width));
   margin: auto;
   opacity: 0;
-  transform: translateY(18px) scale(.97);
-  transition: opacity .45s, transform .45s;
+  transform: translateY(12px);
+  transition: opacity .35s ease, transform .35s ease;
 }
-#card.show { opacity: 1; transform: none; }
+
+#card.show {
+  opacity: 1;
+  transform: none;
+}
+
 #heading {
   margin: 0 0 16px;
   font-size: var(--heading-size);
@@ -94,87 +147,48 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   overflow-wrap: anywhere;
   text-shadow: 0 3px 15px #000;
 }
+
+/* Video */
+
 #player {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  min-height: 300px;
-  min-width: 400px;
   overflow: hidden;
   border: 2px solid var(--accent);
   border-radius: 14px;
   background: #09070d;
   box-shadow: 0 8px 40px #0008;
 }
-#player iframe,
-#player video {
+
+#player iframe {
   position: absolute;
   inset: 0;
   display: block;
   width: 100%;
   height: 100%;
-  min-width: 400px;
-  min-height: 300px;
   border: 0;
+  background: #09070d;
 }
-#player video { object-fit: contain; background: #09070d; }
+
+/* Classic information card BELOW the video */
+
 #details {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 16px;
+  width: 82%;
+  max-width: 100%;
+  min-width: 0;
   margin: 16px auto 0;
   padding: 15px 22px;
-  max-width: 620px;
+  text-align: left;
   background: var(--panel);
   border: 1px solid var(--accent);
   border-radius: 14px;
   box-shadow: 0 8px 32px #0008;
 }
-
-/* Layout and motion presets */
-#player #details {
-  position: absolute;
-  z-index: 3;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  max-width: none;
-  margin: 0;
-  justify-content: flex-start;
-  border: 0;
-  border-top: 2px solid var(--accent);
-  border-radius: 0;
-  background: color-mix(in srgb, var(--panel) 92%, transparent);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 -8px 28px #0008;
-  text-align: left;
-}
-#player #details #avatar { flex-basis: 62px; width: 62px; height: 62px; }
-#player #details #name { font-size: 22px; }
-#card.layout-video-bottom #details { left: 50%; right: auto; bottom: 0; transform:translateX(-50%); width:var(--info-width,82%); border-top: 2px solid var(--accent); border-radius: 0; }
-#card.layout-classic #details { position: static; width: auto; max-width: 620px; margin: 16px auto 0; border: 1px solid var(--accent); border-radius: 14px; }
-#card.layout-classic #player #details { position: static; width: auto; max-width: 620px; margin: 16px auto 0; border: 1px solid var(--accent); border-radius: 14px; }
-#card.layout-lower-third #heading { text-align: left; margin-left: 2%; }
-#card.layout-lower-third #player #details { left: 50%; right: auto; bottom: 3%; transform:translateX(-50%); width:var(--info-width,82%); border: 1px solid var(--accent); border-radius: 12px; }
-#card.layout-minimal #heading { font-size: calc(var(--heading-size) * .72); margin-bottom: 8px; letter-spacing: .08em; }
-#card.layout-minimal #player { border-width: 1px; border-radius: 4px; }
-#card.layout-minimal #player #details { padding: 8px 14px; gap: 10px; }
-#card.layout-minimal #player #details #avatar { flex-basis: 44px; width: 44px; height: 44px; }
-#card.layout-neon #player { border-width: 3px; box-shadow: 0 0 18px var(--accent), 0 0 44px color-mix(in srgb, var(--accent) 50%, transparent); }
-#card.layout-neon #player #details { border-top: 2px solid var(--accent); }
-#card.anim-fade { animation: shoutFade .6s ease both; }
-#card.anim-slide { animation: shoutSlide .65s cubic-bezier(.2,.8,.2,1) both; }
-#card.anim-zoom { animation: shoutZoom .55s cubic-bezier(.2,.8,.2,1) both; }
-#card.anim-bounce { animation: shoutBounce .8s cubic-bezier(.2,.8,.2,1) both; }
-#card.anim-glow #player { animation: shoutGlow 1.8s ease-in-out infinite alternate; }
-@keyframes shoutFade { from { opacity:0 } to { opacity:1 } }
-@keyframes shoutSlide { from { opacity:0; transform:translateY(40px) } to { opacity:1; transform:translateY(0) } }
-@keyframes shoutZoom { from { opacity:0; transform:scale(.82) } to { opacity:1; transform:scale(1) } }
-@keyframes shoutBounce { 0% { opacity:0; transform:translateY(35px) scale(.94) } 65% { opacity:1; transform:translateY(-7px) scale(1.015) } 100% { transform:translateY(0) scale(1) } }
-@keyframes shoutGlow { from { box-shadow:0 0 12px var(--accent) } to { box-shadow:0 0 34px var(--accent), 0 0 60px color-mix(in srgb, var(--accent) 45%, transparent) } }
-@media(prefers-reduced-motion: reduce) { #card, #card.anim-fade, #card.anim-slide, #card.anim-zoom, #card.anim-bounce, #card.anim-glow #player { animation:none !important; transition:none !important; } }
 
 #avatar {
   flex: 0 0 76px;
@@ -185,10 +199,30 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   border: 3px solid var(--accent);
   background: #30243f;
 }
-#name { font-size: 25px; font-weight: 800; overflow-wrap: anywhere; }
-#channelUrl { display: inline-block; margin-top: 6px; color: #d4c4f5; overflow-wrap: anywhere; user-select: text; }
-#clipTitle { margin-top: 5px; color: #b9afc9; font-size: 13px; overflow-wrap: anywhere; }
+
+#name {
+  font-size: 25px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+#channelUrl {
+  display: inline-block;
+  margin-top: 6px;
+  color: #d4c4f5;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+#clipTitle {
+  margin-top: 5px;
+  color: #b9afc9;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
 #clipTitle:empty { display: none; }
+
 #overlayStatus {
   max-width: 620px;
   margin: 12px auto 0;
@@ -198,185 +232,68 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   font-size: 13px;
   line-height: 1.5;
 }
+
 #overlayStatus:empty { display: none; }
 
-/* Layout designer controls */
-.preset-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:10px 0 16px; }
-.preset-grid button { min-height:44px; background:#2b203b; border:1px solid #57406e; text-align:left; }
-.preset-grid button:hover { background:#44305d; }
-.control-pair { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.control-pair label { margin-top:8px; }
-.range-value { color:#cdb6f8; font-size:12px; float:right; }
-#player.designer-position #details { position:absolute; left:50%; top:var(--info-y,82%); right:auto; bottom:auto; transform:translate(-50%,-50%); width:var(--info-width,82%); max-width:100%; min-width:0; box-sizing:border-box; margin:0; z-index:5; cursor:grab; user-select:none; touch-action:none; }
-#player.designer-position #details:active { cursor:grabbing; }
-#player.designer-position #details #avatar { pointer-events:none; }
-#player.avatar-square #avatar { border-radius:0; }
-#player.avatar-rounded #avatar { border-radius:14px; }
-#player.avatar-diamond #avatar { border-radius:10px; clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%); }
-#player.gradient-horizontal #details { background:linear-gradient(90deg, var(--panel), color-mix(in srgb, var(--accent) 45%, var(--panel))); }
-#player.gradient-diagonal #details { background:linear-gradient(135deg, var(--panel), color-mix(in srgb, var(--accent) 55%, #130d20)); }
-#player.gradient-radial #details { background:radial-gradient(ellipse at left, color-mix(in srgb, var(--accent) 55%, var(--panel)), var(--panel) 78%); }
-#player.gradient-glass #details { background:color-mix(in srgb, var(--panel) 54%, transparent); backdrop-filter:blur(16px) saturate(1.35); }
-#player.border-glow { animation:designerGlow 1.8s ease-in-out infinite alternate; }
-#player.border-pulse { animation:designerPulse 1.2s ease-in-out infinite alternate; }
-#player.border-rainbow { animation:designerRainbow 4s linear infinite; }
-#player.border-dash { border-style:dashed; animation:designerDash 1.2s linear infinite; }
-@keyframes designerGlow { from { box-shadow:0 0 8px var(--accent),0 8px 40px #0008; } to { box-shadow:0 0 30px var(--accent),0 0 52px color-mix(in srgb,var(--accent) 45%,transparent); } }
-@keyframes designerPulse { from { border-width:2px; } to { border-width:5px; } }
-@keyframes designerRainbow { 0% { border-color:#ff4f9a; box-shadow:0 0 16px #ff4f9a; } 33% { border-color:#8c5bff; box-shadow:0 0 16px #8c5bff; } 66% { border-color:#31d8ff; box-shadow:0 0 16px #31d8ff; } 100% { border-color:#ff4f9a; box-shadow:0 0 16px #ff4f9a; } }
-@keyframes designerDash { to { border-color:color-mix(in srgb,var(--accent) 35%,white); } }
-#card.layout-classic #player #details { left:auto; top:auto; transform:none; }
-@media(prefers-reduced-motion:reduce) { #player.border-glow,#player.border-pulse,#player.border-rainbow,#player.border-dash { animation:none !important; } }
-
-@media(max-width: 750px) {
+@media (max-width: 750px) {
   .columns { grid-template-columns: 1fr; }
-  #heading { font-size: 26px; }
-  #details { gap: 10px; padding: 12px; }
-  
-/* Layout and motion presets */
-#player #details {
-  position: absolute;
-  z-index: 3;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  max-width: none;
-  margin: 0;
-  justify-content: flex-start;
-  border: 0;
-  border-top: 2px solid var(--accent);
-  border-radius: 0;
-  background: color-mix(in srgb, var(--panel) 92%, transparent);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 -8px 28px #0008;
-  text-align: left;
-}
-#player #details #avatar { flex-basis: 62px; width: 62px; height: 62px; }
-#player #details #name { font-size: 22px; }
-#card.layout-classic #details { position: static; width: auto; max-width: 620px; margin: 16px auto 0; border: 1px solid var(--accent); border-radius: 14px; }
-#card.layout-classic #player #details { position: static; width: auto; max-width: 620px; margin: 16px auto 0; border: 1px solid var(--accent); border-radius: 14px; }
-#card.layout-lower-third #heading { text-align: left; margin-left: 2%; }
-#card.layout-lower-third #player #details { left: 50%; right: auto; bottom: 3%; transform:translateX(-50%); width:var(--info-width,82%); border: 1px solid var(--accent); border-radius: 12px; }
-#card.layout-minimal #heading { font-size: calc(var(--heading-size) * .72); margin-bottom: 8px; letter-spacing: .08em; }
-#card.layout-minimal #player { border-width: 1px; border-radius: 4px; }
-#card.layout-minimal #player #details { padding: 8px 14px; gap: 10px; }
-#card.layout-minimal #player #details #avatar { flex-basis: 44px; width: 44px; height: 44px; }
-#card.layout-neon #player { border-width: 3px; box-shadow: 0 0 18px var(--accent), 0 0 44px color-mix(in srgb, var(--accent) 50%, transparent); }
-#card.layout-neon #player #details { border-top: 2px solid var(--accent); }
-#card.anim-fade { animation: shoutFade .6s ease both; }
-#card.anim-slide { animation: shoutSlide .65s cubic-bezier(.2,.8,.2,1) both; }
-#card.anim-zoom { animation: shoutZoom .55s cubic-bezier(.2,.8,.2,1) both; }
-#card.anim-bounce { animation: shoutBounce .8s cubic-bezier(.2,.8,.2,1) both; }
-#card.anim-glow #player { animation: shoutGlow 1.8s ease-in-out infinite alternate; }
-@keyframes shoutFade { from { opacity:0 } to { opacity:1 } }
-@keyframes shoutSlide { from { opacity:0; transform:translateY(40px) } to { opacity:1; transform:translateY(0) } }
-@keyframes shoutZoom { from { opacity:0; transform:scale(.82) } to { opacity:1; transform:scale(1) } }
-@keyframes shoutBounce { 0% { opacity:0; transform:translateY(35px) scale(.94) } 65% { opacity:1; transform:translateY(-7px) scale(1.015) } 100% { transform:translateY(0) scale(1) } }
-@keyframes shoutGlow { from { box-shadow:0 0 12px var(--accent) } to { box-shadow:0 0 34px var(--accent), 0 0 60px color-mix(in srgb, var(--accent) 45%, transparent) } }
-@media(prefers-reduced-motion: reduce) { #card, #card.anim-fade, #card.anim-slide, #card.anim-zoom, #card.anim-bounce, #card.anim-glow #player { animation:none !important; transition:none !important; } }
 
-#avatar { flex-basis: 58px; width: 58px; height: 58px; }
+  #heading {
+    font-size: min(26px, var(--heading-size));
+  }
+
+  #details {
+    width: 100%;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  #avatar {
+    flex-basis: 58px;
+    width: 58px;
+    height: 58px;
+  }
+
   #name { font-size: 20px; }
 }
-@media(prefers-reduced-motion: reduce) {
-  #card { transition: none; }
-}
 
-/* Final layout-designer overrides: responsive info width and true background alpha. */
-#card #details {
-  box-sizing: border-box;
-  width: var(--info-width, 82%);
-  max-width: 100%;
-  min-width: 0;
-}
-#card.layout-classic #details,
-#card.layout-classic #player #details {
-  width: var(--info-width, 82%);
-  max-width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-}
-#player #details {
-  right: auto;
-  left: 50%;
-  transform: translateX(-50%);
-  width: var(--info-width, 82%);
-  max-width: 100%;
-  box-sizing: border-box;
-}
-#player.designer-position #details {
-  width: var(--info-width, 82%);
-  max-width: 100%;
+@media (prefers-reduced-motion: reduce) {
+  #card { transition: none; }
 }
 </style>
 </head>
+
 <body>
+
 <div id="panel">
   <h1>Shoutout Studio</h1>
-  <p class="small">Customize your Twitch shoutout overlay.</p>
+  <p class="small">
+    Simple Twitch shoutout overlay with the classic card below the video.
+  </p>
+
   <div class="columns">
+
     <section class="settings">
       <h2>Appearance</h2>
+
       <label for="accent">Accent color</label>
       <input id="accent" type="color" value="#a970ff">
+
       <label for="panelColor">Information card color</label>
       <input id="panelColor" type="color" value="#171225">
+
       <label for="fontSize">Heading size</label>
       <input id="fontSize" type="range" min="20" max="52" value="34">
+
       <label for="clipWidth">Maximum card width</label>
       <input id="clipWidth" type="range" min="400" max="1000" step="20" value="760">
-      <label for="layout">Layout design</label>
-      <select id="layout">
-        <option value="video-bottom">Video with info overlay at bottom</option>
-        <option value="lower-third">Inset lower-third overlay</option>
-        <option value="classic">Classic card below video</option>
-        <option value="minimal">Minimal / clean</option>
-        <option value="neon">Neon glow</option>
-      </select>
-      <label for="animation">Entrance / animation</label>
-      <select id="animation">
-        <option value="slide">Smooth slide-in</option>
-        <option value="fade">Fade in</option>
-        <option value="zoom">Zoom in</option>
-        <option value="bounce">Bounce in</option>
-        <option value="glow">Continuous glow</option>
-        <option value="none">No animation</option>
-      </select>
-      <h2>Layout designer</h2>
-      <p class="small">Choose a preset, then fine-tune the overlay. In the preview, drag the creator info bar to reposition it.</p>
-      <div class="preset-grid" aria-label="One-click style presets">
-        <button type="button" data-preset="neon">⚡ Neon gamer</button>
-        <button type="button" data-preset="cinematic">🎬 Cinematic</button>
-        <button type="button" data-preset="glass">🪟 Glass card</button>
-        <button type="button" data-preset="minimal">◻ Minimal</button>
-        <button type="button" data-preset="rainbow">🌈 Rainbow edge</button>
-        <button type="button" data-preset="classic">▤ Classic card</button>
-      </div>
-      <label for="overlayOpacity">Info overlay opacity <span id="opacityValue" class="range-value">88%</span></label>
-      <input id="overlayOpacity" type="range" min="20" max="100" value="88">
-      <label for="infoWidth">Info bar width <span id="widthValue" class="range-value">82%</span></label>
-      <input id="infoWidth" type="range" min="20" max="100" value="82">
-      <label for="avatarShape">Avatar shape</label>
-      <select id="avatarShape">
-        <option value="circle">Circle</option><option value="rounded">Rounded square</option><option value="square">Square</option><option value="diamond">Diamond</option>
-      </select>
-      <label for="gradient">Info background</label>
-      <select id="gradient">
-        <option value="solid">Solid color</option><option value="horizontal">Horizontal gradient</option><option value="diagonal">Diagonal gradient</option><option value="radial">Radial glow</option><option value="glass">Glass / blur</option>
-      </select>
-      <label for="borderStyle">Video border effect</label>
-      <select id="borderStyle">
-        <option value="none">Static border</option><option value="glow">Animated glow</option><option value="pulse">Pulse</option><option value="rainbow">Rainbow cycle</option><option value="dash">Dashed shimmer</option>
-      </select>
-      <div class="control-pair">
-        <div><label for="infoX">Info position X <span id="xValue" class="range-value">50%</span></label><input id="infoX" type="range" min="10" max="90" value="50"></div>
-        <div><label for="infoY">Info position Y <span id="yValue" class="range-value">82%</span></label><input id="infoY" type="range" min="15" max="90" value="82"></div>
-      </div>
+
       <label for="duration">Display duration (seconds)</label>
       <input id="duration" type="number" min="10" max="120" value="30">
+
       <label for="headingText">Heading text</label>
       <input id="headingText" value="GO CHECK OUT">
+
       <label for="fontFamily">Font</label>
       <select id="fontFamily">
         <option value="Arial, sans-serif">Arial</option>
@@ -384,18 +301,24 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
         <option value="Georgia, serif">Georgia</option>
         <option value="'Trebuchet MS', sans-serif">Trebuchet</option>
       </select>
+
       <label>
         <input id="showTitle" type="checkbox" checked style="width:auto">
         Show clip title
       </label>
+
       <div class="actions">
         <button id="save" type="button">Save settings</button>
         <button id="reset" type="button">Reset</button>
       </div>
+
       <hr>
+
       <h2>Test shoutout</h2>
+
       <label for="testUser">Twitch username</label>
       <input id="testUser" value="dropzedd" placeholder="username">
+
       <label for="clipTimeframe">Clip timeframe</label>
       <select id="clipTimeframe">
         <option value="all">All time</option>
@@ -403,37 +326,54 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
         <option value="30days">Past 30 days</option>
         <option value="featured">Featured clips only</option>
       </select>
-      <p class="small">The selected timeframe is sent with the clip request. Your clip API worker must support the <code>timeframe</code> parameter for filtering to take effect.</p>
+
+      <p class="small">
+        Your clip API worker must support the timeframe parameter
+        for filtering to take effect.
+      </p>
+
       <div class="actions">
         <button id="test" type="button">Play preview</button>
         <button id="openOverlay" type="button">Open overlay</button>
       </div>
+
       <p class="small">
         Use the HTTPS overlay URL as an OBS Browser Source.
-        The page does not require a local server or Python.
       </p>
+
       <div id="status" class="status" role="status" aria-live="polite"></div>
     </section>
+
     <section class="preview">
       <h2>Live preview</h2>
-      <iframe id="preview" title="Shoutout preview"
+
+      <iframe
+        id="preview"
+        title="Shoutout preview"
         style="width:100%;height:620px;border:0;border-radius:10px;background:transparent"
-        allow="autoplay; fullscreen"></iframe>
+        allow="autoplay; fullscreen">
+      </iframe>
     </section>
+
   </div>
 </div>
+
 <div id="overlay">
   <main id="card">
     <h1 id="heading">GO CHECK OUT</h1>
+
     <div id="player"></div>
+
     <section id="details">
       <img id="avatar" alt="Creator profile picture">
+
       <div style="text-align:left;min-width:0">
         <div id="name"></div>
         <div id="channelUrl"></div>
         <div id="clipTitle"></div>
       </div>
     </section>
+
     <div id="overlayStatus" role="status" aria-live="polite"></div>
   </main>
 </div>
@@ -445,211 +385,505 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   const $ = id => document.getElementById(id);
   const params = new URLSearchParams(location.search);
   const mode = params.get("mode") || "panel";
+
   const API = "https://twitch-shoutout-clips.dropzedd.workers.dev/";
   const STORE = "soSettings";
+
   const DEFAULTS = {
-    accent: "#a970ff", panelColor: "#171225", fontSize: 34, clipWidth: 760,
-    duration: 30, clipTimeframe: "all", headingText: "GO CHECK OUT",
-    fontFamily: "Arial, sans-serif", showTitle: true, layout: "video-bottom",
-    animation: "slide", overlayOpacity: 88, avatarShape: "circle", gradient: "solid",
-    borderStyle: "none", infoX: 50, infoY: 82, infoWidth: 82
+    accent: "#a970ff",
+    panelColor: "#171225",
+    fontSize: 34,
+    clipWidth: 760,
+    duration: 30,
+    clipTimeframe: "all",
+    headingText: "GO CHECK OUT",
+    fontFamily: "Arial, sans-serif",
+    showTitle: true
   };
-  const PRESETS = {
-    neon: { layout:"neon", animation:"glow", accent:"#00eaff", panelColor:"#101525", overlayOpacity:88, avatarShape:"rounded", gradient:"diagonal", borderStyle:"glow", infoX:50, infoY:82, infoWidth:82, fontSize:36 },
-    cinematic: { layout:"video-bottom", animation:"fade", accent:"#e4b86a", panelColor:"#17120d", overlayOpacity:92, avatarShape:"circle", gradient:"horizontal", borderStyle:"none", infoX:50, infoY:82, infoWidth:100, fontSize:32 },
-    glass: { layout:"video-bottom", animation:"zoom", accent:"#8bdcff", panelColor:"#182332", overlayOpacity:72, avatarShape:"rounded", gradient:"glass", borderStyle:"glow", infoX:50, infoY:80, infoWidth:88, fontSize:34 },
-    minimal: { layout:"minimal", animation:"slide", accent:"#ffffff", panelColor:"#101010", overlayOpacity:90, avatarShape:"circle", gradient:"solid", borderStyle:"none", infoX:50, infoY:84, infoWidth:76, fontSize:28 },
-    rainbow: { layout:"neon", animation:"bounce", accent:"#b65cff", panelColor:"#171225", overlayOpacity:86, avatarShape:"diamond", gradient:"radial", borderStyle:"rainbow", infoX:50, infoY:80, infoWidth:82, fontSize:36 },
-    classic: { layout:"classic", animation:"fade", accent:"#a970ff", panelColor:"#171225", overlayOpacity:100, avatarShape:"circle", gradient:"solid", borderStyle:"none", infoX:50, infoY:82, infoWidth:82, fontSize:34 }
-  };
+
   let settings = loadSettings();
   let requestNumber = 0;
   let hideTimer = 0;
   let cleanupTimer = 0;
-  let activeVideo = null;
 
   function clamp(value, min, max, fallback) {
     const n = Number(value);
-    return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : fallback;
+    return Number.isFinite(n)
+      ? Math.max(min, Math.min(max, n))
+      : fallback;
   }
+
   function loadSettings() {
     let saved = {};
-    try { saved = JSON.parse(localStorage.getItem(STORE) || "{}"); } catch (_) {}
-    const s = { ...DEFAULTS, ...(saved && typeof saved === "object" ? saved : {}) };
-    if (!/^#[0-9a-f]{6}$/i.test(s.accent)) s.accent = DEFAULTS.accent;
-    if (!/^#[0-9a-f]{6}$/i.test(s.panelColor)) s.panelColor = DEFAULTS.panelColor;
-    s.fontSize = clamp(s.fontSize,20,52,34); s.clipWidth = clamp(s.clipWidth,400,1000,760);
-    s.duration = clamp(s.duration,10,120,30); s.overlayOpacity = clamp(s.overlayOpacity,20,100,88);
-    s.infoX = clamp(s.infoX,10,90,50); s.infoY = clamp(s.infoY,15,90,82); s.infoWidth = clamp(s.infoWidth,20,100,82);
-    if (!["all","year","30days","featured"].includes(s.clipTimeframe)) s.clipTimeframe="all";
-    if (!["video-bottom","lower-third","classic","minimal","neon"].includes(s.layout)) s.layout="video-bottom";
-    if (!["fade","slide","zoom","bounce","glow","none"].includes(s.animation)) s.animation="slide";
-    if (!["circle","rounded","square","diamond"].includes(s.avatarShape)) s.avatarShape="circle";
-    if (!["solid","horizontal","diagonal","radial","glass"].includes(s.gradient)) s.gradient="solid";
-    if (!["none","glow","pulse","rainbow","dash"].includes(s.borderStyle)) s.borderStyle="none";
-    if (!["Arial, sans-serif","Verdana, sans-serif","Georgia, serif","'Trebuchet MS', sans-serif"].includes(s.fontFamily)) s.fontFamily=DEFAULTS.fontFamily;
+
+    try {
+      saved = JSON.parse(localStorage.getItem(STORE) || "{}");
+    } catch (_) {}
+
+    const s = {
+      ...DEFAULTS,
+      ...(saved && typeof saved === "object" ? saved : {})
+    };
+
+    if (!/^#[0-9a-f]{6}$/i.test(s.accent))
+      s.accent = DEFAULTS.accent;
+
+    if (!/^#[0-9a-f]{6}$/i.test(s.panelColor))
+      s.panelColor = DEFAULTS.panelColor;
+
+    s.fontSize = clamp(s.fontSize, 20, 52, 34);
+    s.clipWidth = clamp(s.clipWidth, 400, 1000, 760);
+    s.duration = clamp(s.duration, 10, 120, 30);
+
+    if (!["all", "year", "30days", "featured"].includes(s.clipTimeframe))
+      s.clipTimeframe = "all";
+
+    if (![
+      "Arial, sans-serif",
+      "Verdana, sans-serif",
+      "Georgia, serif",
+      "'Trebuchet MS', sans-serif"
+    ].includes(s.fontFamily)) {
+      s.fontFamily = DEFAULTS.fontFamily;
+    }
+
     s.showTitle = typeof s.showTitle === "boolean" ? s.showTitle : true;
-    s.headingText = typeof s.headingText === "string" ? s.headingText : DEFAULTS.headingText;
+    s.headingText = typeof s.headingText === "string"
+      ? s.headingText
+      : DEFAULTS.headingText;
+
     return s;
   }
+
   function saveSettings(s) {
-    try { localStorage.setItem(STORE, JSON.stringify(s)); return true; } catch (_) { return false; }
+    try {
+      localStorage.setItem(STORE, JSON.stringify(s));
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
+
   function readForm() {
     return {
-      accent:$('accent').value, panelColor:$('panelColor').value,
-      fontSize:clamp($('fontSize').value,20,52,34), clipWidth:clamp($('clipWidth').value,400,1000,760),
-      duration:clamp($('duration').value,10,120,30), clipTimeframe:$('clipTimeframe').value,
-      headingText:$('headingText').value, fontFamily:$('fontFamily').value, showTitle:$('showTitle').checked,
-      layout:$('layout').value, animation:$('animation').value, overlayOpacity:clamp($('overlayOpacity').value,20,100,88),
-      avatarShape:$('avatarShape').value, gradient:$('gradient').value, borderStyle:$('borderStyle').value,
-      infoX:clamp($('infoX').value,10,90,50), infoY:clamp($('infoY').value,15,90,82), infoWidth:clamp($('infoWidth').value,20,100,82)
+      accent: $("accent").value,
+      panelColor: $("panelColor").value,
+      fontSize: clamp($("fontSize").value, 20, 52, 34),
+      clipWidth: clamp($("clipWidth").value, 400, 1000, 760),
+      duration: clamp($("duration").value, 10, 120, 30),
+      clipTimeframe: $("clipTimeframe").value,
+      headingText: $("headingText").value,
+      fontFamily: $("fontFamily").value,
+      showTitle: $("showTitle").checked
     };
   }
+
   function fillForm(s) {
-    Object.entries(s).forEach(([key,value]) => { const el=$(key); if (el) { if (el.type === 'checkbox') el.checked=!!value; else el.value=value; } });
+    Object.entries(s).forEach(([key, value]) => {
+      const el = $(key);
+
+      if (el) {
+        if (el.type === "checkbox") {
+          el.checked = !!value;
+        } else {
+          el.value = value;
+        }
+      }
+    });
   }
-  function rgba(hex, alpha) {
-    const h = String(hex || '#171225').replace('#','');
-    const n = parseInt(h,16) || 0x171225;
-    return `rgba(${(n>>16)&255}, ${(n>>8)&255}, ${n&255}, ${Math.max(0,Math.min(1,alpha))})`;
-  }
+
   function applySettings(s) {
-    const root=document.documentElement;
-    root.style.setProperty('--accent',s.accent); root.style.setProperty('--panel',s.panelColor);
-    root.style.setProperty('--width',s.clipWidth+'px'); root.style.setProperty('--heading-size',s.fontSize+'px');
-    root.style.setProperty('--info-x',s.infoX+'%'); root.style.setProperty('--info-y',s.infoY+'%'); root.style.setProperty('--info-width',s.infoWidth+'%');
-    const heading=$('heading'); if(heading){heading.textContent=s.headingText;heading.style.fontFamily=s.fontFamily;}
-    const card=$('card'), player=$('player'), details=$('details');
-    if(card&&player&&details){
-      const inside=['video-bottom','lower-third','minimal','neon'].includes(s.layout);
-      if(inside && details.parentElement!==player) player.appendChild(details);
-      if(!inside && details.parentElement!==card) card.insertBefore(details,$('overlayStatus'));
-      card.classList.remove('layout-video-bottom','layout-lower-third','layout-classic','layout-minimal','layout-neon'); card.classList.add('layout-'+s.layout);
-      card.classList.remove('anim-fade','anim-slide','anim-zoom','anim-bounce','anim-glow','anim-none');card.classList.add('anim-'+s.animation);
-      const alpha=s.overlayOpacity/100, panel=rgba(s.panelColor,alpha), accent=rgba(s.accent,alpha);
-      details.style.setProperty('background-color',panel,'important'); details.style.setProperty('background-image','none','important'); details.style.setProperty('backdrop-filter','none','important');
-      if(s.gradient==='horizontal') details.style.setProperty('background-image',`linear-gradient(90deg,${panel},${accent})`,'important');
-      if(s.gradient==='diagonal') details.style.setProperty('background-image',`linear-gradient(135deg,${panel},${accent})`,'important');
-      if(s.gradient==='radial') details.style.setProperty('background-image',`radial-gradient(ellipse at left,${accent},${panel} 78%)`,'important');
-      if(s.gradient==='glass'){details.style.setProperty('background-color',rgba(s.panelColor,alpha*.62),'important');details.style.setProperty('backdrop-filter','blur(16px) saturate(1.35)','important');}
-      player.classList.toggle('designer-position',s.layout!=='classic');
-      ['circle','rounded','square','diamond'].forEach(x=>player.classList.toggle('avatar-'+x,s.avatarShape===x));
-      ['solid','horizontal','diagonal','radial','glass'].forEach(x=>player.classList.toggle('gradient-'+x,s.gradient===x));
-      ['none','glow','pulse','rainbow','dash'].forEach(x=>player.classList.toggle('border-'+x,s.borderStyle===x));
+    const root = document.documentElement;
+
+    root.style.setProperty("--accent", s.accent);
+    root.style.setProperty("--panel", s.panelColor);
+    root.style.setProperty("--width", s.clipWidth + "px");
+    root.style.setProperty("--heading-size", s.fontSize + "px");
+
+    const heading = $("heading");
+
+    if (heading) {
+      heading.textContent = s.headingText;
+      heading.style.fontFamily = s.fontFamily;
     }
-    const title=$('clipTitle'); if(title) title.style.display=s.showTitle?'':'none';
-    ['opacityValue','xValue','yValue','widthValue'].forEach((id,i)=>{const el=$(id);if(el)el.textContent=[s.overlayOpacity+'%',s.infoX+'%',s.infoY+'%',s.infoWidth+'%'][i];});
+
+    const title = $("clipTitle");
+
+    if (title) {
+      title.style.display = s.showTitle ? "" : "none";
+    }
   }
-  function status(message, kind='') { const el=$('status'); if(el){el.textContent=message;el.className='status '+kind;} }
-  function overlayStatus(message) { const el=$('overlayStatus'); if(el) el.textContent=message||''; }
-  function usernameOf(v) { const u=String(v||'').trim().replace(/^@/,''); if(!/^[a-zA-Z0-9_]{1,25}$/.test(u)) throw new Error('Enter a valid Twitch username.'); return u; }
+
+  function status(message, kind = "") {
+    const el = $("status");
+
+    if (el) {
+      el.textContent = message;
+      el.className = "status " + kind;
+    }
+  }
+
+  function overlayStatus(message) {
+    const el = $("overlayStatus");
+
+    if (el) el.textContent = message || "";
+  }
+
+  function usernameOf(value) {
+    const user = String(value || "").trim().replace(/^@/, "");
+
+    if (!/^[a-zA-Z0-9_]{1,25}$/.test(user)) {
+      throw new Error("Enter a valid Twitch username.");
+    }
+
+    return user;
+  }
+
   async function getClip(user, timeframe) {
-    const url=new URL(API);url.searchParams.set('username',user);url.searchParams.set('timeframe',timeframe);
-    const controller=new AbortController(), timer=setTimeout(()=>controller.abort(),12000);
+    const url = new URL(API);
+
+    url.searchParams.set("username", user);
+    url.searchParams.set("timeframe", timeframe);
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12000);
+
     try {
-      const response=await fetch(url,{signal:controller.signal,cache:'no-store'});
-      if(!response.ok) throw new Error('Clip service returned HTTP '+response.status+'.');
-      const data=await response.json(); if(data.error) throw new Error(data.error);
+      const response = await fetch(url, {
+        signal: controller.signal,
+        cache: "no-store"
+      });
+
+      if (!response.ok) {
+        throw new Error("Clip service returned HTTP " + response.status + ".");
+      }
+
+      const data = await response.json();
+
+      if (data.error) throw new Error(data.error);
+
       return data;
-    } catch(e) {
-      if(e.name==='AbortError') throw new Error('Clip lookup timed out.');
-      throw e;
-    } finally {clearTimeout(timer);}
+    } catch (error) {
+      if (error.name === "AbortError") {
+        throw new Error("Clip lookup timed out.");
+      }
+
+      throw error;
+    } finally {
+      clearTimeout(timer);
+    }
   }
+
   function clearMedia() {
-    clearTimeout(hideTimer); clearTimeout(cleanupTimer); hideTimer=cleanupTimer=0;
-    if(activeVideo){try{activeVideo.pause();activeVideo.removeAttribute('src');activeVideo.load();}catch(_){} activeVideo=null;}
-    const player=$('player'), details=$('details');
-    if(player) Array.from(player.children).forEach(node=>{if(node!==details)node.remove();});
+    clearTimeout(hideTimer);
+    clearTimeout(cleanupTimer);
+
+    hideTimer = 0;
+    cleanupTimer = 0;
+
+    $("player").replaceChildren();
   }
+
   function showError(message, id) {
-    if(id!==requestNumber)return;
-    overlayStatus(message); const card=$('card'); if(card)card.classList.add('show');
+    if (id !== requestNumber) return;
+
+    overlayStatus(message);
+    $("card").classList.add("show");
   }
+
   function createClipEmbed(clip) {
-    const slug = String(clip.slug || '').trim();
+    const slug = String(clip.slug || "").trim();
+
     if (!/^[a-zA-Z0-9_-]+$/.test(slug)) {
-      throw new Error('The clip service did not return a valid Twitch clip ID.');
+      throw new Error("The clip service did not return a valid Twitch clip ID.");
     }
-    if (location.protocol !== 'https:' || !location.hostname) {
-      throw new Error('Twitch clips require the overlay to be hosted on HTTPS.');
+
+    if (location.protocol !== "https:" || !location.hostname) {
+      throw new Error("Twitch clips require the overlay to be hosted on HTTPS.");
     }
-    // Twitch's supported Clips embed. Do not fabricate an MP4 URL.
-    const url = new URL('https://clips.twitch.tv/embed');
-    url.searchParams.set('clip', slug);
-    url.searchParams.set('parent', location.hostname);
-    url.searchParams.set('autoplay', 'true');
-    url.searchParams.set('muted', 'false'); // Allow clip audio; autoplay with sound may be blocked by browser policy.
-    const iframe = document.createElement('iframe');
-    iframe.className = 'shoutout-clip-embed';
-    iframe.title = 'Twitch shoutout clip';
-    iframe.allow = 'autoplay; fullscreen; encrypted-media; picture-in-picture';
+
+    const url = new URL("https://clips.twitch.tv/embed");
+
+    url.searchParams.set("clip", slug);
+    url.searchParams.set("parent", location.hostname);
+    url.searchParams.set("autoplay", "true");
+    url.searchParams.set("muted", "false");
+
+    const iframe = document.createElement("iframe");
+
+    iframe.title = "Twitch shoutout clip";
+    iframe.allow = "autoplay; fullscreen; encrypted-media; picture-in-picture";
     iframe.allowFullscreen = true;
-    iframe.referrerPolicy = 'origin';
-    iframe.loading = 'eager';
-    iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;min-width:400px;min-height:300px;border:0;display:block;background:#09070d;';
-    iframe.dataset.pendingSrc = url.toString();
-    iframe.addEventListener('load', () => overlayStatus(''));
+    iframe.referrerPolicy = "origin";
+    iframe.loading = "eager";
+    iframe.src = url.toString();
+
     return iframe;
   }
-  async function shoutout(rawUser) {
-    let user; try{user=usernameOf(rawUser);}catch(e){overlayStatus(e.message);$('card').classList.add('show');return;}
-    const id=++requestNumber; clearMedia(); settings=loadSettings(); applySettings(settings);
-    $('card').classList.remove('show'); $('heading').textContent=settings.headingText;
-    $('name').textContent=user; $('channelUrl').textContent='https://www.twitch.tv/'+user; $('clipTitle').textContent='';
-    $('avatar').removeAttribute('src'); overlayStatus('Looking up clip…');
-    let clip;
-    try{clip=await getClip(user,settings.clipTimeframe);}catch(e){showError('Shoutout lookup failed: '+e.message,id);return;}
-    if(id!==requestNumber)return;
-    if(clip.profile_image_url&&/^https:\/\//i.test(clip.profile_image_url)) $('avatar').src=clip.profile_image_url;
-    if(clip.broadcaster_name) $('name').textContent=String(clip.broadcaster_name).replace(/^@+/, '');
-    $('channelUrl').textContent='https://www.twitch.tv/'+(clip.username||user);
-    $('clipTitle').textContent=settings.showTitle&&clip.title?clip.title:'';
-    let media;try{media=createClipEmbed(clip);}catch(e){showError(e.message,id);return;}
-    const player=$('player'), details=$('details');
-    if(details&&details.parentElement===player) player.insertBefore(media,details); else player.appendChild(media);
-    const card=$('card');card.classList.add('show');overlayStatus('Loading Twitch clip…');
-    // Set the iframe URL only after it is attached to the visible overlay.
-    requestAnimationFrame(()=>{
-      if(id!==requestNumber||!media.isConnected)return;
-      const src=media.dataset.pendingSrc;delete media.dataset.pendingSrc;media.src=src;
-    });
-    const duration=Number(clip.duration)>0?Math.max(10,Number(clip.duration)+2):settings.duration;
-    hideTimer=setTimeout(()=>{
-      if(id!==requestNumber)return;
-      card.classList.remove('show');
-      cleanupTimer=setTimeout(()=>{if(id===requestNumber&&!card.classList.contains('show'))clearMedia();},600);
-    },duration*1000);
-  }
-  function overlayURL(user){const u=new URL(location.href);u.search='';u.hash='';u.searchParams.set('mode','overlay');u.searchParams.set('username',user);return u.href;}
 
-  // Overlay mode: no editor, no nested preview, one native HTML video player.
-  if(mode==='overlay'){
-    $('panel').style.display='none';$('overlay').style.display='flex';
-    settings=loadSettings();applySettings(settings);
-    const user=params.get('username');
-    if(user) shoutout(user).catch(e=>showError('Unexpected error: '+e.message,requestNumber));
-    else showError('Add ?mode=overlay&username=USERNAME to the URL.',++requestNumber);
+  async function shoutout(rawUser) {
+    let user;
+
+    try {
+      user = usernameOf(rawUser);
+    } catch (error) {
+      overlayStatus(error.message);
+      $("card").classList.add("show");
+      return;
+    }
+
+    const id = ++requestNumber;
+
+    clearMedia();
+
+    settings = loadSettings();
+    applySettings(settings);
+
+    $("card").classList.remove("show");
+    $("name").textContent = user;
+    $("channelUrl").textContent = "https://www.twitch.tv/" + user;
+    $("clipTitle").textContent = "";
+    $("avatar").removeAttribute("src");
+
+    overlayStatus("Looking up clip…");
+
+    let clip;
+
+    try {
+      clip = await getClip(user, settings.clipTimeframe);
+    } catch (error) {
+      showError("Shoutout lookup failed: " + error.message, id);
+      return;
+    }
+
+    if (id !== requestNumber) return;
+
+    if (
+      clip.profile_image_url &&
+      /^https:\/\//i.test(clip.profile_image_url)
+    ) {
+      $("avatar").src = clip.profile_image_url;
+    }
+
+    if (clip.broadcaster_name) {
+      $("name").textContent = String(clip.broadcaster_name).replace(/^@+/, "");
+    }
+
+    $("channelUrl").textContent =
+      "https://www.twitch.tv/" + (clip.username || user);
+
+    $("clipTitle").textContent =
+      settings.showTitle && clip.title ? clip.title : "";
+
+    let media;
+
+    try {
+      media = createClipEmbed(clip);
+    } catch (error) {
+      showError(error.message, id);
+      return;
+    }
+
+    $("player").appendChild(media);
+    $("card").classList.add("show");
+
+    overlayStatus("Loading Twitch clip…");
+
+    media.addEventListener("load", () => {
+      overlayStatus("");
+    }, { once: true });
+
+    const duration = Number(clip.duration) > 0
+      ? Math.max(10, Number(clip.duration) + 2)
+      : settings.duration;
+
+    hideTimer = setTimeout(() => {
+      if (id !== requestNumber) return;
+
+      $("card").classList.remove("show");
+
+      cleanupTimer = setTimeout(() => {
+        if (
+          id === requestNumber &&
+          !$("card").classList.contains("show")
+        ) {
+          clearMedia();
+          overlayStatus("");
+        }
+      }, 400);
+
+    }, duration * 1000);
+  }
+
+  function overlayURL(user) {
+    const url = new URL(location.href);
+
+    url.search = "";
+    url.hash = "";
+
+    url.searchParams.set("mode", "overlay");
+    url.searchParams.set("username", user);
+
+    return url.href;
+  }
+
+  /* OBS overlay mode */
+
+  if (mode === "overlay") {
+    $("panel").style.display = "none";
+    $("overlay").style.display = "flex";
+
+    settings = loadSettings();
+    applySettings(settings);
+
+    const user = params.get("username");
+
+    if (user) {
+      shoutout(user).catch(error => {
+        showError("Unexpected error: " + error.message, requestNumber);
+      });
+    } else {
+      showError(
+        "Add ?mode=overlay&username=USERNAME to the URL.",
+        ++requestNumber
+      );
+    }
+
     return;
   }
 
-  fillForm(settings);applySettings(settings);
-  function refreshPreview(){let user;try{user=usernameOf($('testUser').value||'dropzedd');}catch(_){user='dropzedd';}$('preview').src=overlayURL(user);}
-  $('save').addEventListener('click',()=>{settings=readForm();const ok=saveSettings(settings);applySettings(settings);refreshPreview();status(ok?'Settings saved.':'Could not save settings in this browser.',ok?'success':'error');});
-  $('reset').addEventListener('click',()=>{settings={...DEFAULTS};fillForm(settings);const ok=saveSettings(settings);applySettings(settings);refreshPreview();status(ok?'Settings reset.':'Reset locally, but browser storage is unavailable.',ok?'success':'error');});
-  $('test').addEventListener('click',()=>{let user;try{user=usernameOf($('testUser').value);}catch(e){status(e.message,'error');return;}settings=readForm();saveSettings(settings);applySettings(settings);refreshPreview();const w=window.open(overlayURL(user),'_blank');status(w?'Opened a test overlay for @'+user+'.':'Popup blocked; allow popups and try again.',w?'success':'error');});
-  $('openOverlay').addEventListener('click',()=>{let user;try{user=usernameOf($('testUser').value||'dropzedd');}catch(e){status(e.message,'error');return;}const w=window.open(overlayURL(user),'_blank');status(w?'Opened overlay for @'+user+'.':'Popup blocked; allow popups and try again.',w?'success':'error');});
-  $('testUser').addEventListener('change',refreshPreview);
-  const fields=['accent','panelColor','fontSize','clipWidth','duration','clipTimeframe','headingText','fontFamily','showTitle','layout','animation','overlayOpacity','avatarShape','gradient','borderStyle','infoX','infoY','infoWidth'];
-  fields.forEach(id=>{const el=$(id);if(!el)return;const update=()=>{settings=readForm();applySettings(settings);saveSettings(settings);refreshPreview();};el.addEventListener('input',update);el.addEventListener('change',update);});
-  document.querySelectorAll('[data-preset]').forEach(button=>button.addEventListener('click',()=>{settings={...readForm(),...(PRESETS[button.dataset.preset]||{})};fillForm(settings);applySettings(settings);saveSettings(settings);refreshPreview();status('Applied '+button.textContent.trim()+'.','success');}));
-  window.addEventListener('storage',e=>{if(e.key===STORE){settings=loadSettings();fillForm(settings);applySettings(settings);refreshPreview();}});
-  // Drag-to-position remains available in overlay mode for supported layouts.
-  const details=$('details');if(details){let dragging=false;details.addEventListener('pointerdown',e=>{const p=$('player');if(mode!=='overlay'||!p.classList.contains('designer-position'))return;dragging=true;details.setPointerCapture(e.pointerId);e.preventDefault();});details.addEventListener('pointermove',e=>{if(!dragging)return;const r=$('player').getBoundingClientRect();settings.infoX=Math.round(clamp((e.clientX-r.left)/r.width*100,10,90,50));settings.infoY=Math.round(clamp((e.clientY-r.top)/r.height*100,15,90,82));applySettings(settings);});const stop=()=>{if(dragging){dragging=false;saveSettings(settings);}};details.addEventListener('pointerup',stop);details.addEventListener('pointercancel',stop);}
+  /* Editor mode */
+
+  fillForm(settings);
+  applySettings(settings);
+
+  function refreshPreview() {
+    let user;
+
+    try {
+      user = usernameOf($("testUser").value || "dropzedd");
+    } catch (_) {
+      user = "dropzedd";
+    }
+
+    $("preview").src = overlayURL(user);
+  }
+
+  $("save").addEventListener("click", () => {
+    settings = readForm();
+
+    const ok = saveSettings(settings);
+
+    applySettings(settings);
+    refreshPreview();
+
+    status(
+      ok ? "Settings saved." : "Could not save settings in this browser.",
+      ok ? "success" : "error"
+    );
+  });
+
+  $("reset").addEventListener("click", () => {
+    settings = { ...DEFAULTS };
+
+    fillForm(settings);
+
+    const ok = saveSettings(settings);
+
+    applySettings(settings);
+    refreshPreview();
+
+    status(
+      ok ? "Settings reset." : "Reset locally, but browser storage is unavailable.",
+      ok ? "success" : "error"
+    );
+  });
+
+  $("test").addEventListener("click", () => {
+    let user;
+
+    try {
+      user = usernameOf($("testUser").value);
+    } catch (error) {
+      status(error.message, "error");
+      return;
+    }
+
+    settings = readForm();
+
+    saveSettings(settings);
+    applySettings(settings);
+    refreshPreview();
+
+    const win = window.open(overlayURL(user), "_blank");
+
+    status(
+      win
+        ? "Opened a test overlay for @" + user + "."
+        : "Popup blocked; allow popups and try again.",
+      win ? "success" : "error"
+    );
+  });
+
+  $("openOverlay").addEventListener("click", () => {
+    let user;
+
+    try {
+      user = usernameOf($("testUser").value || "dropzedd");
+    } catch (error) {
+      status(error.message, "error");
+      return;
+    }
+
+    const win = window.open(overlayURL(user), "_blank");
+
+    status(
+      win
+        ? "Opened overlay for @" + user + "."
+        : "Popup blocked; allow popups and try again.",
+      win ? "success" : "error"
+    );
+  });
+
+  $("testUser").addEventListener("change", refreshPreview);
+
+  [
+    "accent",
+    "panelColor",
+    "fontSize",
+    "clipWidth",
+    "duration",
+    "clipTimeframe",
+    "headingText",
+    "fontFamily",
+    "showTitle"
+  ].forEach(id => {
+    const el = $(id);
+
+    const update = () => {
+      settings = readForm();
+
+      applySettings(settings);
+      saveSettings(settings);
+      refreshPreview();
+    };
+
+    el.addEventListener("input", update);
+    el.addEventListener("change", update);
+  });
+
+  window.addEventListener("storage", event => {
+    if (event.key === STORE) {
+      settings = loadSettings();
+
+      fillForm(settings);
+      applySettings(settings);
+      refreshPreview();
+    }
+  });
+
   refreshPreview();
 })();
-
 </script>
 </body>
 </html>
