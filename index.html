@@ -115,10 +115,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   min-height: 180px;
   border: 0;
 }
-#player video {
-  object-fit: contain;
-  background: #09070d;
-}
+#player video { object-fit: contain; background: #09070d; }
 #details {
   display: flex;
   align-items: center;
@@ -444,750 +441,17 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   "use strict";
 
   const $ = id => document.getElementById(id);
-  // Guard UI updates so a stale/partial hosted markup cannot crash a shoutout.
-  const setText = (id, value) => { const element = $(id); if (element) element.textContent = value == null ? "" : String(value); };
-
-  const DEFAULTS = {
-    accent: "#a970ff",
-    panelColor: "#171225",
-    fontSize: 34,
-    clipWidth: 760,
-    duration: 30,
-    clipTimeframe: "all",
-    headingText: "GO CHECK OUT",
-    fontFamily: "Arial, sans-serif",
-    showTitle: true,
-    layout: "video-bottom",
-    animation: "slide",
-    overlayOpacity: 88,
-    avatarShape: "circle",
-    gradient: "solid",
-    borderStyle: "none",
-    infoX: 50,
-    infoY: 82,
-    infoWidth: 82
-  };
-
-  const CLIP_API = "https://twitch-shoutout-clips.dropzedd.workers.dev/";
-  const SETTINGS_KEY = "soSettings";
   const params = new URLSearchParams(location.search);
   const mode = params.get("mode") || "panel";
-
-  let settings = loadSettings();
-  let hideTimer = null;
-  let cleanupTimer = null;
-  let requestId = 0;
-
-  function clampNumber(value, min, max, fallback) {
-    const number = Number(value);
-    return Number.isFinite(number)
-      ? Math.max(min, Math.min(max, number))
-      : fallback;
-  }
-
-  function loadSettings() {
-    try {
-      const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
-      if (!saved || typeof saved !== "object" || Array.isArray(saved)) {
-        return { ...DEFAULTS };
-      }
-
-      const result = { ...DEFAULTS, ...saved };
-
-      if (!/^#[0-9a-f]{6}$/i.test(result.accent)) result.accent = DEFAULTS.accent;
-      if (!/^#[0-9a-f]{6}$/i.test(result.panelColor)) result.panelColor = DEFAULTS.panelColor;
-
-      result.fontSize = clampNumber(result.fontSize, 20, 52, 34);
-      result.clipWidth = clampNumber(result.clipWidth, 400, 1000, 760);
-      result.duration = clampNumber(result.duration, 10, 120, 30);
-      if (!["all","year","30days","featured"].includes(result.clipTimeframe)) result.clipTimeframe = DEFAULTS.clipTimeframe;
-
-      if (typeof result.headingText !== "string") result.headingText = DEFAULTS.headingText;
-      if (typeof result.showTitle !== "boolean") result.showTitle = DEFAULTS.showTitle;
-      if (!["video-bottom","lower-third","classic","minimal","neon"].includes(result.layout)) result.layout = DEFAULTS.layout;
-      if (!["fade","slide","zoom","bounce","glow","none"].includes(result.animation)) result.animation = DEFAULTS.animation;
-      result.overlayOpacity = clampNumber(result.overlayOpacity, 20, 100, DEFAULTS.overlayOpacity);
-      result.infoX = clampNumber(result.infoX, 10, 90, DEFAULTS.infoX);
-      result.infoY = clampNumber(result.infoY, 15, 90, DEFAULTS.infoY);
-      result.infoWidth = clampNumber(result.infoWidth, 20, 100, DEFAULTS.infoWidth);
-      if (!["circle","rounded","square","diamond"].includes(result.avatarShape)) result.avatarShape = DEFAULTS.avatarShape;
-      if (!["solid","horizontal","diagonal","radial","glass"].includes(result.gradient)) result.gradient = DEFAULTS.gradient;
-      if (!["none","glow","pulse","rainbow","dash"].includes(result.borderStyle)) result.borderStyle = DEFAULTS.borderStyle;
-
-      const fonts = [
-        "Arial, sans-serif",
-        "Verdana, sans-serif",
-        "Georgia, serif",
-        "'Trebuchet MS', sans-serif"
-      ];
-
-      if (!fonts.includes(result.fontFamily)) result.fontFamily = DEFAULTS.fontFamily;
-
-      return result;
-    } catch (error) {
-      console.warn("Could not read settings:", error);
-      return { ...DEFAULTS };
-    }
-  }
-
-  function saveSettings(value) {
-    try {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(value));
-      return true;
-    } catch (error) {
-      console.error("Could not save settings:", error);
-      return false;
-    }
-  }
-
-  function readForm() {
-    return {
-      accent: $("accent").value,
-      panelColor: $("panelColor").value,
-      fontSize: clampNumber($("fontSize").value, 20, 52, 34),
-      clipWidth: clampNumber($("clipWidth").value, 400, 1000, 760),
-      duration: clampNumber($("duration").value, 10, 120, 30),
-      clipTimeframe: $("clipTimeframe").value,
-      headingText: $("headingText").value,
-      fontFamily: $("fontFamily").value,
-      showTitle: $("showTitle").checked,
-      layout: $("layout").value,
-      animation: $("animation").value,
-      overlayOpacity: clampNumber($("overlayOpacity").value, 20, 100, 88),
-      avatarShape: $("avatarShape").value,
-      gradient: $("gradient").value,
-      borderStyle: $("borderStyle").value,
-      infoX: clampNumber($("infoX").value, 10, 90, 50),
-      infoY: clampNumber($("infoY").value, 15, 90, 82),
-      infoWidth: clampNumber($("infoWidth").value, 20, 100, 82)
-    };
-  }
-
-  function fillForm(value) {
-    for (const [key, val] of Object.entries(value)) {
-      const element = $(key);
-      if (!element) continue;
-      if (element.type === "checkbox") element.checked = Boolean(val);
-      else element.value = val;
-    }
-  }
-
-  function applySettings(value) {
-    const root = document.documentElement;
-    root.style.setProperty("--accent", value.accent);
-    root.style.setProperty("--panel", value.panelColor);
-    root.style.setProperty("--width", value.clipWidth + "px");
-    root.style.setProperty("--heading-size", value.fontSize + "px");
-    root.style.setProperty("--info-x", (value.infoX ?? 50) + "%");
-    root.style.setProperty("--info-y", (value.infoY ?? 82) + "%");
-    root.style.setProperty("--info-width", (value.infoWidth ?? 82) + "%");
-
-    const heading = $("heading");
-    if (heading) {
-      heading.textContent = value.headingText;
-      heading.style.fontFamily = value.fontFamily;
-    }
-
-    const details = $("details");
-    const player = $("player");
-    const card = $("card");
-    if (details && player && card) {
-      // The info bar must be a child of the video frame for true in-video overlays.
-      if (value.layout === "video-bottom" || value.layout === "lower-third" || value.layout === "minimal" || value.layout === "neon") {
-        if (details.parentElement !== player) player.appendChild(details);
-      } else if (details.parentElement !== card) {
-        card.insertBefore(details, $("overlayStatus"));
-      }
-      card.classList.remove("layout-video-bottom", "layout-lower-third", "layout-classic", "layout-minimal", "layout-neon");
-      card.classList.add("layout-" + (value.layout || "video-bottom"));
-      card.classList.remove("anim-fade", "anim-slide", "anim-zoom", "anim-bounce", "anim-glow", "anim-none");
-      card.classList.add("anim-" + (value.animation || "slide"));
-      const toRgba = (hexColor, alpha) => {
-        const match = /^#?([0-9a-f]{6})$/i.exec(hexColor || "#171225");
-        const hex = match ? match[1] : "171225";
-        const r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), b = parseInt(hex.slice(4, 6), 16);
-        return `rgba(${r}, ${g}, ${b}, ${Math.max(0, Math.min(1, alpha))})`;
-      };
-      const alpha = Math.max(0.2, Math.min(1, Number(value.overlayOpacity ?? 88) / 100));
-      const panel = toRgba(value.panelColor, alpha);
-      const accent = toRgba(value.accent, alpha);
-      // Important inline styles win over preset CSS selectors and make the
-      // slider affect only the info-bar background, not the avatar/text.
-      details.style.setProperty("background-color", panel, "important");
-      details.style.setProperty("background-image", "none", "important");
-      details.style.setProperty("backdrop-filter", "none", "important");
-      if (value.gradient === "horizontal") {
-        details.style.setProperty("background-image", `linear-gradient(90deg, ${panel}, ${accent})`, "important");
-      } else if (value.gradient === "diagonal") {
-        details.style.setProperty("background-image", `linear-gradient(135deg, ${panel}, ${accent})`, "important");
-      } else if (value.gradient === "radial") {
-        details.style.setProperty("background-image", `radial-gradient(ellipse at left, ${accent}, ${panel} 78%)`, "important");
-      } else if (value.gradient === "glass") {
-        details.style.setProperty("background-color", toRgba(value.panelColor, alpha * 0.62), "important");
-        details.style.setProperty("backdrop-filter", "blur(16px) saturate(1.35)", "important");
-      }
-      player.classList.toggle("designer-position", value.layout !== "classic");
-      player.classList.remove("avatar-circle", "avatar-rounded", "avatar-square", "avatar-diamond");
-      player.classList.add("avatar-" + (value.avatarShape || "circle"));
-      player.classList.remove("gradient-solid", "gradient-horizontal", "gradient-diagonal", "gradient-radial", "gradient-glass");
-      player.classList.add("gradient-" + (value.gradient || "solid"));
-      player.classList.remove("border-none", "border-glow", "border-pulse", "border-rainbow", "border-dash");
-      player.classList.add("border-" + (value.borderStyle || "none"));
-      // Re-trigger entrance animations whenever the selection changes.
-      card.style.animation = "none";
-      void card.offsetWidth;
-      card.style.animation = "";
-    }
-
-    const title = $("clipTitle");
-    if (title) title.style.display = value.showTitle ? "" : "none";
-    if ($("opacityValue")) $("opacityValue").textContent = (value.overlayOpacity ?? 88) + "%";
-    if ($("xValue")) $("xValue").textContent = (value.infoX ?? 50) + "%";
-    if ($("yValue")) $("yValue").textContent = (value.infoY ?? 82) + "%";
-    if ($("widthValue")) $("widthValue").textContent = (value.infoWidth ?? 82) + "%";
-  }
-
-  function setStatus(message, kind = "") {
-    const element = $("status");
-    if (!element) return;
-    element.textContent = message;
-    element.className = "status " + kind;
-  }
-
-  function setOverlayStatus(message) {
-    const element = $("overlayStatus");
-    if (element) element.textContent = message || "";
-  }
-
-  function validUsername(value) {
-    const username = String(value || "").trim().replace(/^@/, "");
-    if (!/^[a-zA-Z0-9_]{1,25}$/.test(username)) {
-      throw new Error("Enter a valid Twitch username.");
-    }
-    return username;
-  }
-
-  async function fetchWithTimeout(url, timeoutMs = 10000) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-      return await fetch(url, {
-        signal: controller.signal,
-        mode: "cors",
-        cache: "no-store"
-      });
-    } catch (error) {
-      if (error.name === "AbortError") {
-        throw new Error("Request timed out: " + new URL(url).hostname);
-      }
-      throw new Error(
-        "Network request failed for " + new URL(url).hostname +
-        ". Check connection, CORS, or service availability."
-      );
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-
-  async function fetchJSON(url) {
-    const response = await fetchWithTimeout(url);
-    if (!response.ok) {
-      throw new Error(new URL(url).hostname + " returned HTTP " + response.status);
-    }
-    try {
-      return await response.json();
-    } catch {
-      throw new Error("The clip service returned invalid JSON.");
-    }
-  }
-
-  function setAvatar(url) {
-    const avatar = $("avatar");
-    if (!avatar) return;
-
-    avatar.onerror = () => {
-      avatar.onerror = null;
-      avatar.removeAttribute("src");
-    };
-
-    if (url && /^https:\/\//i.test(url)) avatar.src = url;
-    else avatar.removeAttribute("src");
-  }
-
-  function getParentDomain() {
-    const configured = (params.get("parent") || "").trim();
-    const parent = configured || location.hostname;
-
-    if (
-      !parent ||
-      !/^[a-zA-Z0-9.-]+$/.test(parent) ||
-      parent.startsWith(".") ||
-      parent.endsWith(".") ||
-      parent.includes("..") ||
-      parent === "localhost" ||
-      parent === "127.0.0.1"
-    ) {
-      throw new Error(
-        "Twitch playback requires an HTTPS-hosted page with a valid parent domain. " +
-        "Open the hosted overlay, not a file:// URL."
-      );
-    }
-
-    if (location.protocol !== "https:") {
-      throw new Error("The overlay must be hosted over HTTPS for Twitch playback.");
-    }
-
-    return parent;
-  }
-
-  function makeClipPlayer(clip) {
-    const slug = typeof clip.slug === "string" ? clip.slug.trim() : "";
-    if (!/^[a-zA-Z0-9_-]+$/.test(slug)) {
-      throw new Error("The clip service did not return a valid clip slug.");
-    }
-
-    // The Worker may not include video_url. Build the known clip MP4 endpoint
-    // from the slug so we don't silently use the Twitch iframe, which was
-    // showing the thumbnail and then turning black.
-    const suppliedVideoURL =
-      typeof clip.video_url === "string" && clip.video_url.trim()
-        ? clip.video_url.trim()
-        : "https://twitch.so/pclips/" + encodeURIComponent(slug);
-
-    let videoURL;
-    try {
-      videoURL = new URL(suppliedVideoURL);
-    } catch {
-      throw new Error("The clip service returned an invalid video URL.");
-    }
-    if (videoURL.protocol !== "https:") {
-      throw new Error("The clip video URL must use HTTPS.");
-    }
-
-    const video = document.createElement("video");
-    video.title = "Twitch shoutout clip";
-    video.autoplay = true;
-    video.muted = true;
-    video.defaultMuted = true;
-    video.playsInline = true;
-    video.preload = "auto";
-    video.controls = false;
-    video.setAttribute("webkit-playsinline", "");
-    if (typeof clip.thumbnail_url === "string" && /^https:\/\//i.test(clip.thumbnail_url)) {
-      video.poster = clip.thumbnail_url;
-    }
-    video.dataset.videoSrc = videoURL.toString();
-    video.addEventListener("error", () => {
-      setOverlayStatus("Direct clip playback failed; trying Twitch's embedded player…");
-    });
-    video.addEventListener("playing", () => setOverlayStatus(""));
-    return video;
-  }
-
-  function clearTimers() {
-    clearTimeout(hideTimer);
-    clearTimeout(cleanupTimer);
-    hideTimer = null;
-    cleanupTimer = null;
-  }
-
-  // Remove only the clip/player content. The creator-info panel is sometimes
-  // positioned inside #player by the selected layout, so never clear it with
-  // replaceChildren().
-  function clearPlayerMedia() {
-    const player = $("player");
-    const details = $("details");
-    if (!player) return;
-    for (const child of Array.from(player.children)) {
-      if (child !== details) child.remove();
-    }
-  }
-
-  function setPlayerMedia(media) {
-    const player = $("player");
-    const details = $("details");
-    if (!player) return;
-    clearPlayerMedia();
-    if (!media) return;
-    if (details && details.parentElement === player) player.insertBefore(media, details);
-    else player.appendChild(media);
-  }
-
-  function showFailure(message, myRequest) {
-    if (myRequest !== requestId) return;
-    console.error("Shoutout failed:", message);
-    setOverlayStatus(message);
-    $("card").classList.add("show");
-  }
-
-  function showOverlayError(error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error("Shoutout failed:", error);
-    setText("heading", "SHOUTOUT ERROR");
-    clearPlayerMedia();
-    setOverlayStatus(message);
-    $("card").classList.add("show");
-  }
-
-  async function shoutout(rawUsername) {
-    const username = validUsername(rawUsername);
-    const myRequest = ++requestId;
-
-    clearTimers();
-    settings = loadSettings();
-    applySettings(settings);
-
-    $("card").classList.remove("show");
-    clearPlayerMedia();
-    setText("name", username);
-    setText("channelUrl", "https://www.twitch.tv/" + username);
-    setText("clipTitle", "");
-    setAvatar("");
-    setOverlayStatus("");
-
-    const clipTimeframe = ["all","year","30days","featured"].includes(settings.clipTimeframe)
-      ? settings.clipTimeframe
-      : "all";
-    const clipURL = new URL(CLIP_API);
-    clipURL.searchParams.set("username", username);
-    clipURL.searchParams.set("timeframe", clipTimeframe);
-
-    const clipResult = await Promise.allSettled([
-      fetchJSON(clipURL.toString())
-    ]).then(results => results[0]);
-
-    if (myRequest !== requestId) return;
-
-    if (clipResult.status !== "fulfilled") {
-      const reason = clipResult.reason;
-
-      showFailure(
-        "Clip lookup failed: " +
-        (reason instanceof Error ? reason.message : String(reason)),
-        myRequest
-      );
-      return;
-    }
-
-    const clip = clipResult.value;
-
-    // Creator information comes from the same Worker response as the clip.
-    if (typeof clip.profile_image_url === "string" && /^https:\/\//i.test(clip.profile_image_url)) {
-      setAvatar(clip.profile_image_url);
-    }
-
-    if (typeof clip.broadcaster_name === "string" && clip.broadcaster_name.trim()) {
-      setText("name", clip.broadcaster_name.trim().replace(/^@+/, ""));
-    }
-
-    if (!clip || typeof clip.slug !== "string" || !clip.slug.trim()) {
-      console.error("Unexpected clip API response:", clip);
-
-      showFailure(
-        "The clip service did not return a valid 'slug'. " +
-        "Check the worker response in the browser console.",
-        myRequest
-      );
-      return;
-    }
-
-    let media;
-    try {
-      media = makeClipPlayer(clip);
-      setPlayerMedia(media);
-    } catch (error) {
-      showFailure(error.message, myRequest);
-      return;
-    }
-
-    if (!(typeof clip.broadcaster_name === "string" && clip.broadcaster_name.trim())) {
-      setText("name", username.replace(/^@+/, ""));
-    }
-    setText("clipTitle",
-      settings.showTitle && typeof clip.title === "string"
-        ? clip.title
-        : "");
-
-    const card = $("card");
-    card.classList.add("show");
-
-    // If the direct MP4 endpoint fails to decode or start, fall back to
-    // Twitch's hosted clip player instead of leaving the overlay on a black frame.
-    let playbackFallbackTimer = null;
-    let didFallbackToEmbed = false;
-
-    function fallbackToTwitchEmbed(reason) {
-      if (myRequest !== requestId || didFallbackToEmbed || !card.classList.contains("show")) return;
-      if (!media || media.tagName !== "VIDEO") return;
-      didFallbackToEmbed = true;
-      clearTimeout(playbackFallbackTimer);
-      console.warn("Direct clip playback failed; falling back to Twitch embed:", reason || "no playback detected");
-      let iframe;
-      try {
-        iframe = makeClipPlayer({ slug: clip.slug });
-      } catch (error) {
-        setOverlayStatus("Clip playback failed: " + error.message);
-        return;
-      }
-      media.pause();
-      setPlayerMedia(iframe);
-      media = iframe;
-      setOverlayStatus("Loading clip player…");
-      if (iframe.dataset.clipSrc) {
-        iframe.src = iframe.dataset.clipSrc;
-        delete iframe.dataset.clipSrc;
-      }
-    }
-
-    // Wait for the card's entrance transition before starting media playback.
-    setTimeout(() => {
-      if (myRequest !== requestId || !card.classList.contains("show")) return;
-      if (!media.isConnected) return;
-
-      if (media.tagName === "VIDEO" && media.dataset.videoSrc) {
-        media.addEventListener("playing", () => {
-          clearTimeout(playbackFallbackTimer);
-          setOverlayStatus("");
-        }, { once: true });
-        media.addEventListener("error", () => fallbackToTwitchEmbed("video element error"), { once: true });
-        media.addEventListener("stalled", () => {
-          // Give transient network stalls a moment before switching players.
-          clearTimeout(playbackFallbackTimer);
-          playbackFallbackTimer = setTimeout(() => {
-            if (media.tagName === "VIDEO" && media.paused) fallbackToTwitchEmbed("video stalled");
-          }, 2500);
-        });
-        media.src = media.dataset.videoSrc;
-        delete media.dataset.videoSrc;
-        media.load();
-        playbackFallbackTimer = setTimeout(() => {
-          if (media.tagName === "VIDEO" && (media.paused || media.readyState < 2 || media.currentTime < 0.1)) {
-            fallbackToTwitchEmbed("video did not start within 5 seconds");
-          }
-        }, 5000);
-        const playPromise = media.play();
-        if (playPromise && typeof playPromise.catch === "function") {
-          playPromise.catch(error => fallbackToTwitchEmbed(error && error.message ? error.message : "autoplay rejected"));
-        }
-      } else if (media.tagName === "IFRAME" && media.dataset.clipSrc) {
-        media.src = media.dataset.clipSrc;
-        delete media.dataset.clipSrc;
-      }
-    }, 550);
-
-    hideTimer = setTimeout(() => {
-      if (myRequest !== requestId) return;
-
-      $("card").classList.remove("show");
-      clearTimeout(playbackFallbackTimer);
-
-      cleanupTimer = setTimeout(() => {
-        if (
-          myRequest === requestId &&
-          !$("card").classList.contains("show")
-        ) {
-          clearPlayerMedia();
-        }
-      }, 500);
-    }, (Number.isFinite(Number(clip.duration)) && Number(clip.duration) > 0
-      ? Number(clip.duration) + 3
-      : settings.duration) * 1000);
-  }
-
-  function overlayURL(username) {
-    const url = new URL(location.href);
-    url.search = "";
-    url.hash = "";
-    url.searchParams.set("mode", "overlay");
-    url.searchParams.set("username", username);
-    return url.href;
-  }
-
-  // Drag the info bar directly inside the overlay preview. Persist normalized coordinates.
-  const details = $("details");
-  if (details) {
-    let dragging = false;
-    let dragStart = null;
-    details.addEventListener("pointerdown", event => {
-      const player = $("player");
-      if (!player || !player.classList.contains("designer-position") || mode !== "overlay") return;
-      if (event.target.closest("a,button,input,select")) return;
-      const rect = player.getBoundingClientRect();
-      const box = details.getBoundingClientRect();
-      dragging = true;
-      dragStart = { rect, pointerId:event.pointerId };
-      details.setPointerCapture(event.pointerId);
-      settings = loadSettings();
-      settings.infoX = Math.max(10, Math.min(90, ((box.left + box.width/2 - rect.left) / rect.width) * 100));
-      settings.infoY = Math.max(15, Math.min(90, ((box.top + box.height/2 - rect.top) / rect.height) * 100));
-      event.preventDefault();
-    });
-    details.addEventListener("pointermove", event => {
-      if (!dragging || !dragStart) return;
-      const rect = dragStart.rect;
-      settings.infoX = Math.round(Math.max(10, Math.min(90, ((event.clientX - rect.left) / rect.width) * 100)));
-      settings.infoY = Math.round(Math.max(15, Math.min(90, ((event.clientY - rect.top) / rect.height) * 100)));
-      applySettings(settings);
-    });
-    const stopDrag = () => {
-      if (!dragging) return;
-      dragging = false;
-      dragStart = null;
-      saveSettings(settings);
-    };
-    details.addEventListener("pointerup", stopDrag);
-    details.addEventListener("pointercancel", stopDrag);
-  }
-
-
-  // Overlay mode: hide the editor and show the requested shoutout.
-  if (mode === "overlay") {
-    $("panel").style.display = "none";
-    $("overlay").style.display = "flex";
-
-    settings = loadSettings();
-    applySettings(settings);
-
-    const username = params.get("username");
-
-    if (username) {
-      shoutout(username).catch(showOverlayError);
-    } else {
-      showOverlayError(new Error(
-        "No username supplied. Add ?mode=overlay&username=USERNAME to the URL."
-      ));
-    }
-
-    return;
-  }
-
-  fillForm(settings);
-  applySettings(settings);
-
-  function refreshPreview() {
-    let username;
-
-    try {
-      username = validUsername($("testUser").value || "dropzedd");
-    } catch {
-      username = "dropzedd";
-    }
-
-    $("preview").src = overlayURL(username);
-  }
-
-  $("save").addEventListener("click", () => {
-    settings = readForm();
-    const saved = saveSettings(settings);
-
-    applySettings(settings);
-    refreshPreview();
-
-    setStatus(
-      saved
-        ? "Settings saved."
-        : "Could not save settings. Check browser storage permissions.",
-      saved ? "success" : "error"
-    );
-  });
-
-  $("reset").addEventListener("click", () => {
-    settings = { ...DEFAULTS };
-    fillForm(settings);
-
-    const saved = saveSettings(settings);
-
-    applySettings(settings);
-    refreshPreview();
-
-    setStatus(
-      saved
-        ? "Settings reset."
-        : "Settings reset for this page, but could not be saved.",
-      saved ? "success" : "error"
-    );
-  });
-
-  $("test").addEventListener("click", () => {
-    let username;
-
-    try {
-      username = validUsername($("testUser").value);
-    } catch (error) {
-      setStatus(error.message, "error");
-      return;
-    }
-
-    settings = readForm();
-    saveSettings(settings);
-    applySettings(settings);
-    refreshPreview();
-
-    const opened = window.open(overlayURL(username), "_blank");
-
-    setStatus(
-      opened
-        ? "Opened the shoutout in a new tab. Check the overlay for errors."
-        : "Popup blocked. Allow popups for this page and try again.",
-      opened ? "success" : "error"
-    );
-  });
-
-  $("openOverlay").addEventListener("click", () => {
-    let username;
-
-    try {
-      username = validUsername($("testUser").value || "dropzedd");
-    } catch (error) {
-      setStatus(error.message, "error");
-      return;
-    }
-
-    const opened = window.open(overlayURL(username), "_blank");
-
-    setStatus(
-      opened
-        ? "Overlay opened for @" + username + "."
-        : "Popup blocked. Allow popups for this page.",
-      opened ? "success" : "error"
-    );
-  });
-
-  $("testUser").addEventListener("change", refreshPreview);
-
-  for (const id of [
-    "accent",
-    "panelColor",
-    "fontSize",
-    "clipWidth",
-    "duration",
-    "clipTimeframe",
-    "headingText",
-    "fontFamily",
-    "showTitle",
-    "layout",
-    "animation",
-    "overlayOpacity",
-    "avatarShape",
-    "gradient",
-    "borderStyle",
-    "infoX",
-    "infoY",
-    "infoWidth"
-  ]) {
-    const control = $(id);
-    const update = () => {
-      settings = readForm();
-      applySettings(settings);
-      // Keep the preview overlay in sync immediately, not only after Save.
-      saveSettings(settings);
-      refreshPreview();
-    };
-    control.addEventListener("input", update);
-    control.addEventListener("change", update);
-  }
-
+  const API = "https://twitch-shoutout-clips.dropzedd.workers.dev/";
+  const STORE = "soSettings";
+  const DEFAULTS = {
+    accent: "#a970ff", panelColor: "#171225", fontSize: 34, clipWidth: 760,
+    duration: 30, clipTimeframe: "all", headingText: "GO CHECK OUT",
+    fontFamily: "Arial, sans-serif", showTitle: true, layout: "video-bottom",
+    animation: "slide", overlayOpacity: 88, avatarShape: "circle", gradient: "solid",
+    borderStyle: "none", infoX: 50, infoY: 82, infoWidth: 82
+  };
   const PRESETS = {
     neon: { layout:"neon", animation:"glow", accent:"#00eaff", panelColor:"#101525", overlayOpacity:88, avatarShape:"rounded", gradient:"diagonal", borderStyle:"glow", infoX:50, infoY:82, infoWidth:82, fontSize:36 },
     cinematic: { layout:"video-bottom", animation:"fade", accent:"#e4b86a", panelColor:"#17120d", overlayOpacity:92, avatarShape:"circle", gradient:"horizontal", borderStyle:"none", infoX:50, infoY:82, infoWidth:100, fontSize:32 },
@@ -1196,29 +460,194 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     rainbow: { layout:"neon", animation:"bounce", accent:"#b65cff", panelColor:"#171225", overlayOpacity:86, avatarShape:"diamond", gradient:"radial", borderStyle:"rainbow", infoX:50, infoY:80, infoWidth:82, fontSize:36 },
     classic: { layout:"classic", animation:"fade", accent:"#a970ff", panelColor:"#171225", overlayOpacity:100, avatarShape:"circle", gradient:"solid", borderStyle:"none", infoX:50, infoY:82, infoWidth:82, fontSize:34 }
   };
-  document.querySelectorAll("[data-preset]").forEach(button => {
-    button.addEventListener("click", () => {
-      settings = { ...readForm(), ...PRESETS[button.dataset.preset] };
-      fillForm(settings);
-      applySettings(settings);
-      saveSettings(settings);
-      refreshPreview();
-      setStatus("Applied the " + button.textContent.trim() + " preset. You can keep customizing it.", "success");
-    });
-  });
+  let settings = loadSettings();
+  let requestNumber = 0;
+  let hideTimer = 0;
+  let cleanupTimer = 0;
+  let activeVideo = null;
 
-  window.addEventListener("storage", event => {
-    if (event.key === SETTINGS_KEY) {
-      settings = loadSettings();
-      fillForm(settings);
-      applySettings(settings);
-      refreshPreview();
+  function clamp(value, min, max, fallback) {
+    const n = Number(value);
+    return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : fallback;
+  }
+  function loadSettings() {
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(STORE) || "{}"); } catch (_) {}
+    const s = { ...DEFAULTS, ...(saved && typeof saved === "object" ? saved : {}) };
+    if (!/^#[0-9a-f]{6}$/i.test(s.accent)) s.accent = DEFAULTS.accent;
+    if (!/^#[0-9a-f]{6}$/i.test(s.panelColor)) s.panelColor = DEFAULTS.panelColor;
+    s.fontSize = clamp(s.fontSize,20,52,34); s.clipWidth = clamp(s.clipWidth,400,1000,760);
+    s.duration = clamp(s.duration,10,120,30); s.overlayOpacity = clamp(s.overlayOpacity,20,100,88);
+    s.infoX = clamp(s.infoX,10,90,50); s.infoY = clamp(s.infoY,15,90,82); s.infoWidth = clamp(s.infoWidth,20,100,82);
+    if (!["all","year","30days","featured"].includes(s.clipTimeframe)) s.clipTimeframe="all";
+    if (!["video-bottom","lower-third","classic","minimal","neon"].includes(s.layout)) s.layout="video-bottom";
+    if (!["fade","slide","zoom","bounce","glow","none"].includes(s.animation)) s.animation="slide";
+    if (!["circle","rounded","square","diamond"].includes(s.avatarShape)) s.avatarShape="circle";
+    if (!["solid","horizontal","diagonal","radial","glass"].includes(s.gradient)) s.gradient="solid";
+    if (!["none","glow","pulse","rainbow","dash"].includes(s.borderStyle)) s.borderStyle="none";
+    if (!["Arial, sans-serif","Verdana, sans-serif","Georgia, serif","'Trebuchet MS', sans-serif"].includes(s.fontFamily)) s.fontFamily=DEFAULTS.fontFamily;
+    s.showTitle = typeof s.showTitle === "boolean" ? s.showTitle : true;
+    s.headingText = typeof s.headingText === "string" ? s.headingText : DEFAULTS.headingText;
+    return s;
+  }
+  function saveSettings(s) {
+    try { localStorage.setItem(STORE, JSON.stringify(s)); return true; } catch (_) { return false; }
+  }
+  function readForm() {
+    return {
+      accent:$('accent').value, panelColor:$('panelColor').value,
+      fontSize:clamp($('fontSize').value,20,52,34), clipWidth:clamp($('clipWidth').value,400,1000,760),
+      duration:clamp($('duration').value,10,120,30), clipTimeframe:$('clipTimeframe').value,
+      headingText:$('headingText').value, fontFamily:$('fontFamily').value, showTitle:$('showTitle').checked,
+      layout:$('layout').value, animation:$('animation').value, overlayOpacity:clamp($('overlayOpacity').value,20,100,88),
+      avatarShape:$('avatarShape').value, gradient:$('gradient').value, borderStyle:$('borderStyle').value,
+      infoX:clamp($('infoX').value,10,90,50), infoY:clamp($('infoY').value,15,90,82), infoWidth:clamp($('infoWidth').value,20,100,82)
+    };
+  }
+  function fillForm(s) {
+    Object.entries(s).forEach(([key,value]) => { const el=$(key); if (el) { if (el.type === 'checkbox') el.checked=!!value; else el.value=value; } });
+  }
+  function rgba(hex, alpha) {
+    const h = String(hex || '#171225').replace('#','');
+    const n = parseInt(h,16) || 0x171225;
+    return `rgba(${(n>>16)&255}, ${(n>>8)&255}, ${n&255}, ${Math.max(0,Math.min(1,alpha))})`;
+  }
+  function applySettings(s) {
+    const root=document.documentElement;
+    root.style.setProperty('--accent',s.accent); root.style.setProperty('--panel',s.panelColor);
+    root.style.setProperty('--width',s.clipWidth+'px'); root.style.setProperty('--heading-size',s.fontSize+'px');
+    root.style.setProperty('--info-x',s.infoX+'%'); root.style.setProperty('--info-y',s.infoY+'%'); root.style.setProperty('--info-width',s.infoWidth+'%');
+    const heading=$('heading'); if(heading){heading.textContent=s.headingText;heading.style.fontFamily=s.fontFamily;}
+    const card=$('card'), player=$('player'), details=$('details');
+    if(card&&player&&details){
+      const inside=['video-bottom','lower-third','minimal','neon'].includes(s.layout);
+      if(inside && details.parentElement!==player) player.appendChild(details);
+      if(!inside && details.parentElement!==card) card.insertBefore(details,$('overlayStatus'));
+      card.classList.remove('layout-video-bottom','layout-lower-third','layout-classic','layout-minimal','layout-neon'); card.classList.add('layout-'+s.layout);
+      card.classList.remove('anim-fade','anim-slide','anim-zoom','anim-bounce','anim-glow','anim-none');card.classList.add('anim-'+s.animation);
+      const alpha=s.overlayOpacity/100, panel=rgba(s.panelColor,alpha), accent=rgba(s.accent,alpha);
+      details.style.setProperty('background-color',panel,'important'); details.style.setProperty('background-image','none','important'); details.style.setProperty('backdrop-filter','none','important');
+      if(s.gradient==='horizontal') details.style.setProperty('background-image',`linear-gradient(90deg,${panel},${accent})`,'important');
+      if(s.gradient==='diagonal') details.style.setProperty('background-image',`linear-gradient(135deg,${panel},${accent})`,'important');
+      if(s.gradient==='radial') details.style.setProperty('background-image',`radial-gradient(ellipse at left,${accent},${panel} 78%)`,'important');
+      if(s.gradient==='glass'){details.style.setProperty('background-color',rgba(s.panelColor,alpha*.62),'important');details.style.setProperty('backdrop-filter','blur(16px) saturate(1.35)','important');}
+      player.classList.toggle('designer-position',s.layout!=='classic');
+      ['circle','rounded','square','diamond'].forEach(x=>player.classList.toggle('avatar-'+x,s.avatarShape===x));
+      ['solid','horizontal','diagonal','radial','glass'].forEach(x=>player.classList.toggle('gradient-'+x,s.gradient===x));
+      ['none','glow','pulse','rainbow','dash'].forEach(x=>player.classList.toggle('border-'+x,s.borderStyle===x));
     }
-  });
+    const title=$('clipTitle'); if(title) title.style.display=s.showTitle?'':'none';
+    ['opacityValue','xValue','yValue','widthValue'].forEach((id,i)=>{const el=$(id);if(el)el.textContent=[s.overlayOpacity+'%',s.infoX+'%',s.infoY+'%',s.infoWidth+'%'][i];});
+  }
+  function status(message, kind='') { const el=$('status'); if(el){el.textContent=message;el.className='status '+kind;} }
+  function overlayStatus(message) { const el=$('overlayStatus'); if(el) el.textContent=message||''; }
+  function usernameOf(v) { const u=String(v||'').trim().replace(/^@/,''); if(!/^[a-zA-Z0-9_]{1,25}$/.test(u)) throw new Error('Enter a valid Twitch username.'); return u; }
+  async function getClip(user, timeframe) {
+    const url=new URL(API);url.searchParams.set('username',user);url.searchParams.set('timeframe',timeframe);
+    const controller=new AbortController(), timer=setTimeout(()=>controller.abort(),12000);
+    try {
+      const response=await fetch(url,{signal:controller.signal,cache:'no-store'});
+      if(!response.ok) throw new Error('Clip service returned HTTP '+response.status+'.');
+      const data=await response.json(); if(data.error) throw new Error(data.error);
+      return data;
+    } catch(e) {
+      if(e.name==='AbortError') throw new Error('Clip lookup timed out.');
+      throw e;
+    } finally {clearTimeout(timer);}
+  }
+  function clearMedia() {
+    clearTimeout(hideTimer); clearTimeout(cleanupTimer); hideTimer=cleanupTimer=0;
+    if(activeVideo){try{activeVideo.pause();activeVideo.removeAttribute('src');activeVideo.load();}catch(_){} activeVideo=null;}
+    const player=$('player'), details=$('details');
+    if(player) Array.from(player.children).forEach(node=>{if(node!==details)node.remove();});
+  }
+  function showError(message, id) {
+    if(id!==requestNumber)return;
+    overlayStatus(message); const card=$('card'); if(card)card.classList.add('show');
+  }
+  function createVideo(clip) {
+    const slug=String(clip.slug||'').trim();
+    if(!/^[a-zA-Z0-9_-]+$/.test(slug)) throw new Error('The clip service did not return a valid clip ID.');
+    let src=typeof clip.video_url==='string'&&clip.video_url.trim()?clip.video_url.trim():'https://twitch.so/pclips/'+encodeURIComponent(slug);
+    const parsed=new URL(src); if(parsed.protocol!=='https:') throw new Error('Clip video URL must use HTTPS.');
+    const video=document.createElement('video');
+    video.className='shoutout-video'; video.setAttribute('playsinline',''); video.setAttribute('webkit-playsinline','');
+    video.autoplay=true; video.muted=true; video.defaultMuted=true; video.controls=false; video.preload='auto'; video.loop=false;
+    video.style.cssText='position:absolute;inset:0;width:100%;height:100%;min-height:180px;object-fit:contain;background:#09070d;display:block;';
+    if(typeof clip.thumbnail_url==='string'&&/^https:\/\//i.test(clip.thumbnail_url)) video.poster=clip.thumbnail_url;
+    video.addEventListener('playing',()=>overlayStatus(''));
+    video.addEventListener('error',()=>{
+      const e=video.error;
+      showError('Clip video failed (media error '+(e?e.code:'unknown')+'). Try opening the clip URL directly: '+src,requestNumber);
+    });
+    video.addEventListener('ended',()=>{if(settings.duration>0){$('card').classList.remove('show');}});
+    video.dataset.pendingSrc=src;
+    return video;
+  }
+  async function shoutout(rawUser) {
+    let user; try{user=usernameOf(rawUser);}catch(e){overlayStatus(e.message);$('card').classList.add('show');return;}
+    const id=++requestNumber; clearMedia(); settings=loadSettings(); applySettings(settings);
+    $('card').classList.remove('show'); $('heading').textContent=settings.headingText;
+    $('name').textContent=user; $('channelUrl').textContent='https://www.twitch.tv/'+user; $('clipTitle').textContent='';
+    $('avatar').removeAttribute('src'); overlayStatus('Looking up clip…');
+    let clip;
+    try{clip=await getClip(user,settings.clipTimeframe);}catch(e){showError('Shoutout lookup failed: '+e.message,id);return;}
+    if(id!==requestNumber)return;
+    if(clip.profile_image_url&&/^https:\/\//i.test(clip.profile_image_url)) $('avatar').src=clip.profile_image_url;
+    if(clip.broadcaster_name) $('name').textContent=String(clip.broadcaster_name).replace(/^@+/, '');
+    $('channelUrl').textContent='https://www.twitch.tv/'+(clip.username||user);
+    $('clipTitle').textContent=settings.showTitle&&clip.title?clip.title:'';
+    let video;try{video=createVideo(clip);}catch(e){showError(e.message,id);return;}
+    activeVideo=video;
+    const player=$('player'), details=$('details');
+    if(details&&details.parentElement===player) player.insertBefore(video,details); else player.appendChild(video);
+    const card=$('card');card.classList.add('show');overlayStatus('Starting clip…');
+    // Assign source only after the video is attached and the card is visible.
+    requestAnimationFrame(()=>{
+      if(id!==requestNumber||!video.isConnected)return;
+      const src=video.dataset.pendingSrc;delete video.dataset.pendingSrc;video.src=src;video.load();
+      const p=video.play();
+      if(p&&typeof p.catch==='function')p.catch(()=>{
+        if(id!==requestNumber)return;
+        video.controls=true;
+        overlayStatus('Autoplay was blocked. Click the video play control to start it.');
+      });
+    });
+    const duration=Number(clip.duration)>0?Math.max(10,Number(clip.duration)+2):settings.duration;
+    hideTimer=setTimeout(()=>{
+      if(id!==requestNumber)return;
+      card.classList.remove('show');
+      cleanupTimer=setTimeout(()=>{if(id===requestNumber&&!card.classList.contains('show'))clearMedia();},600);
+    },duration*1000);
+  }
+  function overlayURL(user){const u=new URL(location.href);u.search='';u.hash='';u.searchParams.set('mode','overlay');u.searchParams.set('username',user);return u.href;}
 
+  // Overlay mode: no editor, no nested preview, one native HTML video player.
+  if(mode==='overlay'){
+    $('panel').style.display='none';$('overlay').style.display='flex';
+    settings=loadSettings();applySettings(settings);
+    const user=params.get('username');
+    if(user) shoutout(user).catch(e=>showError('Unexpected error: '+e.message,requestNumber));
+    else showError('Add ?mode=overlay&username=USERNAME to the URL.',++requestNumber);
+    return;
+  }
+
+  fillForm(settings);applySettings(settings);
+  function refreshPreview(){let user;try{user=usernameOf($('testUser').value||'dropzedd');}catch(_){user='dropzedd';}$('preview').src=overlayURL(user);}
+  $('save').addEventListener('click',()=>{settings=readForm();const ok=saveSettings(settings);applySettings(settings);refreshPreview();status(ok?'Settings saved.':'Could not save settings in this browser.',ok?'success':'error');});
+  $('reset').addEventListener('click',()=>{settings={...DEFAULTS};fillForm(settings);const ok=saveSettings(settings);applySettings(settings);refreshPreview();status(ok?'Settings reset.':'Reset locally, but browser storage is unavailable.',ok?'success':'error');});
+  $('test').addEventListener('click',()=>{let user;try{user=usernameOf($('testUser').value);}catch(e){status(e.message,'error');return;}settings=readForm();saveSettings(settings);applySettings(settings);refreshPreview();const w=window.open(overlayURL(user),'_blank');status(w?'Opened a test overlay for @'+user+'.':'Popup blocked; allow popups and try again.',w?'success':'error');});
+  $('openOverlay').addEventListener('click',()=>{let user;try{user=usernameOf($('testUser').value||'dropzedd');}catch(e){status(e.message,'error');return;}const w=window.open(overlayURL(user),'_blank');status(w?'Opened overlay for @'+user+'.':'Popup blocked; allow popups and try again.',w?'success':'error');});
+  $('testUser').addEventListener('change',refreshPreview);
+  const fields=['accent','panelColor','fontSize','clipWidth','duration','clipTimeframe','headingText','fontFamily','showTitle','layout','animation','overlayOpacity','avatarShape','gradient','borderStyle','infoX','infoY','infoWidth'];
+  fields.forEach(id=>{const el=$(id);if(!el)return;const update=()=>{settings=readForm();applySettings(settings);saveSettings(settings);refreshPreview();};el.addEventListener('input',update);el.addEventListener('change',update);});
+  document.querySelectorAll('[data-preset]').forEach(button=>button.addEventListener('click',()=>{settings={...readForm(),...(PRESETS[button.dataset.preset]||{})};fillForm(settings);applySettings(settings);saveSettings(settings);refreshPreview();status('Applied '+button.textContent.trim()+'.','success');}));
+  window.addEventListener('storage',e=>{if(e.key===STORE){settings=loadSettings();fillForm(settings);applySettings(settings);refreshPreview();}});
+  // Drag-to-position remains available in overlay mode for supported layouts.
+  const details=$('details');if(details){let dragging=false;details.addEventListener('pointerdown',e=>{const p=$('player');if(mode!=='overlay'||!p.classList.contains('designer-position'))return;dragging=true;details.setPointerCapture(e.pointerId);e.preventDefault();});details.addEventListener('pointermove',e=>{if(!dragging)return;const r=$('player').getBoundingClientRect();settings.infoX=Math.round(clamp((e.clientX-r.left)/r.width*100,10,90,50));settings.infoY=Math.round(clamp((e.clientY-r.top)/r.height*100,15,90,82));applySettings(settings);});const stop=()=>{if(dragging){dragging=false;saveSettings(settings);}};details.addEventListener('pointerup',stop);details.addEventListener('pointercancel',stop);}
   refreshPreview();
-
 })();
+
 </script>
 </body>
 </html>
