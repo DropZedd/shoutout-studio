@@ -105,7 +105,8 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   background: #09070d;
   box-shadow: 0 8px 40px #0008;
 }
-#player iframe {
+#player iframe,
+#player video {
   position: absolute;
   inset: 0;
   display: block;
@@ -113,6 +114,10 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   height: 100%;
   min-height: 180px;
   border: 0;
+}
+#player video {
+  object-fit: contain;
+  background: #09070d;
 }
 #details {
   display: flex;
@@ -736,28 +741,56 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     return parent;
   }
 
-  function makeClipPlayer(slug) {
-    if (typeof slug !== "string" || !/^[a-zA-Z0-9_-]+$/.test(slug)) {
-      throw new Error("The clip service returned an invalid clip slug.");
+  function makeClipPlayer(clip) {
+    // Prefer the direct MP4 URL supplied by the Worker. The URL has been
+    // tested in a native <video> element in the browser.
+    if (typeof clip.video_url === "string" && clip.video_url.trim()) {
+      let videoURL;
+      try {
+        videoURL = new URL(clip.video_url);
+      } catch {
+        throw new Error("The clip service returned an invalid video URL.");
+      }
+      if (videoURL.protocol !== "https:") {
+        throw new Error("The clip video URL must use HTTPS.");
+      }
+
+      const video = document.createElement("video");
+      video.title = "Twitch shoutout clip";
+      video.autoplay = true;
+      video.muted = true;
+      video.defaultMuted = true;
+      video.playsInline = true;
+      video.preload = "auto";
+      video.controls = false;
+      video.setAttribute("webkit-playsinline", "");
+      if (typeof clip.thumbnail_url === "string" && /^https:\/\//i.test(clip.thumbnail_url)) {
+        video.poster = clip.thumbnail_url;
+      }
+      video.dataset.videoSrc = videoURL.toString();
+      video.addEventListener("error", () => {
+        setOverlayStatus("The clip MP4 could not be played. The video provider may be unavailable.");
+      });
+      video.addEventListener("playing", () => setOverlayStatus(""));
+      return video;
     }
 
+    // Backward-compatible fallback for Workers that have not added video_url.
+    const slug = clip.slug;
+    if (typeof slug !== "string" || !/^[a-zA-Z0-9_-]+$/.test(slug)) {
+      throw new Error("The clip service returned neither a valid video URL nor a clip slug.");
+    }
     const iframe = document.createElement("iframe");
     iframe.title = "Twitch shoutout clip";
     iframe.allow = "autoplay *; encrypted-media *; fullscreen *; picture-in-picture *";
     iframe.allowFullscreen = true;
     iframe.referrerPolicy = "origin";
     iframe.loading = "eager";
-
     const url = new URL("https://clips.twitch.tv/embed");
     url.searchParams.set("clip", slug);
     url.searchParams.set("parent", getParentDomain());
     url.searchParams.set("autoplay", "true");
-    // Muted autoplay is more likely to start under browser autoplay policies.
-    // Twitch's clip embed does not expose a supported API to unmute on start.
     url.searchParams.set("muted", "true");
-
-    // Keep the URL ready but do not navigate yet. Twitch checks the embed's
-    // rendered visibility when deciding whether autoplay is allowed.
     iframe.dataset.clipSrc = url.toString();
     return iframe;
   }
@@ -869,10 +902,10 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       return;
     }
 
-    let iframe;
+    let media;
     try {
-      iframe = makeClipPlayer(clip.slug.trim());
-      setPlayerMedia(iframe);
+      media = makeClipPlayer(clip);
+      setPlayerMedia(media);
     } catch (error) {
       showFailure(error.message, myRequest);
       return;
@@ -889,14 +922,26 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     const card = $("card");
     card.classList.add("show");
 
-    // The card fades in over 450ms. Do not initialize Twitch during that fade:
-    // Twitch can reject autoplay when the embed is not yet visibly rendered.
-    // Wait until the transition has completed, then navigate the attached iframe.
+    // Wait for the card's entrance transition before starting media playback.
+    // Muted native-video autoplay is more reliable than the Twitch iframe.
     setTimeout(() => {
       if (myRequest !== requestId || !card.classList.contains("show")) return;
-      if (iframe.isConnected && iframe.dataset.clipSrc) {
-        iframe.src = iframe.dataset.clipSrc;
-        delete iframe.dataset.clipSrc;
+      if (!media.isConnected) return;
+
+      if (media.tagName === "VIDEO" && media.dataset.videoSrc) {
+        media.src = media.dataset.videoSrc;
+        delete media.dataset.videoSrc;
+        media.load();
+        const playPromise = media.play();
+        if (playPromise && typeof playPromise.catch === "function") {
+          playPromise.catch(error => {
+            console.warn("Clip autoplay was blocked:", error);
+            setOverlayStatus("Autoplay was blocked. Try enabling autoplay for this source in OBS/browser settings.");
+          });
+        }
+      } else if (media.tagName === "IFRAME" && media.dataset.clipSrc) {
+        media.src = media.dataset.clipSrc;
+        delete media.dataset.clipSrc;
       }
     }, 550);
 
