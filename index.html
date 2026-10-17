@@ -92,11 +92,18 @@ restoreSettings();applyDesign();
 settingsIds.filter(k=>!['api','username','duration'].includes(k)).forEach(k=>$(k).addEventListener('input',applyDesign));
 ['api','username','duration'].forEach(k=>$(k).addEventListener('change',saveSettings));
 function normalizeRoot(data){
- if(Array.isArray(data)) return {clips:data};
- if(!data || typeof data!=='object') return {clips:[]};
- const user=data.user||data.streamer||data.channel||data;
+ if(Array.isArray(data)) return {user:{},clips:data};
+ if(!data || typeof data!=='object') return {user:{},clips:[]};
+ // This Cloudflare Worker returns creator fields plus ONE clip at the top level.
+ const user = data.user || data.streamer || data.channel || {
+   username:data.username, display_name:data.broadcaster_name,
+   profile_image_url:data.profile_image_url, game_name:data.game_name,
+   is_live:data.is_live, timeframe:data.timeframe
+ };
  const possible=data.clips||data.videos||data.results||data.data?.clips||data.data?.videos||data.data?.results;
- return {user,clips:Array.isArray(possible)?possible:(data.data&&Array.isArray(data.data)?data.data:[])};
+ if(Array.isArray(possible)) return {user,clips:possible,error:data.error||''};
+ if(data.video_url || data.url || data.slug || data.thumbnail_url) return {user,clips:[data],error:data.error||''};
+ return {user,clips:[],error:data.error||''};
 }
 function first(obj,keys){for(const k of keys){const v=k.split('.').reduce((a,b)=>a&&a[b],obj);if(v!==undefined&&v!==null&&v!=='')return v;}return '';}
 function clipDate(c){const raw=first(c,['created_at','createdAt','published_at','date','created','timestamp']);if(!raw)return null;const d=typeof raw==='number'?new Date(raw<1e12?raw*1000:raw):new Date(raw);return Number.isNaN(d.getTime())?null:d;}
@@ -124,15 +131,16 @@ function setIdentity(user,fallback){
 async function fetchData(username){
  const base=$('api').value.trim(); if(!base)throw new Error('Enter your Cloudflare Worker URL.');
  const url=new URL(base);
- // Ask the Worker for clips from the last year using several common parameter names.
- url.searchParams.set('username',username);url.searchParams.set('user',username);url.searchParams.set('login',username);
- url.searchParams.set('timeframe','year');url.searchParams.set('period','year');url.searchParams.set('range','year');url.searchParams.set('days','365');
+ // Match this Worker’s documented query parameters exactly.
+ url.searchParams.set('username',username);
+ url.searchParams.set('timeframe','year');
  const response=await fetch(url.toString(),{headers:{'Accept':'application/json'}});
  const textBody=await response.text();
  let data;try{data=JSON.parse(textBody)}catch(e){throw new Error('Worker did not return JSON (HTTP '+response.status+'). Check the Worker URL and its expected request format.')}
  if(!response.ok)throw new Error(first(data,['error','message'])||('Worker request failed with HTTP '+response.status+'.'));
- if(data.error)throw new Error(typeof data.error==='string'?data.error:'Worker returned an error.');
- return normalizeRoot(data);
+ const normalized=normalizeRoot(data);
+ if(data.error && !normalized.clips.length) throw new Error(typeof data.error==='string'?data.error:'Worker returned an error.');
+ return normalized;
 }
 function showClip(c){
  const url=getVideo(c);
@@ -140,12 +148,12 @@ function showClip(c){
  $('placeholder').classList.add('hidden');video.classList.remove('hidden');$('playOverlay').style.display='none';
  video.pause();video.removeAttribute('src');video.load();
  const normalized=normalizeVideoUrl(url);
- if(normalized.includes('clips.twitch.tv/embed')){
-   // Twitch embed URLs are not direct <video> sources; use an iframe instead.
+ if(normalized.includes('clips.twitch.tv/embed') || normalized.includes('twitch.so/')){
+   // Twitch and third-party player pages are web pages, not direct video files.
    let frame=document.getElementById('twitchFrame');
-   if(!frame){frame=document.createElement('iframe');frame.id='twitchFrame';frame.allow='autoplay; fullscreen';frame.allowFullscreen=true;frame.style.cssText='width:100%;height:100%;border:0;position:absolute;inset:0';$('videoShell').appendChild(frame);}
+   if(!frame){frame=document.createElement('iframe');frame.id='twitchFrame';frame.allow='autoplay; fullscreen; picture-in-picture';frame.allowFullscreen=true;frame.style.cssText='width:100%;height:100%;border:0;position:absolute;inset:0';$('videoShell').appendChild(frame);}
    video.classList.add('hidden');frame.style.display='block';frame.src=normalized;
-   say('Loaded Twitch clip embed. If it does not autoplay with sound, click inside the clip or check OBS Browser Source audio settings.');
+   say('Loaded the clip player page. Autoplay and sound depend on the third-party player and browser/OBS permissions.');
  } else {
    const frame=document.getElementById('twitchFrame');if(frame){frame.style.display='none';frame.src='';}
    video.src=normalized;video.muted=false;video.volume=1;video.controls=true;
@@ -165,8 +173,10 @@ async function loadShoutout(next=false){
   const result=await fetchData(username);
   const user=result.user||{};
   setIdentity(user,username);
-  const clips=(result.clips||[]).filter(c=>getVideo(c)||clipUrl(c)).filter(isWithinYear);
-  if(!clips.length)throw new Error('No eligible clips found. The Worker may use a different response shape, may not return clip dates, or this creator has no clips from the past year.');
+  // The Worker already filters via Twitch Helix using timeframe=year and returns a single clip.
+  // Enforce the date cutoff when a date is present; Twitch's Worker response may omit created_at.
+  const clips=(result.clips||[]).filter(c=>(getVideo(c)||clipUrl(c)) && isWithinYear(c));
+  if(!clips.length)throw new Error(result.error || 'The Worker returned no clip with a usable video URL. Check that this streamer has clips from the past year and that video_url is playable.');
   currentClips=clips;
   if(next)currentIndex=(currentIndex+1)%currentClips.length;else currentIndex=0;
   showClip(currentClips[currentIndex]);
