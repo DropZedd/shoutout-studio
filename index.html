@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -750,7 +751,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     url.searchParams.set("clip", slug);
     url.searchParams.set("parent", getParentDomain());
     url.searchParams.set("autoplay", "true");
-    url.searchParams.set("muted", "false");
+    url.searchParams.set("muted", "true"); // Muted autoplay is more reliable in OBS/browser embeds.
 
     iframe.src = url.toString();
     return iframe;
@@ -884,7 +885,11 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     hideTimer = setTimeout(() => {
       if (myRequest !== requestId) return;
 
-      $("card").classList.remove("show");
+      const card = $("card");
+      // Remove entrance animations before hiding. Their `forwards` fill mode
+      // can otherwise keep opacity at 1 even after the `show` class is removed.
+      card.classList.remove("anim-fade", "anim-slide", "anim-zoom", "anim-bounce", "anim-glow", "anim-none");
+      card.classList.remove("show");
 
       cleanupTimer = setTimeout(() => {
         if (
