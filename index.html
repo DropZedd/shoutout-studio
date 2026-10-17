@@ -1,888 +1,198 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Twitch Shoutout Studio</title>
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shoutout Studio — Twitch Video Shoutout</title>
 <style>
-:root {
-  --accent: #a970ff;
-  --panel: #171225;
-  --width: 760px;
-  --heading-size: 34px;
-}
-
-* { box-sizing: border-box; }
-
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  color: #fff;
-  background: #0c0913;
-}
-
-button, input, select { font: inherit; }
-
-button {
-  cursor: pointer;
-  border: 0;
-  border-radius: 8px;
-  background: var(--accent);
-  color: white;
-  padding: 10px 14px;
-  font-weight: bold;
-}
-
-button:hover { filter: brightness(1.12); }
-
-input, select {
-  width: 100%;
-  padding: 10px;
-  color: white;
-  background: #211a30;
-  border: 1px solid #493761;
-  border-radius: 7px;
-}
-
-input[type="color"] {
-  height: 42px;
-  padding: 4px;
-}
-
-input[type="range"] {
-  padding: 0;
-  accent-color: var(--accent);
-}
-
-input[type="checkbox"] { accent-color: var(--accent); }
-
-label {
-  display: block;
-  margin: 12px 0 6px;
-}
-
-.small {
-  color: #b9afc9;
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-#panel {
-  max-width: 1100px;
-  margin: auto;
-  padding: 24px;
-}
-
-.columns {
-  display: grid;
-  grid-template-columns: minmax(240px, 330px) minmax(0, 1fr);
-  gap: 24px;
-}
-
-.settings, .preview {
-  min-width: 0;
-  padding: 20px;
-  background: var(--panel);
-  border: 1px solid #382849;
-  border-radius: 14px;
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
-}
-
-.status {
-  min-height: 24px;
-  margin-top: 10px;
-  color: #d4c4f5;
-  overflow-wrap: anywhere;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.status.error { color: #ff9dba; }
-.status.success { color: #9ff0c1; }
-
-hr {
-  border: 0;
-  border-top: 1px solid #382849;
-  margin-top: 20px;
-}
-
-/* Overlay */
-
-#overlay {
-  display: none;
-  width: 100%;
-  min-height: 100vh;
-  padding: 24px;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  background: transparent;
-}
-
-#card {
-  width: min(100%, var(--width));
-  margin: auto;
-  opacity: 0;
-  transform: translateY(12px);
-  transition: opacity .35s ease, transform .35s ease;
-}
-
-#card.show {
-  opacity: 1;
-  transform: none;
-}
-
-#heading {
-  margin: 0 0 16px;
-  font-size: var(--heading-size);
-  font-weight: 900;
-  overflow-wrap: anywhere;
-  text-shadow: 0 3px 15px #000;
-}
-
-/* Video */
-
-#player {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  border: 2px solid var(--accent);
-  border-radius: 14px;
-  background: #09070d;
-  box-shadow: 0 8px 40px #0008;
-}
-
-#player iframe {
-  position: absolute;
-  inset: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-  border: 0;
-  background: #09070d;
-}
-
-/* Classic information card BELOW the video */
-
-#details {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 16px;
-  width: 82%;
-  max-width: 100%;
-  min-width: 0;
-  margin: 16px auto 0;
-  padding: 15px 22px;
-  text-align: left;
-  background: var(--panel);
-  border: 1px solid var(--accent);
-  border-radius: 14px;
-  box-shadow: 0 8px 32px #0008;
-}
-
-#avatar {
-  flex: 0 0 76px;
-  width: 76px;
-  height: 76px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid var(--accent);
-  background: #30243f;
-}
-
-#name {
-  font-size: 25px;
-  font-weight: 800;
-  overflow-wrap: anywhere;
-}
-
-#channelUrl {
-  display: inline-block;
-  margin-top: 6px;
-  color: #d4c4f5;
-  overflow-wrap: anywhere;
-  user-select: text;
-}
-
-#clipTitle {
-  margin-top: 5px;
-  color: #b9afc9;
-  font-size: 13px;
-  overflow-wrap: anywhere;
-}
-
-#clipTitle:empty { display: none; }
-
-#overlayStatus {
-  max-width: 620px;
-  margin: 12px auto 0;
-  color: #ffb7c8;
-  overflow-wrap: anywhere;
-  text-shadow: 0 2px 8px #000;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-#overlayStatus:empty { display: none; }
-
-@media (max-width: 750px) {
-  .columns { grid-template-columns: 1fr; }
-
-  #heading {
-    font-size: min(26px, var(--heading-size));
-  }
-
-  #details {
-    width: 100%;
-    gap: 10px;
-    padding: 12px;
-  }
-
-  #avatar {
-    flex-basis: 58px;
-    width: 58px;
-    height: 58px;
-  }
-
-  #name { font-size: 20px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  #card { transition: none; }
-}
+:root{--accent:#9147ff;--card:#18181b;--panel:#202024;--text:#fff;--muted:#b8b8c2;--radius:18px;--card-width:760px;--avatar:76px;--video-ratio:16/9;--border:2px;--shadow:0 14px 42px #0008}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;background:#101014;color:var(--text)}
+body{padding:22px}.app{max-width:1100px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.brand{font-weight:900;font-size:22px;letter-spacing:.2px}.brand span{color:var(--accent)}.sub{color:var(--muted);font-size:13px;margin-top:4px}
+.layout{display:grid;grid-template-columns:minmax(280px,350px) minmax(0,1fr);gap:18px}.panel{background:var(--panel);border:1px solid #ffffff12;border-radius:16px;padding:18px}.panel h2{font-size:15px;margin:0 0 14px}.field{display:grid;gap:6px;margin-bottom:13px}.field label{font-size:12px;color:#d3d3db}.field input,.field select,.field button{width:100%;padding:10px 11px;border-radius:9px;border:1px solid #ffffff24;background:#121216;color:white;font:inherit;min-width:0}.field input[type=color]{height:42px;padding:4px}.field input[type=range]{padding:0;accent-color:var(--accent)}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.btn{border:0!important;background:var(--accent)!important;color:white!important;font-weight:750;cursor:pointer}.btn.secondary{background:#34343c!important}.btn:disabled{opacity:.5;cursor:wait}.help{font-size:12px;line-height:1.5;color:var(--muted)}.status{font-size:12px;line-height:1.5;color:#ddd;background:#121216;border-radius:9px;padding:10px;overflow-wrap:anywhere}.preview-wrap{display:flex;align-items:center;justify-content:center;min-height:350px;padding:24px;background:repeating-conic-gradient(#19191e 0% 25%,#151519 0% 50%) 50%/22px 22px;border-radius:12px;overflow:hidden}.shoutout{width:min(var(--card-width),100%);background:var(--card);border:var(--border) solid var(--accent);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);transition:.2s;position:relative}.video-shell{aspect-ratio:var(--video-ratio);background:#08080a;position:relative;display:flex;align-items:center;justify-content:center}.video-shell video{width:100%;height:100%;object-fit:cover;display:block}.video-placeholder{padding:24px;text-align:center;color:#bcbcc5;font-size:13px;line-height:1.6}.video-placeholder strong{display:block;color:white;font-size:17px;margin-bottom:5px}.play-overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#0007;padding:18px;text-align:center}.play-overlay button{background:var(--accent);border:0;color:white;border-radius:10px;padding:12px 18px;font-weight:800;cursor:pointer}.identity{display:flex;align-items:center;gap:14px;padding:16px 18px}.avatar{width:var(--avatar);height:var(--avatar);border-radius:50%;object-fit:cover;flex:0 0 auto;background:#34343c;border:3px solid var(--accent)}.who{min-width:0;flex:1}.eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);font-weight:900;margin-bottom:4px}.username{font-size:clamp(18px,3vw,25px);font-weight:900;overflow-wrap:anywhere}.description{font-size:12px;color:var(--muted);margin-top:3px}.live-dot{width:8px;height:8px;display:inline-block;border-radius:50%;background:#eb4c64;margin-right:6px}.bottomline{height:5px;background:var(--accent)}.controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.controls button{padding:9px 12px;border:1px solid #ffffff20;border-radius:9px;background:#292930;color:white;cursor:pointer;font-weight:650}.controls button.primary{background:var(--accent);border-color:transparent}.hidden{display:none!important}.overlay-mode{padding:0;background:transparent;overflow:hidden}.overlay-mode .app,.overlay-mode .top,.overlay-mode .panel,.overlay-mode .controls{display:none!important}.overlay-mode .layout{display:block}.overlay-mode .preview-panel{padding:0;border:0;background:transparent}.overlay-mode .preview-wrap{padding:0;min-height:0;background:transparent;border-radius:0}.overlay-mode .shoutout{width:min(var(--card-width),100%);box-shadow:var(--shadow)}.overlay-mode .play-overlay{background:#0009}
+@media(max-width:760px){body{padding:12px}.layout{grid-template-columns:1fr}.preview-wrap{min-height:220px;padding:12px}.top{align-items:flex-start;flex-direction:column}}
 </style>
 </head>
-
 <body>
-
-<div id="panel">
-  <h1>Shoutout Studio</h1>
-  <p class="small">
-    Simple Twitch shoutout overlay with the classic card below the video.
-  </p>
-
-  <div class="columns">
-
-    <section class="settings">
-      <h2>Appearance</h2>
-
-      <label for="accent">Accent color</label>
-      <input id="accent" type="color" value="#a970ff">
-
-      <label for="panelColor">Information card color</label>
-      <input id="panelColor" type="color" value="#171225">
-
-      <label for="fontSize">Heading size</label>
-      <input id="fontSize" type="range" min="20" max="52" value="34">
-
-      <label for="clipWidth">Maximum card width</label>
-      <input id="clipWidth" type="range" min="400" max="1000" step="20" value="760">
-
-      <label for="duration">Display duration (seconds)</label>
-      <input id="duration" type="number" min="10" max="120" value="30">
-
-      <label for="headingText">Heading text</label>
-      <input id="headingText" value="GO CHECK OUT">
-
-      <label for="fontFamily">Font</label>
-      <select id="fontFamily">
-        <option value="Arial, sans-serif">Arial</option>
-        <option value="Verdana, sans-serif">Verdana</option>
-        <option value="Georgia, serif">Georgia</option>
-        <option value="'Trebuchet MS', sans-serif">Trebuchet</option>
-      </select>
-
-      <label>
-        <input id="showTitle" type="checkbox" checked style="width:auto">
-        Show clip title
-      </label>
-
-      <div class="actions">
-        <button id="save" type="button">Save settings</button>
-        <button id="reset" type="button">Reset</button>
+<div class="app">
+  <header class="top"><div><div class="brand">SHOUTOUT <span>STUDIO</span></div><div class="sub">Twitch clip shoutout · classic video card</div></div><div class="help">Settings are saved in this browser.</div></header>
+  <main class="layout">
+    <section class="panel settings-panel" id="settings">
+      <h2>Shoutout settings</h2>
+      <div class="field"><label for="api">Cloudflare Worker URL</label><input id="api" value="https://twitch-shoutout-clips.dropzedd.workers.dev/" spellcheck="false"></div>
+      <div class="field"><label for="username">Twitch username to shout out</label><input id="username" placeholder="e.g. streamername" autocomplete="off"></div>
+      <div class="row">
+        <div class="field"><label for="duration">Clip duration</label><select id="duration"><option value="20">20 seconds</option><option value="30" selected>30 seconds</option><option value="45">45 seconds</option><option value="60">60 seconds</option><option value="0">Full clip</option></select></div>
+        <div class="field"><label for="fit">Video fit</label><select id="fit"><option value="cover">Fill card</option><option value="contain">Show full video</option></select></div>
       </div>
-
-      <hr>
-
-      <h2>Test shoutout</h2>
-
-      <label for="testUser">Twitch username</label>
-      <input id="testUser" value="dropzedd" placeholder="username">
-
-      <label for="clipTimeframe">Clip timeframe</label>
-      <select id="clipTimeframe">
-        <option value="all">All time</option>
-        <option value="year">Past year</option>
-        <option value="30days">Past 30 days</option>
-        <option value="featured">Featured clips only</option>
-      </select>
-
-      <p class="small">
-        Your clip API worker must support the timeframe parameter
-        for filtering to take effect.
-      </p>
-
-      <div class="actions">
-        <button id="test" type="button">Play preview</button>
-        <button id="openOverlay" type="button">Open overlay</button>
+      <div class="field"><button class="btn" id="load">Load shoutout</button></div>
+      <div class="field"><label for="accent">Accent colour</label><input id="accent" type="color" value="#9147ff"></div>
+      <div class="row">
+        <div class="field"><label for="cardColor">Card background</label><input id="cardColor" type="color" value="#18181b"></div>
+        <div class="field"><label for="textColor">Text colour</label><input id="textColor" type="color" value="#ffffff"></div>
       </div>
-
-      <p class="small">
-        Use the HTTPS overlay URL as an OBS Browser Source.
-      </p>
-
-      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <div class="field"><label for="width">Card width: <span id="widthVal">760</span> px</label><input id="width" type="range" min="320" max="1000" step="10" value="760"></div>
+      <div class="field"><label for="avatarSize">Avatar size: <span id="avatarVal">76</span> px</label><input id="avatarSize" type="range" min="44" max="120" step="2" value="76"></div>
+      <div class="row">
+        <div class="field"><label for="radius">Corner roundness</label><input id="radius" type="range" min="0" max="32" value="18"></div>
+        <div class="field"><label for="border">Border thickness</label><input id="border" type="range" min="0" max="8" value="2"></div>
+      </div>
+      <div class="field"><label for="layoutStyle">Card layout</label><select id="layoutStyle"><option value="below">Classic: info below video</option><option value="compact">Compact: smaller info row</option></select></div>
+      <div class="field"><button class="btn secondary" id="overlayLink">Copy OBS overlay link</button></div>
+      <div class="field"><button class="btn secondary" id="reset">Reset design</button></div>
+      <div class="help">Clips are requested with a past-year filter. The Worker must support that filter and return a clip date for strict client-side filtering. The widget tries common query parameter names to work with different Worker implementations.</div>
+      <div class="status" id="status" role="status">Ready. Enter a Twitch username and click Load shoutout.</div>
     </section>
-
-    <section class="preview">
+    <section class="panel preview-panel">
       <h2>Live preview</h2>
-
-      <iframe
-        id="preview"
-        title="Shoutout preview"
-        style="width:100%;height:620px;border:0;border-radius:10px;background:transparent"
-        allow="autoplay; fullscreen">
-      </iframe>
-    </section>
-
-  </div>
-</div>
-
-<div id="overlay">
-  <main id="card">
-    <h1 id="heading">GO CHECK OUT</h1>
-
-    <div id="player"></div>
-
-    <section id="details">
-      <img id="avatar" alt="Creator profile picture">
-
-      <div style="text-align:left;min-width:0">
-        <div id="name"></div>
-        <div id="channelUrl"></div>
-        <div id="clipTitle"></div>
+      <div class="preview-wrap">
+        <article class="shoutout" id="card">
+          <div class="video-shell" id="videoShell">
+            <div class="video-placeholder" id="placeholder"><strong>Your clip will appear here</strong>Enter a Twitch username and load a shoutout.</div>
+            <video id="video" playsinline autoplay controls class="hidden"></video>
+            <div class="play-overlay" id="playOverlay"><button id="enableSound">▶ Play clip with sound</button></div>
+          </div>
+          <div class="identity" id="identity">
+            <img class="avatar" id="avatar" alt="Streamer profile picture" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100%25' height='100%25' fill='%2334343c'/%3E%3Ccircle cx='50' cy='37' r='19' fill='%23888899'/%3E%3Cpath d='M15 100a35 35 0 0 1 70 0' fill='%23888899'/%3E%3C/svg%3E">
+            <div class="who"><div class="eyebrow"><span class="live-dot"></span>CREATOR SHOUTOUT</div><div class="username" id="displayName">Streamer Name</div><div class="description" id="description">Go show them some love!</div></div>
+          </div><div class="bottomline"></div>
+        </article>
       </div>
+      <div class="controls"><button class="primary" id="replay">↻ Replay clip</button><button id="mute">Unmute / mute</button><button id="next">Load another clip</button><button id="test">Preview sample card</button></div>
+      <p class="help">Sound note: browsers may block audible autoplay until a user gesture. OBS Browser Source can behave differently by version/settings; if autoplay with sound is blocked, use the on-card Play button once. OBS supports web pages as Browser Sources. <a href="https://obsproject.com/kb/browser-source" target="_blank" rel="noreferrer" style="color:#c5a6ff">OBS Browser Source guide</a>.</p>
     </section>
-
-    <div id="overlayStatus" role="status" aria-live="polite"></div>
   </main>
 </div>
-
 <script>
 (() => {
-  "use strict";
-
-  const $ = id => document.getElementById(id);
-  const params = new URLSearchParams(location.search);
-  const mode = params.get("mode") || "panel";
-
-  const API = "https://twitch-shoutout-clips.dropzedd.workers.dev/";
-  const STORE = "soSettings";
-
-  const DEFAULTS = {
-    accent: "#a970ff",
-    panelColor: "#171225",
-    fontSize: 34,
-    clipWidth: 760,
-    duration: 30,
-    clipTimeframe: "all",
-    headingText: "GO CHECK OUT",
-    fontFamily: "Arial, sans-serif",
-    showTitle: true
-  };
-
-  let settings = loadSettings();
-  let requestNumber = 0;
-  let hideTimer = 0;
-  let cleanupTimer = 0;
-
-  function clamp(value, min, max, fallback) {
-    const n = Number(value);
-    return Number.isFinite(n)
-      ? Math.max(min, Math.min(max, n))
-      : fallback;
-  }
-
-  function loadSettings() {
-    let saved = {};
-
-    try {
-      saved = JSON.parse(localStorage.getItem(STORE) || "{}");
-    } catch (_) {}
-
-    const s = {
-      ...DEFAULTS,
-      ...(saved && typeof saved === "object" ? saved : {})
-    };
-
-    if (!/^#[0-9a-f]{6}$/i.test(s.accent))
-      s.accent = DEFAULTS.accent;
-
-    if (!/^#[0-9a-f]{6}$/i.test(s.panelColor))
-      s.panelColor = DEFAULTS.panelColor;
-
-    s.fontSize = clamp(s.fontSize, 20, 52, 34);
-    s.clipWidth = clamp(s.clipWidth, 400, 1000, 760);
-    s.duration = clamp(s.duration, 10, 120, 30);
-
-    if (!["all", "year", "30days", "featured"].includes(s.clipTimeframe))
-      s.clipTimeframe = "all";
-
-    if (![
-      "Arial, sans-serif",
-      "Verdana, sans-serif",
-      "Georgia, serif",
-      "'Trebuchet MS', sans-serif"
-    ].includes(s.fontFamily)) {
-      s.fontFamily = DEFAULTS.fontFamily;
-    }
-
-    s.showTitle = typeof s.showTitle === "boolean" ? s.showTitle : true;
-    s.headingText = typeof s.headingText === "string"
-      ? s.headingText
-      : DEFAULTS.headingText;
-
-    return s;
-  }
-
-  function saveSettings(s) {
-    try {
-      localStorage.setItem(STORE, JSON.stringify(s));
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  function readForm() {
-    return {
-      accent: $("accent").value,
-      panelColor: $("panelColor").value,
-      fontSize: clamp($("fontSize").value, 20, 52, 34),
-      clipWidth: clamp($("clipWidth").value, 400, 1000, 760),
-      duration: clamp($("duration").value, 10, 120, 30),
-      clipTimeframe: $("clipTimeframe").value,
-      headingText: $("headingText").value,
-      fontFamily: $("fontFamily").value,
-      showTitle: $("showTitle").checked
-    };
-  }
-
-  function fillForm(s) {
-    Object.entries(s).forEach(([key, value]) => {
-      const el = $(key);
-
-      if (el) {
-        if (el.type === "checkbox") {
-          el.checked = !!value;
-        } else {
-          el.value = value;
-        }
-      }
-    });
-  }
-
-  function applySettings(s) {
-    const root = document.documentElement;
-
-    root.style.setProperty("--accent", s.accent);
-    root.style.setProperty("--panel", s.panelColor);
-    root.style.setProperty("--width", s.clipWidth + "px");
-    root.style.setProperty("--heading-size", s.fontSize + "px");
-
-    const heading = $("heading");
-
-    if (heading) {
-      heading.textContent = s.headingText;
-      heading.style.fontFamily = s.fontFamily;
-    }
-
-    const title = $("clipTitle");
-
-    if (title) {
-      title.style.display = s.showTitle ? "" : "none";
-    }
-  }
-
-  function status(message, kind = "") {
-    const el = $("status");
-
-    if (el) {
-      el.textContent = message;
-      el.className = "status " + kind;
-    }
-  }
-
-  function overlayStatus(message) {
-    const el = $("overlayStatus");
-
-    if (el) el.textContent = message || "";
-  }
-
-  function usernameOf(value) {
-    const user = String(value || "").trim().replace(/^@/, "");
-
-    if (!/^[a-zA-Z0-9_]{1,25}$/.test(user)) {
-      throw new Error("Enter a valid Twitch username.");
-    }
-
-    return user;
-  }
-
-  async function getClip(user, timeframe) {
-    const url = new URL(API);
-
-    url.searchParams.set("username", user);
-    url.searchParams.set("timeframe", timeframe);
-
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 12000);
-
-    try {
-      const response = await fetch(url, {
-        signal: controller.signal,
-        cache: "no-store"
-      });
-
-      if (!response.ok) {
-        throw new Error("Clip service returned HTTP " + response.status + ".");
-      }
-
-      const data = await response.json();
-
-      if (data.error) throw new Error(data.error);
-
-      return data;
-    } catch (error) {
-      if (error.name === "AbortError") {
-        throw new Error("Clip lookup timed out.");
-      }
-
-      throw error;
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-
-  function clearMedia() {
-    clearTimeout(hideTimer);
-    clearTimeout(cleanupTimer);
-
-    hideTimer = 0;
-    cleanupTimer = 0;
-
-    $("player").replaceChildren();
-  }
-
-  function showError(message, id) {
-    if (id !== requestNumber) return;
-
-    overlayStatus(message);
-    $("card").classList.add("show");
-  }
-
-  function createClipEmbed(clip) {
-    const slug = String(clip.slug || "").trim();
-
-    if (!/^[a-zA-Z0-9_-]+$/.test(slug)) {
-      throw new Error("The clip service did not return a valid Twitch clip ID.");
-    }
-
-    if (location.protocol !== "https:" || !location.hostname) {
-      throw new Error("Twitch clips require the overlay to be hosted on HTTPS.");
-    }
-
-    const url = new URL("https://clips.twitch.tv/embed");
-
-    url.searchParams.set("clip", slug);
-    url.searchParams.set("parent", location.hostname);
-    url.searchParams.set("autoplay", "true");
-    url.searchParams.set("muted", "false");
-
-    const iframe = document.createElement("iframe");
-
-    iframe.title = "Twitch shoutout clip";
-    iframe.allow = "autoplay; fullscreen; encrypted-media; picture-in-picture";
-    iframe.allowFullscreen = true;
-    iframe.referrerPolicy = "origin";
-    iframe.loading = "eager";
-    iframe.src = url.toString();
-
-    return iframe;
-  }
-
-  async function shoutout(rawUser) {
-    let user;
-
-    try {
-      user = usernameOf(rawUser);
-    } catch (error) {
-      overlayStatus(error.message);
-      $("card").classList.add("show");
-      return;
-    }
-
-    const id = ++requestNumber;
-
-    clearMedia();
-
-    settings = loadSettings();
-    applySettings(settings);
-
-    $("card").classList.remove("show");
-    $("name").textContent = user;
-    $("channelUrl").textContent = "https://www.twitch.tv/" + user;
-    $("clipTitle").textContent = "";
-    $("avatar").removeAttribute("src");
-
-    overlayStatus("Looking up clip…");
-
-    let clip;
-
-    try {
-      clip = await getClip(user, settings.clipTimeframe);
-    } catch (error) {
-      showError("Shoutout lookup failed: " + error.message, id);
-      return;
-    }
-
-    if (id !== requestNumber) return;
-
-    if (
-      clip.profile_image_url &&
-      /^https:\/\//i.test(clip.profile_image_url)
-    ) {
-      $("avatar").src = clip.profile_image_url;
-    }
-
-    if (clip.broadcaster_name) {
-      $("name").textContent = String(clip.broadcaster_name).replace(/^@+/, "");
-    }
-
-    $("channelUrl").textContent =
-      "https://www.twitch.tv/" + (clip.username || user);
-
-    $("clipTitle").textContent =
-      settings.showTitle && clip.title ? clip.title : "";
-
-    let media;
-
-    try {
-      media = createClipEmbed(clip);
-    } catch (error) {
-      showError(error.message, id);
-      return;
-    }
-
-    $("player").appendChild(media);
-    $("card").classList.add("show");
-
-    overlayStatus("Loading Twitch clip…");
-
-    media.addEventListener("load", () => {
-      overlayStatus("");
-    }, { once: true });
-
-    const duration = Number(clip.duration) > 0
-      ? Math.max(10, Number(clip.duration) + 2)
-      : settings.duration;
-
-    hideTimer = setTimeout(() => {
-      if (id !== requestNumber) return;
-
-      $("card").classList.remove("show");
-
-      cleanupTimer = setTimeout(() => {
-        if (
-          id === requestNumber &&
-          !$("card").classList.contains("show")
-        ) {
-          clearMedia();
-          overlayStatus("");
-        }
-      }, 400);
-
-    }, duration * 1000);
-  }
-
-  function overlayURL(user) {
-    const url = new URL(location.href);
-
-    url.search = "";
-    url.hash = "";
-
-    url.searchParams.set("mode", "overlay");
-    url.searchParams.set("username", user);
-
-    return url.href;
-  }
-
-  /* OBS overlay mode */
-
-  if (mode === "overlay") {
-    $("panel").style.display = "none";
-    $("overlay").style.display = "flex";
-
-    settings = loadSettings();
-    applySettings(settings);
-
-    const user = params.get("username");
-
-    if (user) {
-      shoutout(user).catch(error => {
-        showError("Unexpected error: " + error.message, requestNumber);
-      });
-    } else {
-      showError(
-        "Add ?mode=overlay&username=USERNAME to the URL.",
-        ++requestNumber
-      );
-    }
-
-    return;
-  }
-
-  /* Editor mode */
-
-  fillForm(settings);
-  applySettings(settings);
-
-  function refreshPreview() {
-    let user;
-
-    try {
-      user = usernameOf($("testUser").value || "dropzedd");
-    } catch (_) {
-      user = "dropzedd";
-    }
-
-    $("preview").src = overlayURL(user);
-  }
-
-  $("save").addEventListener("click", () => {
-    settings = readForm();
-
-    const ok = saveSettings(settings);
-
-    applySettings(settings);
-    refreshPreview();
-
-    status(
-      ok ? "Settings saved." : "Could not save settings in this browser.",
-      ok ? "success" : "error"
-    );
-  });
-
-  $("reset").addEventListener("click", () => {
-    settings = { ...DEFAULTS };
-
-    fillForm(settings);
-
-    const ok = saveSettings(settings);
-
-    applySettings(settings);
-    refreshPreview();
-
-    status(
-      ok ? "Settings reset." : "Reset locally, but browser storage is unavailable.",
-      ok ? "success" : "error"
-    );
-  });
-
-  $("test").addEventListener("click", () => {
-    let user;
-
-    try {
-      user = usernameOf($("testUser").value);
-    } catch (error) {
-      status(error.message, "error");
-      return;
-    }
-
-    settings = readForm();
-
-    saveSettings(settings);
-    applySettings(settings);
-    refreshPreview();
-
-    const win = window.open(overlayURL(user), "_blank");
-
-    status(
-      win
-        ? "Opened a test overlay for @" + user + "."
-        : "Popup blocked; allow popups and try again.",
-      win ? "success" : "error"
-    );
-  });
-
-  $("openOverlay").addEventListener("click", () => {
-    let user;
-
-    try {
-      user = usernameOf($("testUser").value || "dropzedd");
-    } catch (error) {
-      status(error.message, "error");
-      return;
-    }
-
-    const win = window.open(overlayURL(user), "_blank");
-
-    status(
-      win
-        ? "Opened overlay for @" + user + "."
-        : "Popup blocked; allow popups and try again.",
-      win ? "success" : "error"
-    );
-  });
-
-  $("testUser").addEventListener("change", refreshPreview);
-
-  [
-    "accent",
-    "panelColor",
-    "fontSize",
-    "clipWidth",
-    "duration",
-    "clipTimeframe",
-    "headingText",
-    "fontFamily",
-    "showTitle"
-  ].forEach(id => {
-    const el = $(id);
-
-    const update = () => {
-      settings = readForm();
-
-      applySettings(settings);
-      saveSettings(settings);
-      refreshPreview();
-    };
-
-    el.addEventListener("input", update);
-    el.addEventListener("change", update);
-  });
-
-  window.addEventListener("storage", event => {
-    if (event.key === STORE) {
-      settings = loadSettings();
-
-      fillForm(settings);
-      applySettings(settings);
-      refreshPreview();
-    }
-  });
-
-  refreshPreview();
+const $ = id => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+const overlayMode = params.get('overlay') === '1';
+if (overlayMode) document.body.classList.add('overlay-mode');
+const video = $('video');
+const status = $('status');
+let currentClips = [], currentIndex = 0, currentUser = '';
+const DEFAULTS = {accent:'#9147ff',cardColor:'#18181b',textColor:'#ffffff',width:760,avatarSize:76,radius:18,border:2,fit:'cover',layoutStyle:'below'};
+const settingsIds = ['api','username','duration','fit','accent','cardColor','textColor','width','avatarSize','radius','border','layoutStyle'];
+function say(message){ status.textContent = message; }
+function saveSettings(){ try { const s={}; settingsIds.forEach(k=>s[k]=$(k).value); localStorage.setItem('shoutoutStudioSettings',JSON.stringify(s)); } catch(e){} }
+function restoreSettings(){ try { const s=JSON.parse(localStorage.getItem('shoutoutStudioSettings')||'{}'); settingsIds.forEach(k=>{if(s[k]!==undefined && $(k)) $(k).value=s[k];}); } catch(e){} }
+function applyDesign(){
+ const root=document.documentElement.style;
+ root.setProperty('--accent',$('accent').value);root.setProperty('--card',$('cardColor').value);root.setProperty('--text',$('textColor').value);
+ root.setProperty('--card-width',$('width').value+'px');root.setProperty('--avatar',$('avatarSize').value+'px');
+ root.setProperty('--radius',$('radius').value+'px');root.setProperty('--border',$('border').value+'px');
+ $('widthVal').textContent=$('width').value;$('avatarVal').textContent=$('avatarSize').value;
+ $('video').style.objectFit=$('fit').value;
+ $('identity').style.padding=$('layoutStyle').value==='compact'?'9px 14px':'16px 18px';
+ $('avatar').style.width=$('layoutStyle').value==='compact'?'56px':$('avatarSize').value+'px';
+ $('avatar').style.height=$('layoutStyle').value==='compact'?'56px':$('avatarSize').value+'px';
+ saveSettings();
+}
+restoreSettings();applyDesign();
+settingsIds.filter(k=>!['api','username','duration'].includes(k)).forEach(k=>$(k).addEventListener('input',applyDesign));
+['api','username','duration'].forEach(k=>$(k).addEventListener('change',saveSettings));
+function normalizeRoot(data){
+ if(Array.isArray(data)) return {clips:data};
+ if(!data || typeof data!=='object') return {clips:[]};
+ const user=data.user||data.streamer||data.channel||data;
+ const possible=data.clips||data.videos||data.results||data.data?.clips||data.data?.videos||data.data?.results;
+ return {user,clips:Array.isArray(possible)?possible:(data.data&&Array.isArray(data.data)?data.data:[])};
+}
+function first(obj,keys){for(const k of keys){const v=k.split('.').reduce((a,b)=>a&&a[b],obj);if(v!==undefined&&v!==null&&v!=='')return v;}return '';}
+function clipDate(c){const raw=first(c,['created_at','createdAt','published_at','date','created','timestamp']);if(!raw)return null;const d=typeof raw==='number'?new Date(raw<1e12?raw*1000:raw):new Date(raw);return Number.isNaN(d.getTime())?null:d;}
+function clipUrl(c){return first(c,['url','video_url','videoUrl','embed_url','embedUrl','thumbnail_url']) || first(c,['clip.url']);}
+function isWithinYear(c){const d=clipDate(c);if(!d)return true;const cutoff=new Date();cutoff.setFullYear(cutoff.getFullYear()-1);return d>=cutoff;}
+function normalizeVideoUrl(url){
+ if(!url)return '';
+ if(typeof url!=='string')return '';
+ if(url.includes('clips.twitch.tv/embed'))return url;
+ if(url.includes('clips.twitch.tv/')){const slug=url.split('clips.twitch.tv/')[1].split(/[?/#]/)[0];return `https://clips.twitch.tv/embed?clip=${encodeURIComponent(slug)}&parent=${encodeURIComponent(location.hostname||'localhost')}&autoplay=true&muted=false`;}
+ if(url.includes('twitch.tv/') && url.includes('/clip/')){const slug=url.split('/clip/')[1].split(/[?/#]/)[0];return `https://clips.twitch.tv/embed?clip=${encodeURIComponent(slug)}&parent=${encodeURIComponent(location.hostname||'localhost')}&autoplay=true&muted=false`;}
+ return url;
+}
+function getVideo(c){
+ return first(c,['video_url','videoUrl','mp4_url','mp4Url','src','media_url','mediaUrl','url','clip_url','clipUrl']);
+}
+function getAvatar(user){return first(user,['profile_image_url','profileImageUrl','profile_image','avatar','avatar_url','avatarUrl','profilePic','profile_pic','image']);}
+function getName(user,fallback){return first(user,['display_name','displayName','name','username','login','user_name'])||fallback||'Streamer';}
+function setIdentity(user,fallback){
+ $('displayName').textContent=getName(user,fallback);
+ const avatar=getAvatar(user);
+ if(avatar) $('avatar').src=avatar;
+ $('description').textContent='Go show them some love!';
+}
+async function fetchData(username){
+ const base=$('api').value.trim(); if(!base)throw new Error('Enter your Cloudflare Worker URL.');
+ const url=new URL(base);
+ // Ask the Worker for clips from the last year using several common parameter names.
+ url.searchParams.set('username',username);url.searchParams.set('user',username);url.searchParams.set('login',username);
+ url.searchParams.set('timeframe','year');url.searchParams.set('period','year');url.searchParams.set('range','year');url.searchParams.set('days','365');
+ const response=await fetch(url.toString(),{headers:{'Accept':'application/json'}});
+ const textBody=await response.text();
+ let data;try{data=JSON.parse(textBody)}catch(e){throw new Error('Worker did not return JSON (HTTP '+response.status+'). Check the Worker URL and its expected request format.')}
+ if(!response.ok)throw new Error(first(data,['error','message'])||('Worker request failed with HTTP '+response.status+'.'));
+ if(data.error)throw new Error(typeof data.error==='string'?data.error:'Worker returned an error.');
+ return normalizeRoot(data);
+}
+function showClip(c){
+ const url=getVideo(c);
+ if(!url){say('The Worker returned a clip, but no video URL was found. Check the response fields from your Worker.');return;}
+ $('placeholder').classList.add('hidden');video.classList.remove('hidden');$('playOverlay').style.display='none';
+ video.pause();video.removeAttribute('src');video.load();
+ const normalized=normalizeVideoUrl(url);
+ if(normalized.includes('clips.twitch.tv/embed')){
+   // Twitch embed URLs are not direct <video> sources; use an iframe instead.
+   let frame=document.getElementById('twitchFrame');
+   if(!frame){frame=document.createElement('iframe');frame.id='twitchFrame';frame.allow='autoplay; fullscreen';frame.allowFullscreen=true;frame.style.cssText='width:100%;height:100%;border:0;position:absolute;inset:0';$('videoShell').appendChild(frame);}
+   video.classList.add('hidden');frame.style.display='block';frame.src=normalized;
+   say('Loaded Twitch clip embed. If it does not autoplay with sound, click inside the clip or check OBS Browser Source audio settings.');
+ } else {
+   const frame=document.getElementById('twitchFrame');if(frame){frame.style.display='none';frame.src='';}
+   video.src=normalized;video.muted=false;video.volume=1;video.controls=true;
+   const attempt=video.play();
+   if(attempt&&attempt.catch)attempt.catch(()=>{$('playOverlay').style.display='flex';say('Clip loaded. Autoplay with sound was blocked by the browser; click “Play clip with sound”.');});
+   say('Clip loaded. Attempting autoplay with sound.');
+ }
+ const title=first(c,['title','name'])||'Featured clip';
+ $('description').textContent=title;
+}
+async function loadShoutout(next=false){
+ const username=$('username').value.trim().replace(/^@/,'');
+ if(!username){say('Enter the Twitch username you want to shout out.');return;}
+ currentUser=username;saveSettings();$('load').disabled=true;
+ try{
+  say('Contacting Cloudflare Worker and requesting clips from the past year…');
+  const result=await fetchData(username);
+  const user=result.user||{};
+  setIdentity(user,username);
+  const clips=(result.clips||[]).filter(c=>getVideo(c)||clipUrl(c)).filter(isWithinYear);
+  if(!clips.length)throw new Error('No eligible clips found. The Worker may use a different response shape, may not return clip dates, or this creator has no clips from the past year.');
+  currentClips=clips;
+  if(next)currentIndex=(currentIndex+1)%currentClips.length;else currentIndex=0;
+  showClip(currentClips[currentIndex]);
+ }catch(e){say('Could not load shoutout: '+e.message);}
+ finally{$('load').disabled=false;}
+}
+$('load').addEventListener('click',()=>loadShoutout(false));
+$('next').addEventListener('click',()=>loadShoutout(true));
+$('replay').addEventListener('click',()=>{if(video.src){video.currentTime=0;video.play().catch(()=>{$('playOverlay').style.display='flex';});}else{const f=$('twitchFrame');if(f&&f.src)f.src=f.src;}});
+$('mute').addEventListener('click',()=>{video.muted=!video.muted;video.volume=1; say(video.muted?'Video muted.':'Sound enabled (if the browser allows playback).');});
+$('enableSound').addEventListener('click',()=>{video.muted=false;video.volume=1;video.play().then(()=>{$('playOverlay').style.display='none';}).catch(()=>say('Playback is still blocked. Click the video itself or check browser/OBS audio settings.'));});
+$('test').addEventListener('click',()=>{setIdentity({display_name:currentUser||'SampleStreamer'},currentUser||'SampleStreamer');$('description').textContent='Thanks for being part of the community!';$('placeholder').classList.remove('hidden');video.classList.add('hidden');const f=$('twitchFrame');if(f){f.style.display='none';f.src='';}say('Sample card preview. Load a username to fetch a real clip.');});
+$('reset').addEventListener('click',()=>{Object.entries(DEFAULTS).forEach(([k,v])=>$(k).value=v);applyDesign();say('Design reset to defaults.');});
+$('overlayLink').addEventListener('click',async()=>{
+ const u=new URL(location.href);u.searchParams.set('overlay','1');
+ if($('username').value.trim())u.searchParams.set('user',$('username').value.trim().replace(/^@/,''));
+ const link=u.toString();
+ try{await navigator.clipboard.writeText(link);say('OBS overlay link copied: '+link);}catch(e){say('Copy this overlay URL into OBS Browser Source: '+link);}
+});
+if(overlayMode){
+ document.querySelector('.app').style.display='block';
+ $('settings').classList.add('hidden');
+ const overlayUser=params.get('user');
+ if(overlayUser){$('username').value=overlayUser;setTimeout(()=>loadShoutout(false),250);}
+ else say('Overlay mode ready. Add ?user=TWITCHNAME to the URL or load a user from the settings page first.');
+}
 })();
 </script>
 </body>
