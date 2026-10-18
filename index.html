@@ -205,9 +205,13 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 #player.designer-position #details { position:absolute; left:50%; top:var(--info-y,82%); right:auto; bottom:auto; transform:translate(-50%,-50%); width:var(--info-width,82%); max-width:100%; min-width:0; box-sizing:border-box; margin:0; z-index:5; cursor:grab; user-select:none; touch-action:none; }
 #player.designer-position #details:active { cursor:grabbing; }
 #player.designer-position #details #avatar { pointer-events:none; }
-#player.avatar-square #avatar { border-radius:0; }
-#player.avatar-rounded #avatar { border-radius:14px; }
-#player.avatar-diamond #avatar { border-radius:10px; clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%); }
+#player.avatar-square #avatar, #details.avatar-square #avatar { border-radius:0; }
+#player.avatar-rounded #avatar, #details.avatar-rounded #avatar { border-radius:14px; }
+#player.avatar-diamond #avatar, #details.avatar-diamond #avatar { border-radius:10px; clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%); }
+#player.avatar-hexagon #avatar, #details.avatar-hexagon #avatar { border-radius:0; clip-path:polygon(25% 4%,75% 4%,100% 50%,75% 96%,25% 96%,0 50%); }
+#player.avatar-squircle #avatar, #details.avatar-squircle #avatar { border-radius:30%; }
+#player.avatar-pill #avatar, #details.avatar-pill #avatar { border-radius:999px; }
+#player.avatar-cut #avatar, #details.avatar-cut #avatar { border-radius:0; clip-path:polygon(14% 0,86% 0,100% 14%,100% 86%,86% 100%,14% 100%,0 86%,0 14%); }
 #player.gradient-horizontal #details { background:linear-gradient(90deg, var(--panel), color-mix(in srgb, var(--accent) 45%, var(--panel))); }
 #player.gradient-diagonal #details { background:linear-gradient(135deg, var(--panel), color-mix(in srgb, var(--accent) 55%, #130d20)); }
 #player.gradient-radial #details { background:radial-gradient(ellipse at left, color-mix(in srgb, var(--accent) 55%, var(--panel)), var(--panel) 78%); }
@@ -304,6 +308,33 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   width: var(--info-width, 82%);
   max-width: 100%;
 }
+
+/* Theme backgrounds are rendered on a dedicated canvas behind the card. */
+#overlay { position:relative; isolation:isolate; overflow:hidden; }
+#backgroundFX { position:absolute; inset:0; width:100%; height:100%; z-index:-1; pointer-events:none; opacity:var(--fx-opacity,.85); }
+#card { position:relative; z-index:1; }
+#heading { color:var(--heading-color,#fff); letter-spacing:var(--heading-spacing,0px); text-transform:var(--heading-transform,none); }
+#details { border-radius:var(--card-radius,14px); gap:var(--detail-gap,16px); text-align:var(--text-align,left); }
+#avatar { width:var(--avatar-size,76px); height:var(--avatar-size,76px); object-fit:cover; flex:0 0 auto; border:var(--avatar-border-width,0px) solid var(--avatar-border-color,var(--accent)); }
+#name { color:var(--name-color,#fff); font-size:var(--name-size,1.05em); font-weight:var(--name-weight,800); overflow-wrap:anywhere; }
+#channelUrl { color:var(--channel-color,#c9b5e8); font-size:var(--channel-size,12px); overflow-wrap:anywhere; }
+#game { color:var(--text-color,#ddd); font-size:var(--body-size,14px); }
+#clipTitle { color:var(--title-color,#ddd); font-size:var(--body-size,14px); overflow-wrap:anywhere; }
+#overlay.theme-gothic #details { box-shadow:0 8px 34px #000b,0 0 22px #8c6caa30; }
+#overlay.theme-steel #player { border-radius:4px; box-shadow:0 0 0 1px #9ba8b7,0 8px 30px #000b; }
+#overlay.theme-space #details { box-shadow:0 0 22px #647bff66; }
+#overlay.theme-neon #player { box-shadow:0 0 24px color-mix(in srgb,var(--accent),transparent 42%); }
+#overlay.theme-glass #details { border-color:#ffffff55; box-shadow:0 12px 40px #0005; }
+#overlay.theme-synthwave #heading { text-shadow:0 0 10px var(--accent),0 0 25px #ff39c7; }
+#overlay.theme-aurora #details { border-color:#68ffd777; }
+#overlay.theme-fire #details { box-shadow:0 0 25px #ff6a1740; }
+#overlay.theme-ocean #details { border-color:#44d7ff88; }
+.settings h3 { margin:20px 0 6px; color:#e7d8ff; font-size:14px; }
+.settings .control-grid { display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
+.settings .control-grid > div { min-width:0; }
+.settings .hint { margin:4px 0 10px; color:#b9afc9; font-size:11px; line-height:1.45; }
+@media(max-width:750px){ .settings .control-grid { grid-template-columns:1fr; } }
+
 </style>
 </head>
 <body>
@@ -312,7 +343,26 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   <p class="small">Customize your Twitch shoutout overlay.</p>
   <div class="columns">
     <section class="settings">
-      <h2>Appearance</h2>
+      <h2>Appearance & themes</h2>
+      <label for="theme">Theme</label>
+      <select id="theme">
+        <option value="gothic">Gothic</option><option value="steel">Steel / Industrial</option>
+        <option value="space">Space / Sci-Fi</option><option value="rain">Rain / Storm</option>
+        <option value="neon">Neon / Cyberpunk</option><option value="glass">Glassmorphism</option>
+        <option value="synthwave">Synthwave</option><option value="minimal">Minimal</option>
+        <option value="aurora">Aurora</option><option value="fire">Fire / Embers</option>
+        <option value="ocean">Deep Ocean</option><option value="custom">Custom Colors</option>
+      </select>
+      <label for="backgroundEffect">Background effect</label>
+      <select id="backgroundEffect">
+        <option value="none">None</option><option value="fog">Fog / Mist</option>
+        <option value="scanlines">Scan Lines</option><option value="starfield">Starfield</option>
+        <option value="rain">Rain</option><option value="matrix">Matrix Rain</option>
+        <option value="shimmer">Shimmer Sweep</option><option value="nebula">Nebula</option>
+        <option value="aurora">Aurora Waves</option><option value="embers">Embers</option>
+        <option value="bubbles">Ocean Bubbles</option>
+      </select>
+      <p class="hint">Preset themes choose their effect automatically. Custom Colors lets you choose any effect above.</p>
       <label for="accent">Accent color</label>
       <input id="accent" type="color" value="#a970ff">
       <label for="panelColor">Information card color</label>
@@ -354,7 +404,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       <input id="infoWidth" type="range" min="20" max="100" value="82">
       <label for="avatarShape">Avatar shape</label>
       <select id="avatarShape">
-        <option value="circle">Circle</option><option value="rounded">Rounded square</option><option value="square">Square</option><option value="diamond">Diamond</option>
+        <option value="circle">Circle</option><option value="rounded">Rounded square</option><option value="square">Square</option><option value="diamond">Diamond</option><option value="hexagon">Hexagon</option><option value="squircle">Squircle</option><option value="pill">Pill / capsule</option><option value="cut">Cut corners</option>
       </select>
       <label for="gradient">Info background</label>
       <select id="gradient">
@@ -379,6 +429,34 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
         <option value="Georgia, serif">Georgia</option>
         <option value="'Trebuchet MS', sans-serif">Trebuchet</option>
       </select>
+      <h3>Text styling</h3>
+      <div class="control-grid">
+        <div><label for="headingColor">Heading color</label><input id="headingColor" type="color" value="#ffffff"></div>
+        <div><label for="textColor">Game / body text</label><input id="textColor" type="color" value="#dddddd"></div>
+        <div><label for="nameColor">Creator name color</label><input id="nameColor" type="color" value="#ffffff"></div>
+        <div><label for="channelColor">Channel URL color</label><input id="channelColor" type="color" value="#c9b5e8"></div>
+        <div><label for="titleColor">Clip title color</label><input id="titleColor" type="color" value="#dddddd"></div>
+        <div><label for="bodySize">Body text size</label><input id="bodySize" type="range" min="10" max="28" value="14"></div>
+        <div><label for="nameSize">Creator name size</label><input id="nameSize" type="range" min="14" max="42" value="20"></div>
+        <div><label for="headingWeight">Heading weight</label><select id="headingWeight"><option value="600">Semi-bold</option><option value="700">Bold</option><option value="900" selected>Extra-bold</option><option value="400">Regular</option></select></div>
+        <div><label for="textAlign">Text alignment</label><select id="textAlign"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></div>
+        <div><label for="headingTransform">Heading case</label><select id="headingTransform"><option value="none">As typed</option><option value="uppercase">UPPERCASE</option><option value="capitalize">Capitalize Words</option><option value="lowercase">lowercase</option></select></div>
+        <div><label for="namePrefix">Creator name prefix</label><input id="namePrefix" value=""></div>
+        <div><label for="gamePrefix">Game label / prefix</label><input id="gamePrefix" value="Game: "></div>
+        <div><label for="titlePrefix">Clip title prefix</label><input id="titlePrefix" value=""></div>
+        <div><label for="channelPrefix">Channel URL prefix</label><input id="channelPrefix" value=""></div>
+        <div><label><input id="showGame" type="checkbox" checked style="width:auto"> Show game text</label></div>
+        <div><label><input id="showChannelUrl" type="checkbox" checked style="width:auto"> Show channel URL</label></div>
+      </div>
+      <h3>Profile picture & card</h3>
+      <div class="control-grid">
+        <div><label for="avatarSize">Profile picture size</label><input id="avatarSize" type="range" min="40" max="160" value="76"></div>
+        <div><label for="avatarBorderWidth">Avatar border width</label><input id="avatarBorderWidth" type="range" min="0" max="10" value="0"></div>
+        <div><label for="avatarBorderColor">Avatar border color</label><input id="avatarBorderColor" type="color" value="#a970ff"></div>
+        <div><label for="cardRadius">Card corner roundness</label><input id="cardRadius" type="range" min="0" max="40" value="14"></div>
+        <div><label for="detailGap">Avatar/text spacing</label><input id="detailGap" type="range" min="4" max="36" value="16"></div>
+        <div><label for="fxOpacity">Effect opacity</label><input id="fxOpacity" type="range" min="10" max="100" value="85"></div>
+      </div>
       <label>
         <input id="showTitle" type="checkbox" checked style="width:auto">
         Show clip title
@@ -421,6 +499,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   </div>
 </div>
 <div id="overlay">
+  <canvas id="backgroundFX" aria-hidden="true"></canvas>
   <main id="card">
     <h1 id="heading">GO CHECK OUT</h1>
     <div id="player"></div>
@@ -428,6 +507,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       <img id="avatar" alt="Creator profile picture">
       <div style="text-align:left;min-width:0">
         <div id="name"></div>
+        <div id="channelUrl"></div>
         <div id="game"></div>
         <div id="clipTitle"></div>
       </div>
@@ -462,8 +542,38 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     borderStyle: "none",
     infoX: 50,
     infoY: 82,
-    infoWidth: 82
+    infoWidth: 82,
+    theme: "gothic", backgroundEffect: "fog",
+    headingColor: "#ffffff", textColor: "#dddddd", nameColor: "#ffffff", channelColor: "#c9b5e8", titleColor: "#dddddd",
+    bodySize: 14, nameSize: 20, headingWeight: "900", textAlign: "left", headingTransform: "none",
+    avatarSize: 76, avatarBorderWidth: 0, avatarBorderColor: "#a970ff", cardRadius: 14, detailGap: 16, fxOpacity: 85,
+    namePrefix: "", gamePrefix: "Game: ", titlePrefix: "", channelPrefix: "", showGame: true, showChannelUrl: true
   };
+
+  const THEME_EFFECT = { gothic:"fog", steel:"scanlines", space:"starfield", rain:"rain", neon:"matrix", glass:"shimmer", synthwave:"nebula", minimal:"none", aurora:"aurora", fire:"embers", ocean:"bubbles" };
+  const THEME_PALETTES = {
+    gothic:{accent:"#b99ad8",panelColor:"#17111f",headingColor:"#f2e8ff",textColor:"#d8cbe5",nameColor:"#fff4ff",channelColor:"#c9addd",titleColor:"#e4d5ef"},
+    steel:{accent:"#aab8c8",panelColor:"#171d25",headingColor:"#f1f5fa",textColor:"#c6d0dc",nameColor:"#ffffff",channelColor:"#b8c7d8",titleColor:"#d8e0e9"},
+    space:{accent:"#8b8cff",panelColor:"#101126",headingColor:"#f5f4ff",textColor:"#d0d0f5",nameColor:"#ffffff",channelColor:"#b4b8ff",titleColor:"#d9d9ff"},
+    rain:{accent:"#7fb8dc",panelColor:"#101a25",headingColor:"#eff8ff",textColor:"#c8dce8",nameColor:"#ffffff",channelColor:"#9fcce8",titleColor:"#d5e7f2"},
+    neon:{accent:"#00f0ff",panelColor:"#090d1b",headingColor:"#eaffff",textColor:"#c8faff",nameColor:"#ffffff",channelColor:"#00eaff",titleColor:"#d3fcff"},
+    glass:{accent:"#9de7ff",panelColor:"#1b2939",headingColor:"#ffffff",textColor:"#e0f4ff",nameColor:"#ffffff",channelColor:"#c2edff",titleColor:"#e2f7ff"},
+    synthwave:{accent:"#ff4fcb",panelColor:"#1b1030",headingColor:"#fff0ff",textColor:"#f0d7ff",nameColor:"#ffffff",channelColor:"#ff9de7",titleColor:"#f8d8ff"},
+    minimal:{accent:"#ffffff",panelColor:"#101010",headingColor:"#ffffff",textColor:"#dddddd",nameColor:"#ffffff",channelColor:"#bbbbbb",titleColor:"#dddddd"},
+    aurora:{accent:"#63f5c8",panelColor:"#0d2025",headingColor:"#eafff8",textColor:"#d1f5eb",nameColor:"#ffffff",channelColor:"#90f7db",titleColor:"#d9fff4"},
+    fire:{accent:"#ff7a27",panelColor:"#24120d",headingColor:"#fff3e6",textColor:"#ffd9c0",nameColor:"#ffffff",channelColor:"#ffb27f",titleColor:"#ffe1cd"},
+    ocean:{accent:"#28c8ed",panelColor:"#071c2a",headingColor:"#e7faff",textColor:"#c6edf7",nameColor:"#ffffff",channelColor:"#7de6ff",titleColor:"#d2f7ff"},
+    custom:{}
+  };
+  const EFFECTS = ["none","fog","scanlines","starfield","rain","matrix","shimmer","nebula","aurora","embers","bubbles"];
+  function normalizeThemeSettings(value) {
+    const theme = Object.hasOwn(THEME_EFFECT, value.theme) || value.theme === "custom" ? value.theme : DEFAULTS.theme;
+    value.theme = theme;
+    // Derive this from the selected theme every single time settings load/apply.
+    // Never rely on previous-theme state or a theme-change event to select effects.
+    value.backgroundEffect = theme === "custom" ? (EFFECTS.includes(value.backgroundEffect) ? value.backgroundEffect : "none") : THEME_EFFECT[theme];
+    return value;
+  }
 
   const CLIP_API = "https://twitch-shoutout-clips.dropzedd.workers.dev/";
   const SETTINGS_KEY = "soSettings";
@@ -510,7 +620,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
         return { ...DEFAULTS };
       }
 
-      const result = { ...DEFAULTS, ...saved };
+      const result = normalizeThemeSettings({ ...DEFAULTS, ...saved });
 
       if (!/^#[0-9a-f]{6}$/i.test(result.accent)) result.accent = DEFAULTS.accent;
       if (!/^#[0-9a-f]{6}$/i.test(result.panelColor)) result.panelColor = DEFAULTS.panelColor;
@@ -528,7 +638,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       result.infoX = clampNumber(result.infoX, 10, 90, DEFAULTS.infoX);
       result.infoY = clampNumber(result.infoY, 15, 90, DEFAULTS.infoY);
       result.infoWidth = clampNumber(result.infoWidth, 20, 100, DEFAULTS.infoWidth);
-      if (!["circle","rounded","square","diamond"].includes(result.avatarShape)) result.avatarShape = DEFAULTS.avatarShape;
+      if (!["circle","rounded","square","diamond","hexagon","squircle","pill","cut"].includes(result.avatarShape)) result.avatarShape = DEFAULTS.avatarShape;
       if (!["solid","horizontal","diagonal","radial","glass"].includes(result.gradient)) result.gradient = DEFAULTS.gradient;
       if (!["none","glow","pulse","rainbow","dash"].includes(result.borderStyle)) result.borderStyle = DEFAULTS.borderStyle;
 
@@ -540,7 +650,21 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       ];
 
       if (!fonts.includes(result.fontFamily)) result.fontFamily = DEFAULTS.fontFamily;
-
+      for (const key of ["headingColor","textColor","nameColor","channelColor","titleColor","avatarBorderColor"]) if (!/^#[0-9a-f]{6}$/i.test(result[key])) result[key] = DEFAULTS[key];
+      result.bodySize = clampNumber(result.bodySize, 10, 28, DEFAULTS.bodySize);
+      result.nameSize = clampNumber(result.nameSize, 14, 42, DEFAULTS.nameSize);
+      result.avatarSize = clampNumber(result.avatarSize, 40, 160, DEFAULTS.avatarSize);
+      result.avatarBorderWidth = clampNumber(result.avatarBorderWidth, 0, 10, DEFAULTS.avatarBorderWidth);
+      result.cardRadius = clampNumber(result.cardRadius, 0, 40, DEFAULTS.cardRadius);
+      result.detailGap = clampNumber(result.detailGap, 4, 36, DEFAULTS.detailGap);
+      result.fxOpacity = clampNumber(result.fxOpacity, 10, 100, DEFAULTS.fxOpacity);
+      if (!["400","600","700","900"].includes(String(result.headingWeight))) result.headingWeight = DEFAULTS.headingWeight;
+      if (!["left","center","right"].includes(result.textAlign)) result.textAlign = DEFAULTS.textAlign;
+      if (!["none","uppercase","capitalize","lowercase"].includes(result.headingTransform)) result.headingTransform = DEFAULTS.headingTransform;
+      for (const key of ["namePrefix","gamePrefix","titlePrefix","channelPrefix"]) if (typeof result[key] !== "string") result[key] = DEFAULTS[key];
+      if (typeof result.showGame !== "boolean") result.showGame = DEFAULTS.showGame;
+      if (typeof result.showChannelUrl !== "boolean") result.showChannelUrl = DEFAULTS.showChannelUrl;
+      normalizeThemeSettings(result);
       return result;
     } catch (error) {
       console.warn("Could not read settings:", error);
@@ -577,7 +701,17 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       borderStyle: $("borderStyle").value,
       infoX: clampNumber($("infoX").value, 10, 90, 50),
       infoY: clampNumber($("infoY").value, 15, 90, 82),
-      infoWidth: clampNumber($("infoWidth").value, 20, 100, 82)
+      infoWidth: clampNumber($("infoWidth").value, 20, 100, 82),
+      theme: $("theme").value, backgroundEffect: $("backgroundEffect").value,
+      headingColor: $("headingColor").value, textColor: $("textColor").value, nameColor: $("nameColor").value,
+      channelColor: $("channelColor").value, titleColor: $("titleColor").value,
+      bodySize: clampNumber($("bodySize").value,10,28,14), nameSize: clampNumber($("nameSize").value,14,42,20),
+      headingWeight: $("headingWeight").value, textAlign: $("textAlign").value, headingTransform: $("headingTransform").value,
+      avatarSize: clampNumber($("avatarSize").value,40,160,76), avatarBorderWidth: clampNumber($("avatarBorderWidth").value,0,10,0),
+      avatarBorderColor: $("avatarBorderColor").value, cardRadius: clampNumber($("cardRadius").value,0,40,14),
+      detailGap: clampNumber($("detailGap").value,4,36,16), fxOpacity: clampNumber($("fxOpacity").value,10,100,85),
+      namePrefix: $("namePrefix").value, gamePrefix: $("gamePrefix").value, titlePrefix: $("titlePrefix").value, channelPrefix: $("channelPrefix").value,
+      showGame: $("showGame").checked, showChannelUrl: $("showChannelUrl").checked
     };
   }
 
@@ -591,6 +725,8 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   }
 
   function applySettings(value) {
+    value = normalizeThemeSettings(value);
+    settings = value;
     const root = document.documentElement;
     root.style.setProperty("--accent", value.accent);
     root.style.setProperty("--panel", value.panelColor);
@@ -599,16 +735,37 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     root.style.setProperty("--info-x", (value.infoX ?? 50) + "%");
     root.style.setProperty("--info-y", (value.infoY ?? 82) + "%");
     root.style.setProperty("--info-width", (value.infoWidth ?? 82) + "%");
+    root.style.setProperty("--heading-color", value.headingColor || "#ffffff");
+    root.style.setProperty("--text-color", value.textColor || "#dddddd");
+    root.style.setProperty("--name-color", value.nameColor || "#ffffff");
+    root.style.setProperty("--channel-color", value.channelColor || "#c9b5e8");
+    root.style.setProperty("--title-color", value.titleColor || "#dddddd");
+    root.style.setProperty("--body-size", (value.bodySize || 14) + "px");
+    root.style.setProperty("--name-size", (value.nameSize || 20) + "px");
+    root.style.setProperty("--heading-spacing", (value.headingSpacing || 0) + "px");
+    root.style.setProperty("--heading-transform", value.headingTransform || "none");
+    root.style.setProperty("--avatar-size", (value.avatarSize || 76) + "px");
+    root.style.setProperty("--avatar-border-width", (value.avatarBorderWidth || 0) + "px");
+    root.style.setProperty("--avatar-border-color", value.avatarBorderColor || value.accent);
+    root.style.setProperty("--card-radius", (value.cardRadius ?? 14) + "px");
+    root.style.setProperty("--detail-gap", (value.detailGap ?? 16) + "px");
+    root.style.setProperty("--fx-opacity", (value.fxOpacity ?? 85) / 100);
 
     const heading = $("heading");
     if (heading) {
       heading.textContent = value.headingText;
       heading.style.fontFamily = value.fontFamily;
+      heading.style.fontWeight = value.headingWeight || "900";
     }
+    const nameEl = $("name"); if (nameEl) nameEl.style.fontFamily = value.fontFamily;
+    const gameEl = $("game"); if (gameEl) gameEl.style.fontFamily = value.fontFamily;
+    const titleEl = $("clipTitle"); if (titleEl) titleEl.style.fontFamily = value.fontFamily;
+    const channelEl = $("channelUrl"); if (channelEl) channelEl.style.fontFamily = value.fontFamily;
 
     const details = $("details");
     const player = $("player");
     const card = $("card");
+    if (details) { const textBlock = details.querySelector("div"); if (textBlock) textBlock.style.textAlign = value.textAlign || "left"; }
     if (details && player && card) {
       // The info bar must be a child of the video frame for true in-video overlays.
       if (value.layout === "video-bottom" || value.layout === "lower-third" || value.layout === "minimal" || value.layout === "neon") {
@@ -645,8 +802,11 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
         details.style.setProperty("backdrop-filter", "blur(16px) saturate(1.35)", "important");
       }
       player.classList.toggle("designer-position", value.layout !== "classic");
-      player.classList.remove("avatar-circle", "avatar-rounded", "avatar-square", "avatar-diamond");
+      const shapes = ["circle", "rounded", "square", "diamond", "hexagon", "squircle", "pill", "cut"];
+      player.classList.remove(...shapes.map(x => "avatar-" + x));
       player.classList.add("avatar-" + (value.avatarShape || "circle"));
+      details.classList.remove(...shapes.map(x => "avatar-" + x));
+      details.classList.add("avatar-" + (value.avatarShape || "circle"));
       player.classList.remove("gradient-solid", "gradient-horizontal", "gradient-diagonal", "gradient-radial", "gradient-glass");
       player.classList.add("gradient-" + (value.gradient || "solid"));
       player.classList.remove("border-none", "border-glow", "border-pulse", "border-rainbow", "border-dash");
@@ -657,12 +817,75 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       card.style.animation = "";
     }
 
+    const overlay = $("overlay");
+    if (overlay) {
+      [...overlay.classList].filter(c => c.startsWith("theme-")).forEach(c => overlay.classList.remove(c));
+      overlay.classList.add("theme-" + value.theme);
+    }
+    const effectControl = $("backgroundEffect");
+    if (effectControl) { effectControl.value = value.backgroundEffect; effectControl.disabled = value.theme !== "custom"; effectControl.title = value.theme === "custom" ? "Choose any background effect" : "This theme selects its own background effect"; }
+    if (mode === "overlay") startBackgroundEffect(value.backgroundEffect, value);
     const title = $("clipTitle");
     if (title) title.style.display = value.showTitle ? "" : "none";
+    const game = $("game"); if (game) game.style.display = value.showGame ? "" : "none";
+    const channel = $("channelUrl"); if (channel) channel.style.display = value.showChannelUrl ? "" : "none";
     if ($("opacityValue")) $("opacityValue").textContent = (value.overlayOpacity ?? 88) + "%";
     if ($("xValue")) $("xValue").textContent = (value.infoX ?? 50) + "%";
     if ($("yValue")) $("yValue").textContent = (value.infoY ?? 82) + "%";
     if ($("widthValue")) $("widthValue").textContent = (value.infoWidth ?? 82) + "%";
+  }
+
+  // One deterministic renderer: the active effect always comes from normalized settings.
+  let fxFrame = 0, fxResize = null, fxLastEffect = "", fxParticles = [];
+  function startBackgroundEffect(effect, value) {
+    const canvas = $("backgroundFX"); if (!canvas) return;
+    const overlay = $("overlay");
+    if (fxFrame) cancelAnimationFrame(fxFrame);
+    fxFrame = 0; fxLastEffect = effect; fxParticles = [];
+    const ctx = canvas.getContext("2d"); if (!ctx) return;
+    const resize = () => {
+      const rect = overlay.getBoundingClientRect();
+      canvas.width = Math.max(1, Math.round(rect.width * (window.devicePixelRatio || 1)));
+      canvas.height = Math.max(1, Math.round(rect.height * (window.devicePixelRatio || 1)));
+      canvas.style.width = rect.width + "px"; canvas.style.height = rect.height + "px";
+      ctx.setTransform(window.devicePixelRatio || 1,0,0,window.devicePixelRatio || 1,0,0);
+      const w=rect.width,h=rect.height;
+      const count = Math.max(18, Math.min(150, Math.round(w*h/9000)));
+      fxParticles = Array.from({length:count},()=>({x:Math.random()*w,y:Math.random()*h,r:1+Math.random()*3,v:.3+Math.random()*1.8,a:.15+Math.random()*.65,len:8+Math.random()*24,phase:Math.random()*Math.PI*2}));
+    };
+    if (fxResize) window.removeEventListener("resize", fxResize);
+    fxResize = resize; window.addEventListener("resize", resize); resize();
+    const w=()=>canvas.clientWidth||canvas.width, h=()=>canvas.clientHeight||canvas.height;
+    if (effect === "none") { ctx.clearRect(0,0,w(),h()); return; }
+    let tick=0;
+    const draw=()=>{
+      const W=w(),H=h(); tick++;
+      ctx.clearRect(0,0,W,H);
+      const accent=value.accent||"#a970ff";
+      if(effect==="fog"){
+        for(let i=0;i<5;i++){let x=((tick*.22+i*W*.28)%(W+W*.5))-W*.2;let y=H*(.18+i*.17)+Math.sin(tick*.006+i)*H*.05;let g=ctx.createRadialGradient(x,y,5,x,y,W*.36);g.addColorStop(0,"rgba(190,190,220,.13)");g.addColorStop(1,"rgba(30,20,40,0)");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
+      } else if(effect==="scanlines"){
+        ctx.fillStyle="rgba(150,190,220,.11)";for(let y=(tick%5)-5;y<H;y+=5)ctx.fillRect(0,y,W,1);ctx.fillStyle="rgba(90,180,255,.08)";ctx.fillRect(0,(tick*1.5)%(H+80)-40,W,32);
+      } else if(effect==="starfield"){
+        fxParticles.forEach(p=>{p.y+=p.v*.35;if(p.y>H){p.y=0;p.x=Math.random()*W;}ctx.globalAlpha=p.a;ctx.fillStyle="#dbe8ff";ctx.beginPath();ctx.arc(p.x,p.y,p.r*.55,0,Math.PI*2);ctx.fill();});ctx.globalAlpha=1;
+      } else if(effect==="rain"){
+        ctx.strokeStyle="rgba(130,190,230,.4)";ctx.lineWidth=1;fxParticles.forEach(p=>{p.y+=p.v*5;p.x-=p.v*.7;if(p.y>H){p.y=-20;p.x=Math.random()*W;}ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x-4,p.y+p.len);ctx.stroke();});
+      } else if(effect==="matrix"){
+        ctx.fillStyle="rgba(0,8,10,.14)";ctx.fillRect(0,0,W,H);ctx.font="12px monospace";fxParticles.forEach(p=>{p.y+=p.v*3;if(p.y>H+15)p.y=-10;ctx.fillStyle=Math.random()>.8?"#d8ffdd":"rgba(0,255,100,.68)";ctx.fillText(String.fromCharCode(0x30A0+Math.floor(Math.random()*96)),p.x,p.y);});
+      } else if(effect==="shimmer"){
+        const x=((tick*2)%(W+240))-120;const g=ctx.createLinearGradient(x-100,0,x+100,H);g.addColorStop(0,"rgba(255,255,255,0)");g.addColorStop(.5,"rgba(255,255,255,.18)");g.addColorStop(1,"rgba(255,255,255,0)");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+      } else if(effect==="nebula"){
+        for(let i=0;i<4;i++){let x=W*(.2+i*.22)+Math.sin(tick*.003+i)*W*.08,y=H*(.2+(i%2)*.5);let g=ctx.createRadialGradient(x,y,0,x,y,W*.34);g.addColorStop(0,["rgba(255,70,210,.15)","rgba(90,100,255,.17)","rgba(0,220,255,.12)"][i%3]);g.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
+      } else if(effect==="aurora"){
+        for(let i=0;i<4;i++){ctx.beginPath();for(let x=0;x<=W;x+=12){let y=H*(.2+i*.12)+Math.sin(x*.009+tick*.018+i)*H*.08+Math.sin(x*.003-tick*.009)*H*.04;if(x===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.lineTo(W,0);ctx.lineTo(0,0);ctx.closePath();ctx.fillStyle=["rgba(0,255,180,.09)","rgba(0,160,255,.08)","rgba(170,70,255,.07)","rgba(100,255,220,.06)"][i];ctx.fill();}
+      } else if(effect==="embers"){
+        fxParticles.forEach(p=>{p.y-=p.v*1.3;p.x+=Math.sin((tick+p.phase)*.03)*.7;if(p.y<0){p.y=H;p.x=Math.random()*W;}ctx.globalAlpha=p.a;ctx.fillStyle=Math.random()>.5?"#ff7b25":"#ffd06b";ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();});ctx.globalAlpha=1;
+      } else if(effect==="bubbles"){
+        fxParticles.forEach(p=>{p.y-=p.v*.7;if(p.y< -10){p.y=H+10;p.x=Math.random()*W;}ctx.strokeStyle="rgba(80,215,255,.38)";ctx.lineWidth=1;ctx.beginPath();ctx.arc(p.x,p.y,p.r*2,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.arc(p.x-p.r*.45,p.y-p.r*.45,Math.max(.5,p.r*.35),0,Math.PI*2);ctx.stroke();});
+      }
+      fxFrame=requestAnimationFrame(draw);
+    };
+    draw();
   }
 
   function setStatus(message, kind = "") {
@@ -890,8 +1113,9 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 
     $("card").classList.remove("show");
     clearPlayerMedia();
-    setText("name", username);
-    setText("game", "Loading creator information...");
+    setText("name", (settings.namePrefix || "") + username);
+    setText("channelUrl", (settings.channelPrefix || "") + "https://www.twitch.tv/" + username);
+    setText("game", (settings.gamePrefix || "") + "Loading creator information...");
     setText("clipTitle", "");
     setAvatar("");
     setOverlayStatus("");
@@ -931,9 +1155,9 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     if (avatarURL) setAvatar(avatarURL);
     else infoErrors.push("avatar not included in worker response");
 
-    if (game) setText("game", "Game: " + game);
+    if (game) setText("game", (settings.gamePrefix || "") + game);
     else {
-      setText("game", "Waiting for StreamElements game lookup…");
+      setText("game", (settings.gamePrefix || "") + "Waiting for StreamElements game lookup…");
       infoErrors.push("game not included in worker response yet");
     }
 
@@ -954,10 +1178,11 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       return;
     }
 
-    setText("name", username);
+    setText("name", (settings.namePrefix || "") + username);
+    setText("channelUrl", (settings.channelPrefix || "") + "https://www.twitch.tv/" + username);
     setText("clipTitle",
       settings.showTitle && typeof clip.title === "string"
-        ? clip.title
+        ? (settings.titlePrefix || "") + clip.title
         : "");
 
     if (infoErrors.length) {
@@ -1006,7 +1231,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     if (!username || !game || isBadLookupResponse(game)) return;
     saveCachedGame(username, game);
     if (currentShoutoutUsername === username.toLowerCase()) {
-      setText("game", "Game: " + game);
+      setText("game", (settings.gamePrefix || "Game: ") + game);
     }
     // Notify another local tab/overlay without requiring a server or KV.
     try { localStorage.setItem("soGameUpdate", JSON.stringify({ username: username.toLowerCase(), game, at: Date.now() })); } catch {}
@@ -1078,7 +1303,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     if (event.key === "soGameUpdate" && event.newValue) {
       try {
         const update = JSON.parse(event.newValue);
-        if (update.username === currentShoutoutUsername && update.game) setText("game", "Game: " + update.game);
+        if (update.username === currentShoutoutUsername && update.game) setText("game", (settings.gamePrefix || "Game: ") + update.game);
       } catch {}
     }
   });
@@ -1091,7 +1316,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     url.searchParams.set("username", username);
     // Embed the currently selected design. OBS has its own localStorage, so
     // this snapshot is the reliable way to carry Studio settings into OBS.
-    const currentSettings = mode === "panel" ? readForm() : settings;
+    const currentSettings = normalizeThemeSettings(mode === "panel" ? readForm() : settings);
     url.searchParams.set("settings", JSON.stringify(currentSettings));
     return url.href;
   }
@@ -1135,6 +1360,10 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 
   // Overlay mode: hide the editor and show the requested shoutout.
   if (mode === "overlay") {
+    // OBS Browser Sources need a genuinely transparent page behind the overlay.
+    document.documentElement.style.background = "transparent";
+    document.body.style.background = "transparent";
+    document.body.style.margin = "0";
     $("panel").style.display = "none";
     $("overlay").style.display = "flex";
 
@@ -1155,6 +1384,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     return;
   }
 
+  settings = normalizeThemeSettings(settings);
   fillForm(settings);
   applySettings(settings);
 
@@ -1267,11 +1497,13 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     "borderStyle",
     "infoX",
     "infoY",
-    "infoWidth"
+    "infoWidth", "theme", "backgroundEffect", "headingColor", "textColor", "nameColor", "channelColor", "titleColor",
+    "bodySize", "nameSize", "headingWeight", "textAlign", "headingTransform", "avatarSize", "avatarBorderWidth", "avatarBorderColor", "cardRadius", "detailGap", "fxOpacity", "namePrefix", "gamePrefix", "titlePrefix", "channelPrefix", "showGame", "showChannelUrl"
   ]) {
+    if (id === "theme" || id === "backgroundEffect") continue; // Dedicated handlers prevent double refreshes.
     const control = $(id);
     const update = () => {
-      settings = readForm();
+      settings = normalizeThemeSettings(readForm());
       applySettings(settings);
       // Keep the preview overlay in sync immediately, not only after Save.
       saveSettings(settings);
@@ -1281,17 +1513,41 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     control.addEventListener("change", update);
   }
 
+  $("theme").addEventListener("change", () => {
+    const selected = $("theme").value;
+    settings = readForm();
+    if (selected !== "custom") {
+      Object.assign(settings, THEME_PALETTES[selected] || {});
+      settings.backgroundEffect = THEME_EFFECT[selected];
+      // Theme-specific styling defaults; users can immediately fine-tune every field.
+      if (selected === "minimal") Object.assign(settings,{gradient:"solid",borderStyle:"none",animation:"none",avatarShape:"circle",overlayOpacity:95});
+      if (selected === "glass") Object.assign(settings,{gradient:"glass",borderStyle:"glow",overlayOpacity:72,avatarShape:"rounded"});
+      if (selected === "neon") Object.assign(settings,{gradient:"diagonal",borderStyle:"glow",animation:"glow",avatarShape:"rounded"});
+      if (selected === "synthwave") Object.assign(settings,{gradient:"diagonal",borderStyle:"rainbow",animation:"glow",avatarShape:"diamond"});
+      if (selected === "steel") Object.assign(settings,{gradient:"horizontal",borderStyle:"dash",animation:"slide",avatarShape:"square"});
+      if (selected === "fire") Object.assign(settings,{gradient:"diagonal",borderStyle:"glow",animation:"glow"});
+    }
+    settings = normalizeThemeSettings(settings);
+    fillForm(settings); applySettings(settings); saveSettings(settings); refreshPreview();
+    setStatus("Applied " + $("theme").selectedOptions[0].text + " theme. You can customize its text, colors, avatar, and card settings below.", "success");
+  });
+  $("backgroundEffect").addEventListener("change", () => {
+    settings = readForm();
+    if (settings.theme !== "custom") { settings.backgroundEffect = THEME_EFFECT[settings.theme]; fillForm(settings); }
+    applySettings(settings); saveSettings(settings); refreshPreview();
+  });
+
   const PRESETS = {
-    neon: { layout:"neon", animation:"glow", accent:"#00eaff", panelColor:"#101525", overlayOpacity:88, avatarShape:"rounded", gradient:"diagonal", borderStyle:"glow", infoX:50, infoY:82, infoWidth:82, fontSize:36 },
-    cinematic: { layout:"video-bottom", animation:"fade", accent:"#e4b86a", panelColor:"#17120d", overlayOpacity:92, avatarShape:"circle", gradient:"horizontal", borderStyle:"none", infoX:50, infoY:82, infoWidth:100, fontSize:32 },
-    glass: { layout:"video-bottom", animation:"zoom", accent:"#8bdcff", panelColor:"#182332", overlayOpacity:72, avatarShape:"rounded", gradient:"glass", borderStyle:"glow", infoX:50, infoY:80, infoWidth:88, fontSize:34 },
-    minimal: { layout:"minimal", animation:"slide", accent:"#ffffff", panelColor:"#101010", overlayOpacity:90, avatarShape:"circle", gradient:"solid", borderStyle:"none", infoX:50, infoY:84, infoWidth:76, fontSize:28 },
-    rainbow: { layout:"neon", animation:"bounce", accent:"#b65cff", panelColor:"#171225", overlayOpacity:86, avatarShape:"diamond", gradient:"radial", borderStyle:"rainbow", infoX:50, infoY:80, infoWidth:82, fontSize:36 },
-    classic: { layout:"classic", animation:"fade", accent:"#a970ff", panelColor:"#171225", overlayOpacity:100, avatarShape:"circle", gradient:"solid", borderStyle:"none", infoX:50, infoY:82, infoWidth:82, fontSize:34 }
+    neon: { theme:"neon", layout:"neon", animation:"glow", accent:"#00eaff", panelColor:"#101525", overlayOpacity:88, avatarShape:"rounded", gradient:"diagonal", borderStyle:"glow", infoX:50, infoY:82, infoWidth:82, fontSize:36 },
+    cinematic: { theme:"custom", backgroundEffect:"shimmer", layout:"video-bottom", animation:"fade", accent:"#e4b86a", panelColor:"#17120d", overlayOpacity:92, avatarShape:"circle", gradient:"horizontal", borderStyle:"none", infoX:50, infoY:82, infoWidth:100, fontSize:32 },
+    glass: { theme:"glass", layout:"video-bottom", animation:"zoom", accent:"#8bdcff", panelColor:"#182332", overlayOpacity:72, avatarShape:"rounded", gradient:"glass", borderStyle:"glow", infoX:50, infoY:80, infoWidth:88, fontSize:34 },
+    minimal: { theme:"minimal", layout:"minimal", animation:"slide", accent:"#ffffff", panelColor:"#101010", overlayOpacity:90, avatarShape:"circle", gradient:"solid", borderStyle:"none", infoX:50, infoY:84, infoWidth:76, fontSize:28 },
+    rainbow: { theme:"synthwave", layout:"neon", animation:"bounce", accent:"#b65cff", panelColor:"#171225", overlayOpacity:86, avatarShape:"diamond", gradient:"radial", borderStyle:"rainbow", infoX:50, infoY:80, infoWidth:82, fontSize:36 },
+    classic: { theme:"custom", backgroundEffect:"none", layout:"classic", animation:"fade", accent:"#a970ff", panelColor:"#171225", overlayOpacity:100, avatarShape:"circle", gradient:"solid", borderStyle:"none", infoX:50, infoY:82, infoWidth:82, fontSize:34 }
   };
   document.querySelectorAll("[data-preset]").forEach(button => {
     button.addEventListener("click", () => {
-      settings = { ...readForm(), ...PRESETS[button.dataset.preset] };
+      settings = normalizeThemeSettings({ ...readForm(), ...PRESETS[button.dataset.preset] });
       fillForm(settings);
       applySettings(settings);
       saveSettings(settings);
