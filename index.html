@@ -114,6 +114,9 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   border: 0;
 }
 #details {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -324,6 +327,8 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 #card { position:relative; z-index:1; }
 #heading { color:var(--heading-color,#fff); letter-spacing:var(--heading-spacing,0px); text-transform:var(--heading-transform,none); }
 #details { border-radius:var(--card-radius,14px); gap:var(--detail-gap,16px); text-align:var(--text-align,left); }
+#infoBackgroundFX { position:absolute; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; opacity:var(--info-fx-opacity,.85); }
+#details > :not(#infoBackgroundFX) { position:relative; z-index:1; }
 #avatar { width:var(--avatar-size,76px); height:var(--avatar-size,76px); object-fit:cover; flex:0 0 auto; border:var(--avatar-border-width,0px) solid var(--avatar-border-color,var(--accent)); }
 #name { color:var(--name-color,#fff); font-size:var(--name-size,1.05em); font-weight:var(--name-weight,800); overflow-wrap:anywhere; }
 #channelUrl { color:var(--channel-color,#c9b5e8); font-size:var(--channel-size,12px); overflow-wrap:anywhere; }
@@ -619,10 +624,20 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       <select id="avatarShape">
         <option value="circle">Circle</option><option value="rounded">Rounded square</option><option value="square">Square</option><option value="diamond">Diamond</option><option value="hexagon">Hexagon</option><option value="squircle">Squircle</option><option value="pill">Pill / capsule</option><option value="cut">Cut corners</option>
       </select>
-      <label for="gradient">Info background</label>
+      <label for="gradient">Info background style</label>
       <select id="gradient">
         <option value="solid">Solid color</option><option value="horizontal">Horizontal gradient</option><option value="diagonal">Diagonal gradient</option><option value="radial">Radial glow</option><option value="glass">Glass / blur</option>
       </select>
+      <label for="infoBackgroundEffect">Info background effect</label>
+      <select id="infoBackgroundEffect">
+        <option value="none">None</option><option value="fog">Fog / Mist</option>
+        <option value="scanlines">Scan Lines</option><option value="starfield">Starfield</option>
+        <option value="rain">Rain</option><option value="matrix">Matrix Rain</option>
+        <option value="shimmer">Shimmer Sweep</option><option value="nebula">Nebula</option>
+        <option value="aurora">Aurora Waves</option><option value="embers">Embers</option>
+        <option value="bubbles">Ocean Bubbles</option>
+      </select>
+      <p class="hint">Runs the same animated effects as Theme Background Effect, but only inside the information card.</p>
       <label for="borderStyle">Shared border effect (video + info)</label>
       <select id="borderStyle">
         <option value="none">Static border</option><option value="glow">Animated glow</option><option value="pulse">Pulse</option><option value="rainbow">Rainbow cycle</option><option value="dash">Dashed shimmer</option>
@@ -640,12 +655,182 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       <input id="duration" type="number" min="10" max="120" value="30">
       <label for="headingText">Heading text</label>
       <input id="headingText" value="GO CHECK OUT">
-      <label for="fontFamily">Font</label>
+      <h3>Font selection</h3>
+      <p class="small">Choose a font independently for each text element. These include system fonts that work without downloading extra files.</p>
+      <label for="fontFamily">Heading text font</label>
       <select id="fontFamily">
-        <option value="Arial, sans-serif">Arial</option>
+        <option value="Arial, sans-serif" selected>Arial</option>
         <option value="Verdana, sans-serif">Verdana</option>
         <option value="Georgia, serif">Georgia</option>
-        <option value="'Trebuchet MS', sans-serif">Trebuchet</option>
+        <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+        <option value="Tahoma, sans-serif">Tahoma</option>
+        <option value="'Segoe UI', sans-serif">Segoe UI</option>
+        <option value="Calibri, sans-serif">Calibri</option>
+        <option value="Helvetica, sans-serif">Helvetica</option>
+        <option value="'Gill Sans', sans-serif">Gill Sans</option>
+        <option value="'Franklin Gothic Medium', sans-serif">Franklin Gothic Medium</option>
+        <option value="Impact, fantasy">Impact</option>
+        <option value="'Arial Black', sans-serif">Arial Black</option>
+        <option value="'Comic Sans MS', cursive">Comic Sans MS</option>
+        <option value="'Courier New', monospace">Courier New</option>
+        <option value="'Lucida Console', monospace">Lucida Console</option>
+        <option value="Consolas, monospace">Consolas</option>
+        <option value="'Lucida Sans', sans-serif">Lucida Sans</option>
+        <option value="'Palatino Linotype', serif">Palatino Linotype</option>
+        <option value="'Book Antiqua', serif">Book Antiqua</option>
+        <option value="Garamond, serif">Garamond</option>
+        <option value="'Century Gothic', sans-serif">Century Gothic</option>
+        <option value="Candara, sans-serif">Candara</option>
+        <option value="Optima, sans-serif">Optima</option>
+        <option value="Rockwell, serif">Rockwell</option>
+        <option value="Baskerville, serif">Baskerville</option>
+        <option value="Monaco, monospace">Monaco</option>
+        <option value="'Brush Script MT', cursive">Brush Script MT</option>
+        <option value="Copperplate, fantasy">Copperplate</option>
+        <option value="system-ui, sans-serif">system UI</option>
+        <option value="serif">Serif</option>
+        <option value="sans-serif">Sans-serif</option>
+        <option value="monospace">Monospace</option>
+      </select>
+      <label for="nameFontFamily">Creator name font</label>
+      <select id="nameFontFamily">
+        <option value="Arial, sans-serif" selected>Arial</option>
+        <option value="Verdana, sans-serif">Verdana</option>
+        <option value="Georgia, serif">Georgia</option>
+        <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+        <option value="Tahoma, sans-serif">Tahoma</option>
+        <option value="'Segoe UI', sans-serif">Segoe UI</option>
+        <option value="Calibri, sans-serif">Calibri</option>
+        <option value="Helvetica, sans-serif">Helvetica</option>
+        <option value="'Gill Sans', sans-serif">Gill Sans</option>
+        <option value="'Franklin Gothic Medium', sans-serif">Franklin Gothic Medium</option>
+        <option value="Impact, fantasy">Impact</option>
+        <option value="'Arial Black', sans-serif">Arial Black</option>
+        <option value="'Comic Sans MS', cursive">Comic Sans MS</option>
+        <option value="'Courier New', monospace">Courier New</option>
+        <option value="'Lucida Console', monospace">Lucida Console</option>
+        <option value="Consolas, monospace">Consolas</option>
+        <option value="'Lucida Sans', sans-serif">Lucida Sans</option>
+        <option value="'Palatino Linotype', serif">Palatino Linotype</option>
+        <option value="'Book Antiqua', serif">Book Antiqua</option>
+        <option value="Garamond, serif">Garamond</option>
+        <option value="'Century Gothic', sans-serif">Century Gothic</option>
+        <option value="Candara, sans-serif">Candara</option>
+        <option value="Optima, sans-serif">Optima</option>
+        <option value="Rockwell, serif">Rockwell</option>
+        <option value="Baskerville, serif">Baskerville</option>
+        <option value="Monaco, monospace">Monaco</option>
+        <option value="'Brush Script MT', cursive">Brush Script MT</option>
+        <option value="Copperplate, fantasy">Copperplate</option>
+        <option value="system-ui, sans-serif">system UI</option>
+        <option value="serif">Serif</option>
+        <option value="sans-serif">Sans-serif</option>
+        <option value="monospace">Monospace</option>
+      </select>
+      <label for="channelFontFamily">Channel URL font</label>
+      <select id="channelFontFamily">
+        <option value="Arial, sans-serif" selected>Arial</option>
+        <option value="Verdana, sans-serif">Verdana</option>
+        <option value="Georgia, serif">Georgia</option>
+        <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+        <option value="Tahoma, sans-serif">Tahoma</option>
+        <option value="'Segoe UI', sans-serif">Segoe UI</option>
+        <option value="Calibri, sans-serif">Calibri</option>
+        <option value="Helvetica, sans-serif">Helvetica</option>
+        <option value="'Gill Sans', sans-serif">Gill Sans</option>
+        <option value="'Franklin Gothic Medium', sans-serif">Franklin Gothic Medium</option>
+        <option value="Impact, fantasy">Impact</option>
+        <option value="'Arial Black', sans-serif">Arial Black</option>
+        <option value="'Comic Sans MS', cursive">Comic Sans MS</option>
+        <option value="'Courier New', monospace">Courier New</option>
+        <option value="'Lucida Console', monospace">Lucida Console</option>
+        <option value="Consolas, monospace">Consolas</option>
+        <option value="'Lucida Sans', sans-serif">Lucida Sans</option>
+        <option value="'Palatino Linotype', serif">Palatino Linotype</option>
+        <option value="'Book Antiqua', serif">Book Antiqua</option>
+        <option value="Garamond, serif">Garamond</option>
+        <option value="'Century Gothic', sans-serif">Century Gothic</option>
+        <option value="Candara, sans-serif">Candara</option>
+        <option value="Optima, sans-serif">Optima</option>
+        <option value="Rockwell, serif">Rockwell</option>
+        <option value="Baskerville, serif">Baskerville</option>
+        <option value="Monaco, monospace">Monaco</option>
+        <option value="'Brush Script MT', cursive">Brush Script MT</option>
+        <option value="Copperplate, fantasy">Copperplate</option>
+        <option value="system-ui, sans-serif">system UI</option>
+        <option value="serif">Serif</option>
+        <option value="sans-serif">Sans-serif</option>
+        <option value="monospace">Monospace</option>
+      </select>
+      <label for="gameFontFamily">Game text font</label>
+      <select id="gameFontFamily">
+        <option value="Arial, sans-serif" selected>Arial</option>
+        <option value="Verdana, sans-serif">Verdana</option>
+        <option value="Georgia, serif">Georgia</option>
+        <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+        <option value="Tahoma, sans-serif">Tahoma</option>
+        <option value="'Segoe UI', sans-serif">Segoe UI</option>
+        <option value="Calibri, sans-serif">Calibri</option>
+        <option value="Helvetica, sans-serif">Helvetica</option>
+        <option value="'Gill Sans', sans-serif">Gill Sans</option>
+        <option value="'Franklin Gothic Medium', sans-serif">Franklin Gothic Medium</option>
+        <option value="Impact, fantasy">Impact</option>
+        <option value="'Arial Black', sans-serif">Arial Black</option>
+        <option value="'Comic Sans MS', cursive">Comic Sans MS</option>
+        <option value="'Courier New', monospace">Courier New</option>
+        <option value="'Lucida Console', monospace">Lucida Console</option>
+        <option value="Consolas, monospace">Consolas</option>
+        <option value="'Lucida Sans', sans-serif">Lucida Sans</option>
+        <option value="'Palatino Linotype', serif">Palatino Linotype</option>
+        <option value="'Book Antiqua', serif">Book Antiqua</option>
+        <option value="Garamond, serif">Garamond</option>
+        <option value="'Century Gothic', sans-serif">Century Gothic</option>
+        <option value="Candara, sans-serif">Candara</option>
+        <option value="Optima, sans-serif">Optima</option>
+        <option value="Rockwell, serif">Rockwell</option>
+        <option value="Baskerville, serif">Baskerville</option>
+        <option value="Monaco, monospace">Monaco</option>
+        <option value="'Brush Script MT', cursive">Brush Script MT</option>
+        <option value="Copperplate, fantasy">Copperplate</option>
+        <option value="system-ui, sans-serif">system UI</option>
+        <option value="serif">Serif</option>
+        <option value="sans-serif">Sans-serif</option>
+        <option value="monospace">Monospace</option>
+      </select>
+      <label for="titleFontFamily">Clip title font</label>
+      <select id="titleFontFamily">
+        <option value="Arial, sans-serif" selected>Arial</option>
+        <option value="Verdana, sans-serif">Verdana</option>
+        <option value="Georgia, serif">Georgia</option>
+        <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+        <option value="Tahoma, sans-serif">Tahoma</option>
+        <option value="'Segoe UI', sans-serif">Segoe UI</option>
+        <option value="Calibri, sans-serif">Calibri</option>
+        <option value="Helvetica, sans-serif">Helvetica</option>
+        <option value="'Gill Sans', sans-serif">Gill Sans</option>
+        <option value="'Franklin Gothic Medium', sans-serif">Franklin Gothic Medium</option>
+        <option value="Impact, fantasy">Impact</option>
+        <option value="'Arial Black', sans-serif">Arial Black</option>
+        <option value="'Comic Sans MS', cursive">Comic Sans MS</option>
+        <option value="'Courier New', monospace">Courier New</option>
+        <option value="'Lucida Console', monospace">Lucida Console</option>
+        <option value="Consolas, monospace">Consolas</option>
+        <option value="'Lucida Sans', sans-serif">Lucida Sans</option>
+        <option value="'Palatino Linotype', serif">Palatino Linotype</option>
+        <option value="'Book Antiqua', serif">Book Antiqua</option>
+        <option value="Garamond, serif">Garamond</option>
+        <option value="'Century Gothic', sans-serif">Century Gothic</option>
+        <option value="Candara, sans-serif">Candara</option>
+        <option value="Optima, sans-serif">Optima</option>
+        <option value="Rockwell, serif">Rockwell</option>
+        <option value="Baskerville, serif">Baskerville</option>
+        <option value="Monaco, monospace">Monaco</option>
+        <option value="'Brush Script MT', cursive">Brush Script MT</option>
+        <option value="Copperplate, fantasy">Copperplate</option>
+        <option value="system-ui, sans-serif">system UI</option>
+        <option value="serif">Serif</option>
+        <option value="sans-serif">Sans-serif</option>
+        <option value="monospace">Monospace</option>
       </select>
       <h3>Text styling</h3>
       <div class="control-grid">
@@ -736,6 +921,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     <h1 id="heading">GO CHECK OUT</h1>
     <div id="player"></div>
     <section id="details">
+      <canvas id="infoBackgroundFX" aria-hidden="true"></canvas>
       <img id="avatar" alt="Creator profile picture">
       <div style="text-align:left;min-width:0">
         <div id="name"></div>
@@ -765,6 +951,10 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     clipTimeframe: "all",
     headingText: "GO CHECK OUT",
     fontFamily: "Arial, sans-serif",
+    nameFontFamily: "Arial, sans-serif",
+    channelFontFamily: "Arial, sans-serif",
+    gameFontFamily: "Arial, sans-serif",
+    titleFontFamily: "Arial, sans-serif",
     showTitle: true,
     layout: "video-bottom",
     animation: "slide",
@@ -776,7 +966,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     infoY: 82,
     infoWidth: 82,
     customPosition: false,
-    theme: "gothic", backgroundEffect: "fog",
+    theme: "gothic", backgroundEffect: "fog", infoBackgroundEffect: "none",
     headingColor: "#ffffff", textColor: "#dddddd", nameColor: "#ffffff", channelColor: "#c9b5e8", titleColor: "#dddddd",
     bodySize: 14, nameSize: 20, headingWeight: "900", textAlign: "left", headingTransform: "none",
     avatarSize: 76, avatarBorderWidth: 0, avatarBorderColor: "#a970ff", cardRadius: 14, detailGap: 16, fxOpacity: 85,
@@ -805,6 +995,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     // Derive this from the selected theme every single time settings load/apply.
     // Never rely on previous-theme state or a theme-change event to select effects.
     value.backgroundEffect = theme === "custom" ? (EFFECTS.includes(value.backgroundEffect) ? value.backgroundEffect : "none") : THEME_EFFECT[theme];
+    value.infoBackgroundEffect = EFFECTS.includes(value.infoBackgroundEffect) ? value.infoBackgroundEffect : "none";
     return value;
   }
 
@@ -879,10 +1070,40 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
         "Arial, sans-serif",
         "Verdana, sans-serif",
         "Georgia, serif",
-        "'Trebuchet MS', sans-serif"
+        "'Trebuchet MS', sans-serif",
+        "Tahoma, sans-serif",
+        "'Segoe UI', sans-serif",
+        "Calibri, sans-serif",
+        "Helvetica, sans-serif",
+        "'Gill Sans', sans-serif",
+        "'Franklin Gothic Medium', sans-serif",
+        "Impact, fantasy",
+        "'Arial Black', sans-serif",
+        "'Comic Sans MS', cursive",
+        "'Courier New', monospace",
+        "'Lucida Console', monospace",
+        "Consolas, monospace",
+        "'Lucida Sans', sans-serif",
+        "'Palatino Linotype', serif",
+        "'Book Antiqua', serif",
+        "Garamond, serif",
+        "'Century Gothic', sans-serif",
+        "Candara, sans-serif",
+        "Optima, sans-serif",
+        "Rockwell, serif",
+        "Baskerville, serif",
+        "Monaco, monospace",
+        "'Brush Script MT', cursive",
+        "Copperplate, fantasy",
+        "system-ui, sans-serif",
+        "serif",
+        "sans-serif",
+        "monospace"
       ];
 
-      if (!fonts.includes(result.fontFamily)) result.fontFamily = DEFAULTS.fontFamily;
+      for (const key of ["fontFamily", "nameFontFamily", "channelFontFamily", "gameFontFamily", "titleFontFamily"]) {
+        if (!fonts.includes(result[key])) result[key] = key === "fontFamily" ? DEFAULTS.fontFamily : (result.fontFamily && fonts.includes(result.fontFamily) ? result.fontFamily : DEFAULTS[key]);
+      }
       for (const key of ["headingColor","textColor","nameColor","channelColor","titleColor","avatarBorderColor"]) if (!/^#[0-9a-f]{6}$/i.test(result[key])) result[key] = DEFAULTS[key];
       result.bodySize = clampNumber(result.bodySize, 10, 28, DEFAULTS.bodySize);
       result.nameSize = clampNumber(result.nameSize, 14, 42, DEFAULTS.nameSize);
@@ -925,6 +1146,10 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       clipTimeframe: $("clipTimeframe").value,
       headingText: $("headingText").value,
       fontFamily: $("fontFamily").value,
+      nameFontFamily: $("nameFontFamily").value,
+      channelFontFamily: $("channelFontFamily").value,
+      gameFontFamily: $("gameFontFamily").value,
+      titleFontFamily: $("titleFontFamily").value,
       showTitle: $("showTitle").checked,
       layout: $("layout").value,
       animation: $("animation").value,
@@ -936,7 +1161,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       infoY: clampNumber($("infoY").value, 15, 90, 82),
       infoWidth: clampNumber($("infoWidth").value, 20, 100, 82),
       customPosition: Boolean(settings && settings.customPosition),
-      theme: $("theme").value, backgroundEffect: $("backgroundEffect").value,
+      theme: $("theme").value, backgroundEffect: $("backgroundEffect").value, infoBackgroundEffect: $("infoBackgroundEffect").value,
       headingColor: $("headingColor").value, textColor: $("textColor").value, nameColor: $("nameColor").value,
       channelColor: $("channelColor").value, titleColor: $("titleColor").value,
       bodySize: clampNumber($("bodySize").value,10,28,14), nameSize: clampNumber($("nameSize").value,14,42,20),
@@ -1032,16 +1257,23 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     root.style.setProperty("--card-radius", (value.cardRadius ?? 14) + "px");
     root.style.setProperty("--detail-gap", (value.detailGap ?? 16) + "px");
     root.style.setProperty("--fx-opacity", (value.fxOpacity ?? 85) / 100);
+    root.style.setProperty("--info-fx-opacity", (value.fxOpacity ?? 85) / 100);
     const heading = $("heading");
     if (heading) {
       heading.textContent = value.headingText;
       heading.style.fontFamily = value.fontFamily;
       heading.style.fontWeight = value.headingWeight || "900";
     }
-    const nameEl = $("name"); if (nameEl) nameEl.style.fontFamily = value.fontFamily;
-    const gameEl = $("game"); if (gameEl) gameEl.style.fontFamily = value.fontFamily;
-    const titleEl = $("clipTitle"); if (titleEl) titleEl.style.fontFamily = value.fontFamily;
-    const channelEl = $("channelUrl"); if (channelEl) channelEl.style.fontFamily = value.fontFamily;
+    const nameEl = $("name"); if (nameEl) nameEl.style.fontFamily = value.nameFontFamily || value.fontFamily;
+    const gameEl = $("game"); if (gameEl) gameEl.style.fontFamily = value.gameFontFamily || value.fontFamily;
+    const titleEl = $("clipTitle"); if (titleEl) titleEl.style.fontFamily = value.titleFontFamily || value.fontFamily;
+    const channelEl = $("channelUrl"); if (channelEl) channelEl.style.fontFamily = value.channelFontFamily || value.fontFamily;
+    // Ticker duplicates are generated dynamically; keep their font choices in sync too.
+    const tickerTrack = $("details") && $("details").querySelector(".ticker-track");
+    if (tickerTrack) {
+      const fontById = { name: value.nameFontFamily || value.fontFamily, game: value.gameFontFamily || value.fontFamily, clipTitle: value.titleFontFamily || value.fontFamily, channelUrl: value.channelFontFamily || value.fontFamily };
+      tickerTrack.querySelectorAll("[data-ticker-id]").forEach(el => { const font = fontById[el.dataset.tickerId]; if (font) el.style.fontFamily = font; });
+    }
 
     const details = $("details");
     const player = $("player");
@@ -1112,7 +1344,10 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     }
     const effectControl = $("backgroundEffect");
     if (effectControl) { effectControl.value = value.backgroundEffect; effectControl.disabled = value.theme !== "custom"; effectControl.title = value.theme === "custom" ? "Choose any background effect" : "This theme selects its own background effect"; }
-    if (mode === "overlay") startBackgroundEffect(value.backgroundEffect, value);
+    if (mode === "overlay") {
+      startBackgroundEffect(value.backgroundEffect, value, "backgroundFX");
+      startBackgroundEffect(value.infoBackgroundEffect, value, "infoBackgroundFX");
+    }
     const title = $("clipTitle");
     if (title) title.style.display = value.showTitle ? "" : "none";
     const game = $("game"); if (game) game.style.display = value.showGame ? "" : "none";
@@ -1124,13 +1359,16 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     if ($("widthValue")) $("widthValue").textContent = (value.infoWidth ?? 82) + "%";
   }
 
-  // One deterministic renderer: the active effect always comes from normalized settings.
-  let fxFrame = 0, fxResize = null, fxLastEffect = "", fxParticles = [];
-  function startBackgroundEffect(effect, value) {
-    const canvas = $("backgroundFX"); if (!canvas) return;
-    const overlay = $("overlay");
-    if (fxFrame) cancelAnimationFrame(fxFrame);
-    fxFrame = 0; fxLastEffect = effect; fxParticles = [];
+  // Independent canvas renderers let the overlay and info card run different effects simultaneously.
+  const fxStates = new Map();
+  function startBackgroundEffect(effect, value, canvasId = "backgroundFX") {
+    const canvas = $(canvasId); if (!canvas) return;
+    const overlay = canvasId === "infoBackgroundFX" ? $("details") : $("overlay");
+    const previous = fxStates.get(canvasId);
+    if (previous?.frame) cancelAnimationFrame(previous.frame);
+    if (previous?.resizeHandler) window.removeEventListener("resize", previous.resizeHandler);
+    const state = { frame: 0, resizeHandler: null, particles: [], effect };
+    fxStates.set(canvasId, state);
     const ctx = canvas.getContext("2d"); if (!ctx) return;
     const resize = () => {
       const rect = overlay.getBoundingClientRect();
@@ -1140,10 +1378,9 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       ctx.setTransform(window.devicePixelRatio || 1,0,0,window.devicePixelRatio || 1,0,0);
       const w=rect.width,h=rect.height;
       const count = Math.max(18, Math.min(150, Math.round(w*h/9000)));
-      fxParticles = Array.from({length:count},()=>({x:Math.random()*w,y:Math.random()*h,r:1+Math.random()*3,v:.3+Math.random()*1.8,a:.15+Math.random()*.65,len:8+Math.random()*24,phase:Math.random()*Math.PI*2}));
+      state.particles = Array.from({length:count},()=>({x:Math.random()*w,y:Math.random()*h,r:1+Math.random()*3,v:.3+Math.random()*1.8,a:.15+Math.random()*.65,len:8+Math.random()*24,phase:Math.random()*Math.PI*2}));
     };
-    if (fxResize) window.removeEventListener("resize", fxResize);
-    fxResize = resize; window.addEventListener("resize", resize); resize();
+    state.resizeHandler = resize; window.addEventListener("resize", resize); resize();
     const w=()=>canvas.clientWidth||canvas.width, h=()=>canvas.clientHeight||canvas.height;
     if (effect === "none") { ctx.clearRect(0,0,w(),h()); return; }
     let tick=0;
@@ -1156,11 +1393,11 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       } else if(effect==="scanlines"){
         ctx.fillStyle="rgba(150,190,220,.11)";for(let y=(tick%5)-5;y<H;y+=5)ctx.fillRect(0,y,W,1);ctx.fillStyle="rgba(90,180,255,.08)";ctx.fillRect(0,(tick*1.5)%(H+80)-40,W,32);
       } else if(effect==="starfield"){
-        fxParticles.forEach(p=>{p.y+=p.v*.35;if(p.y>H){p.y=0;p.x=Math.random()*W;}ctx.globalAlpha=p.a;ctx.fillStyle="#dbe8ff";ctx.beginPath();ctx.arc(p.x,p.y,p.r*.55,0,Math.PI*2);ctx.fill();});ctx.globalAlpha=1;
+        state.particles.forEach(p=>{p.y+=p.v*.35;if(p.y>H){p.y=0;p.x=Math.random()*W;}ctx.globalAlpha=p.a;ctx.fillStyle="#dbe8ff";ctx.beginPath();ctx.arc(p.x,p.y,p.r*.55,0,Math.PI*2);ctx.fill();});ctx.globalAlpha=1;
       } else if(effect==="rain"){
-        ctx.strokeStyle="rgba(130,190,230,.4)";ctx.lineWidth=1;fxParticles.forEach(p=>{p.y+=p.v*5;p.x-=p.v*.7;if(p.y>H){p.y=-20;p.x=Math.random()*W;}ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x-4,p.y+p.len);ctx.stroke();});
+        ctx.strokeStyle="rgba(130,190,230,.4)";ctx.lineWidth=1;state.particles.forEach(p=>{p.y+=p.v*5;p.x-=p.v*.7;if(p.y>H){p.y=-20;p.x=Math.random()*W;}ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x-4,p.y+p.len);ctx.stroke();});
       } else if(effect==="matrix"){
-        ctx.fillStyle="rgba(0,8,10,.14)";ctx.fillRect(0,0,W,H);ctx.font="12px monospace";fxParticles.forEach(p=>{p.y+=p.v*3;if(p.y>H+15)p.y=-10;ctx.fillStyle=Math.random()>.8?"#d8ffdd":"rgba(0,255,100,.68)";ctx.fillText(String.fromCharCode(0x30A0+Math.floor(Math.random()*96)),p.x,p.y);});
+        ctx.fillStyle="rgba(0,8,10,.14)";ctx.fillRect(0,0,W,H);ctx.font="12px monospace";state.particles.forEach(p=>{p.y+=p.v*3;if(p.y>H+15)p.y=-10;ctx.fillStyle=Math.random()>.8?"#d8ffdd":"rgba(0,255,100,.68)";ctx.fillText(String.fromCharCode(0x30A0+Math.floor(Math.random()*96)),p.x,p.y);});
       } else if(effect==="shimmer"){
         const x=((tick*2)%(W+240))-120;const g=ctx.createLinearGradient(x-100,0,x+100,H);g.addColorStop(0,"rgba(255,255,255,0)");g.addColorStop(.5,"rgba(255,255,255,.18)");g.addColorStop(1,"rgba(255,255,255,0)");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
       } else if(effect==="nebula"){
@@ -1168,11 +1405,11 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       } else if(effect==="aurora"){
         for(let i=0;i<4;i++){ctx.beginPath();for(let x=0;x<=W;x+=12){let y=H*(.2+i*.12)+Math.sin(x*.009+tick*.018+i)*H*.08+Math.sin(x*.003-tick*.009)*H*.04;if(x===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.lineTo(W,0);ctx.lineTo(0,0);ctx.closePath();ctx.fillStyle=["rgba(0,255,180,.09)","rgba(0,160,255,.08)","rgba(170,70,255,.07)","rgba(100,255,220,.06)"][i];ctx.fill();}
       } else if(effect==="embers"){
-        fxParticles.forEach(p=>{p.y-=p.v*1.3;p.x+=Math.sin((tick+p.phase)*.03)*.7;if(p.y<0){p.y=H;p.x=Math.random()*W;}ctx.globalAlpha=p.a;ctx.fillStyle=Math.random()>.5?"#ff7b25":"#ffd06b";ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();});ctx.globalAlpha=1;
+        state.particles.forEach(p=>{p.y-=p.v*1.3;p.x+=Math.sin((tick+p.phase)*.03)*.7;if(p.y<0){p.y=H;p.x=Math.random()*W;}ctx.globalAlpha=p.a;ctx.fillStyle=Math.random()>.5?"#ff7b25":"#ffd06b";ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();});ctx.globalAlpha=1;
       } else if(effect==="bubbles"){
-        fxParticles.forEach(p=>{p.y-=p.v*.7;if(p.y< -10){p.y=H+10;p.x=Math.random()*W;}ctx.strokeStyle="rgba(80,215,255,.38)";ctx.lineWidth=1;ctx.beginPath();ctx.arc(p.x,p.y,p.r*2,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.arc(p.x-p.r*.45,p.y-p.r*.45,Math.max(.5,p.r*.35),0,Math.PI*2);ctx.stroke();});
+        state.particles.forEach(p=>{p.y-=p.v*.7;if(p.y< -10){p.y=H+10;p.x=Math.random()*W;}ctx.strokeStyle="rgba(80,215,255,.38)";ctx.lineWidth=1;ctx.beginPath();ctx.arc(p.x,p.y,p.r*2,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.arc(p.x-p.r*.45,p.y-p.r*.45,Math.max(.5,p.r*.35),0,Math.PI*2);ctx.stroke();});
       }
-      fxFrame=requestAnimationFrame(draw);
+      state.frame=requestAnimationFrame(draw);
     };
     draw();
   }
@@ -1777,7 +2014,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     "duration",
     "clipTimeframe",
     "headingText",
-    "fontFamily",
+    "fontFamily", "nameFontFamily", "channelFontFamily", "gameFontFamily", "titleFontFamily",
     "showTitle",
     "layout",
     "animation",
@@ -1787,7 +2024,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     "borderStyle",
     "infoX",
     "infoY",
-    "infoWidth", "theme", "backgroundEffect", "headingColor", "textColor", "nameColor", "channelColor", "titleColor",
+    "infoWidth", "theme", "backgroundEffect", "infoBackgroundEffect", "headingColor", "textColor", "nameColor", "channelColor", "titleColor",
     "bodySize", "nameSize", "headingWeight", "textAlign", "headingTransform", "avatarSize", "avatarBorderWidth", "avatarBorderColor", "cardRadius", "detailGap", "fxOpacity", "namePrefix", "gamePrefix", "titlePrefix", "channelPrefix", "showGame", "showChannelUrl"
   ]) {
     if (id === "theme" || id === "backgroundEffect") continue; // Dedicated handlers prevent double refreshes.
