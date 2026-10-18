@@ -395,6 +395,84 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 /* Explicit custom-position mode: X/Y sliders and drag movement now override preset placement. */
 #card #player.custom-position #details { left:var(--info-x,50%); right:auto; top:var(--info-y,82%); bottom:auto; transform:translate(-50%,-50%); width:var(--info-width,82%); max-width:100%; min-width:0; margin:0; }
 
+
+
+/* Coordinated glow animation fix: animate the video frame AND the creator info panel.
+   The info panel moves between the card and player depending on the selected layout,
+   so target #details from #card rather than relying on one specific parent. */
+#card.anim-glow #player {
+  animation: shoutGlowFrame 1.8s ease-in-out infinite alternate !important;
+}
+#card.anim-glow #details {
+  animation: shoutGlowInfo 1.8s ease-in-out infinite alternate !important;
+  will-change: box-shadow, border-color, filter;
+}
+@keyframes shoutGlowFrame {
+  from {
+    box-shadow: 0 0 10px var(--accent), 0 8px 32px #0008;
+    border-color: var(--accent);
+  }
+  to {
+    box-shadow: 0 0 30px var(--accent), 0 0 54px color-mix(in srgb, var(--accent) 48%, transparent), 0 8px 32px #0008;
+    border-color: color-mix(in srgb, var(--accent) 72%, white);
+  }
+}
+@keyframes shoutGlowInfo {
+  from {
+    box-shadow: 0 0 7px color-mix(in srgb, var(--accent) 58%, transparent), 0 0 14px color-mix(in srgb, var(--accent) 22%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+    filter: brightness(1);
+  }
+  to {
+    box-shadow: 0 0 18px var(--accent), 0 0 34px color-mix(in srgb, var(--accent) 42%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 82%, white);
+    filter: brightness(1.08);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #card.anim-glow #player,
+  #card.anim-glow #details {
+    animation: none !important;
+    will-change: auto;
+  }
+}
+
+
+/* Layout audit fixes: real ticker motion and clearer compositions. */
+#card.layout-ticker #player { overflow:hidden; }
+#card.layout-ticker #player #details {
+  left:0; right:0; top:auto; bottom:0; transform:none;
+  width:100%; max-width:none; min-width:0; padding:8px 14px;
+  gap:12px; border:0; border-top:2px solid var(--accent); border-radius:0;
+  justify-content:flex-start; overflow:hidden; white-space:nowrap;
+}
+#card.layout-ticker #details > #avatar { position:relative; z-index:2; flex:0 0 42px; width:42px; height:42px; }
+#card.layout-ticker #details > .ticker-viewport {
+  display:block; flex:1 1 auto; min-width:0; max-width:100%; overflow:hidden;
+  white-space:nowrap; text-align:left !important;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 3%,#000 97%,transparent 100%);
+  mask-image:linear-gradient(90deg,transparent 0,#000 3%,#000 97%,transparent 100%);
+}
+#card.layout-ticker .ticker-track { display:flex; width:max-content; align-items:center; will-change:transform; animation: shoutTicker 18s linear infinite; }
+#card.layout-ticker .ticker-group { display:flex; flex:0 0 auto; align-items:center; gap:30px; padding-right:30px; width:max-content; }
+#card.layout-ticker .ticker-group > div { display:inline-block !important; flex:0 0 auto; width:auto !important; max-width:none; margin:0; white-space:nowrap; }
+#card.layout-ticker #name, #card.layout-ticker [data-ticker-id="name"] { font-size:var(--name-size,20px); }
+#card.layout-ticker #channelUrl, #card.layout-ticker #game, #card.layout-ticker #clipTitle, #card.layout-ticker [data-ticker-id="channelUrl"], #card.layout-ticker [data-ticker-id="game"], #card.layout-ticker [data-ticker-id="clipTitle"] { margin:0; font-size:var(--body-size,14px); }
+#card.layout-ticker #channelUrl::before, #card.layout-ticker [data-ticker-id="channelUrl"]::before { content:"CHANNEL  •  "; color:var(--accent); font-weight:800; }
+#card.layout-ticker #game::before, #card.layout-ticker [data-ticker-id="game"]::before { content:"GAME  •  "; color:var(--accent); font-weight:800; }
+#card.layout-ticker #clipTitle::before, #card.layout-ticker [data-ticker-id="clipTitle"]::before { content:"CLIP  •  "; color:var(--accent); font-weight:800; }
+@keyframes shoutTicker { from { transform:translateX(0); } to { transform:translateX(-50%); } }
+#card.layout-ticker #details:hover .ticker-track { animation-play-state:paused; }
+@media(prefers-reduced-motion:reduce) { #card.layout-ticker .ticker-track { animation:none !important; } }
+/* The top bar is full-width; top overlay is a separate floating plate. */
+#card.layout-top-bar #player #details { left:0; right:0; top:0; bottom:auto; transform:none; width:100%; max-width:none; border-radius:0; border:0; border-bottom:2px solid var(--accent); }
+#card.layout-top-overlay #player #details { left:3%; right:auto; top:3%; bottom:auto; transform:none; width:min(var(--info-width,82%),76%); max-width:94%; border:1px solid var(--accent); border-radius:14px; box-shadow:0 8px 28px #0009; }
+/* Frame layout keeps the video visible and uses a compact inset information plate. */
+#card.layout-frame #player { border:5px solid var(--accent); box-shadow:inset 0 0 0 2px #ffffff55,0 8px 40px #0008; }
+#card.layout-frame #player #details { left:3%; right:auto; top:3%; bottom:auto; transform:none; width:auto; max-width:94%; border:1px solid #ffffff66; border-radius:12px; background:color-mix(in srgb,var(--panel) 78%,transparent) !important; box-shadow:0 8px 24px #0008; }
+#card.layout-neon #player { border:3px solid var(--accent); box-shadow:0 0 10px var(--accent),0 0 26px color-mix(in srgb,var(--accent) 55%,transparent),inset 0 0 20px color-mix(in srgb,var(--accent) 12%,transparent); }
+#card.layout-neon #player #details { border-top:2px solid var(--accent); background:linear-gradient(90deg,color-mix(in srgb,var(--panel) 96%,transparent),color-mix(in srgb,var(--accent) 24%,var(--panel))) !important; }
+
 </style>
 </head>
 <body>
@@ -606,7 +684,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 
   const $ = id => document.getElementById(id);
   // Guard UI updates so a stale/partial hosted markup cannot crash a shoutout.
-  const setText = (id, value) => { const element = $(id); if (element) element.textContent = value == null ? "" : String(value); };
+  const setText = (id, value) => { const element = $(id); if (element) { element.textContent = value == null ? "" : String(value); if (["name", "channelUrl", "game", "clipTitle"].includes(id)) refreshTickerClone(); } };
 
   const DEFAULTS = {
     accent: "#a970ff",
@@ -810,6 +888,54 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     }
   }
 
+  function refreshTickerClone() {
+    const details = $("details");
+    const track = details && details.querySelector(":scope > .ticker-viewport > .ticker-track");
+    const groups = track && track.querySelectorAll(":scope > .ticker-group");
+    if (!groups || groups.length < 2) return;
+    const original = groups[0], clone = groups[1];
+    original.querySelectorAll("[id]").forEach(source => {
+      const target = clone.querySelector('[data-ticker-id="' + source.id + '"]');
+      if (!target) return;
+      target.textContent = source.textContent;
+      target.style.display = source.style.display;
+    });
+  }
+
+  function syncTickerMarkup(details, enabled) {
+    if (!details) return;
+    let viewport = details.querySelector(':scope > .ticker-viewport');
+    if (!enabled) {
+      if (viewport) {
+        const track = viewport.querySelector(':scope > .ticker-track');
+        const group = track && track.querySelector(':scope > .ticker-group');
+        if (group) {
+          while (group.firstChild) viewport.insertBefore(group.firstChild, track);
+        }
+        if (track) track.remove();
+        viewport.classList.remove('ticker-viewport');
+        viewport.style.removeProperty('overflow');
+        viewport.style.removeProperty('white-space');
+        viewport.style.removeProperty('flex');
+        viewport.style.removeProperty('max-width');
+      }
+      return;
+    }
+    if (viewport) return;
+    const textBlock = [...details.children].find(el => el.tagName === 'DIV' && !el.id);
+    if (!textBlock) return;
+    viewport = textBlock;
+    viewport.classList.add('ticker-viewport');
+    const track = document.createElement('div'); track.className = 'ticker-track';
+    const group = document.createElement('div'); group.className = 'ticker-group';
+    while (viewport.firstChild) group.appendChild(viewport.firstChild);
+    const clone = group.cloneNode(true);
+    clone.setAttribute('aria-hidden', 'true');
+    clone.querySelectorAll('[id]').forEach(el => { el.dataset.tickerId = el.id; el.removeAttribute('id'); });
+    clone.querySelectorAll('img,button,input,select,textarea').forEach(el => el.remove());
+    track.append(group, clone); viewport.appendChild(track);
+  }
+
   function applySettings(value) {
     value = normalizeThemeSettings(value);
     settings = value;
@@ -861,6 +987,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       // Remove every previous layout class, including layouts added in future versions.
       [...card.classList].filter(name => name.startsWith("layout-")).forEach(name => card.classList.remove(name));
       card.classList.add("layout-" + (value.layout || "video-bottom"));
+      syncTickerMarkup(details, value.layout === "ticker");
       card.classList.remove("anim-fade", "anim-slide", "anim-zoom", "anim-bounce", "anim-glow", "anim-none");
       card.classList.add("anim-" + (value.animation || "slide"));
       const toRgba = (hexColor, alpha) => {
@@ -874,18 +1001,18 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       const accent = toRgba(value.accent, alpha);
       // Important inline styles win over preset CSS selectors and make the
       // slider affect only the info-bar background, not the avatar/text.
-      details.style.setProperty("background-color", panel, "important");
-      details.style.setProperty("background-image", "none", "important");
-      details.style.setProperty("backdrop-filter", "none", "important");
+      details.style.setProperty("background-color", panel);
+      details.style.setProperty("background-image", "none");
+      details.style.setProperty("backdrop-filter", "none");
       if (value.gradient === "horizontal") {
-        details.style.setProperty("background-image", `linear-gradient(90deg, ${panel}, ${accent})`, "important");
+        details.style.setProperty("background-image", `linear-gradient(90deg, ${panel}, ${accent})`);
       } else if (value.gradient === "diagonal") {
-        details.style.setProperty("background-image", `linear-gradient(135deg, ${panel}, ${accent})`, "important");
+        details.style.setProperty("background-image", `linear-gradient(135deg, ${panel}, ${accent})`);
       } else if (value.gradient === "radial") {
-        details.style.setProperty("background-image", `radial-gradient(ellipse at left, ${accent}, ${panel} 78%)`, "important");
+        details.style.setProperty("background-image", `radial-gradient(ellipse at left, ${accent}, ${panel} 78%)`);
       } else if (value.gradient === "glass") {
-        details.style.setProperty("background-color", toRgba(value.panelColor, alpha * 0.62), "important");
-        details.style.setProperty("backdrop-filter", "blur(16px) saturate(1.35)", "important");
+        details.style.setProperty("background-color", toRgba(value.panelColor, alpha * 0.62));
+        details.style.setProperty("backdrop-filter", "blur(16px) saturate(1.35)");
       }
       player.classList.toggle("designer-position", value.layout !== "classic");
       player.classList.toggle("custom-position", value.customPosition === true && value.layout !== "classic");
@@ -916,6 +1043,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     if (title) title.style.display = value.showTitle ? "" : "none";
     const game = $("game"); if (game) game.style.display = value.showGame ? "" : "none";
     const channel = $("channelUrl"); if (channel) channel.style.display = value.showChannelUrl ? "" : "none";
+    refreshTickerClone();
     if ($("opacityValue")) $("opacityValue").textContent = (value.overlayOpacity ?? 88) + "%";
     if ($("xValue")) $("xValue").textContent = (value.infoX ?? 50) + "%";
     if ($("yValue")) $("yValue").textContent = (value.infoY ?? 82) + "%";
