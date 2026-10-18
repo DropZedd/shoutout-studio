@@ -799,21 +799,21 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     return parent;
   }
 
-  // Play clips through Mustached Maniac's player instead of the native
-  // Twitch embed. The Worker still supplies the clip slug and creator data.
   function makeClipPlayer(slug) {
-    if (typeof slug !== "string" || !/^[a-zA-Z0-9_-]+$/.test(slug.trim())) {
+    if (typeof slug !== "string" || !/^[a-zA-Z0-9_-]+$/.test(slug)) {
       throw new Error("The clip service returned an invalid clip slug.");
     }
 
     const iframe = document.createElement("iframe");
     iframe.title = "Twitch shoutout clip";
-    iframe.allow = "autoplay; fullscreen; picture-in-picture";
+    iframe.allow = "autoplay; fullscreen";
     iframe.allowFullscreen = true;
-    iframe.referrerPolicy = "strict-origin-when-cross-origin";
+    iframe.referrerPolicy = "origin";
 
+    // Use the external clip player that supports the clipId query parameter.
     const url = new URL("https://mustachedmaniac.com/widgets/Twitch_Clip_Player/");
-    url.searchParams.set("clipId", slug.trim());
+    url.searchParams.set("clipId", slug);
+
     iframe.src = url.toString();
     return iframe;
   }
@@ -992,10 +992,6 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     saveCachedGame(username, game);
     if (currentShoutoutUsername === username.toLowerCase()) {
       setText("game", "Game: " + game);
-      const status = $("overlayStatus");
-      if (status && /game information unavailable|waiting for streamelements game lookup/i.test(status.textContent)) {
-        setOverlayStatus("Game updated from StreamElements.");
-      }
     }
     // Notify another local tab/overlay without requiring a server or KV.
     try { localStorage.setItem("soGameUpdate", JSON.stringify({ username: username.toLowerCase(), game, at: Date.now() })); } catch {}
@@ -1003,11 +999,11 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 
   function startStreamElementsChatListener() {
     if (mode !== "overlay" || chatSocket) return;
-    const status = $("overlayStatus");
+    // Keep chat/game-lookup diagnostics in the Studio control panel only;
+    // never write connection chatter into the on-stream overlay.
     const setChatState = message => {
       const panelStatus = $("gameChatStatus");
       if (panelStatus) panelStatus.textContent = message;
-      if (status && !status.textContent) status.textContent = message;
     };
     try {
       const nick = "justinfan" + Math.floor(Math.random() * 900000 + 100000);
