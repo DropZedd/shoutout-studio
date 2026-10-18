@@ -1258,21 +1258,33 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     root.style.setProperty("--detail-gap", (value.detailGap ?? 16) + "px");
     root.style.setProperty("--fx-opacity", (value.fxOpacity ?? 85) / 100);
     root.style.setProperty("--info-fx-opacity", (value.fxOpacity ?? 85) / 100);
+    // Apply selected fonts as important inline styles so layout-specific rules
+    // cannot silently override the font dropdowns.
+    const setFont = (element, font) => {
+      if (element && font) element.style.setProperty("font-family", font, "important");
+    };
     const heading = $("heading");
     if (heading) {
       heading.textContent = value.headingText;
-      heading.style.fontFamily = value.fontFamily;
-      heading.style.fontWeight = value.headingWeight || "900";
+      setFont(heading, value.fontFamily || DEFAULTS.fontFamily);
+      heading.style.setProperty("font-weight", value.headingWeight || "900");
     }
-    const nameEl = $("name"); if (nameEl) nameEl.style.fontFamily = value.nameFontFamily || value.fontFamily;
-    const gameEl = $("game"); if (gameEl) gameEl.style.fontFamily = value.gameFontFamily || value.fontFamily;
-    const titleEl = $("clipTitle"); if (titleEl) titleEl.style.fontFamily = value.titleFontFamily || value.fontFamily;
-    const channelEl = $("channelUrl"); if (channelEl) channelEl.style.fontFamily = value.channelFontFamily || value.fontFamily;
-    // Ticker duplicates are generated dynamically; keep their font choices in sync too.
-    const tickerTrack = $("details") && $("details").querySelector(".ticker-track");
-    if (tickerTrack) {
-      const fontById = { name: value.nameFontFamily || value.fontFamily, game: value.gameFontFamily || value.fontFamily, clipTitle: value.titleFontFamily || value.fontFamily, channelUrl: value.channelFontFamily || value.fontFamily };
-      tickerTrack.querySelectorAll("[data-ticker-id]").forEach(el => { const font = fontById[el.dataset.tickerId]; if (font) el.style.fontFamily = font; });
+
+    const fontById = {
+      name: value.nameFontFamily || value.fontFamily || DEFAULTS.fontFamily,
+      game: value.gameFontFamily || value.fontFamily || DEFAULTS.fontFamily,
+      clipTitle: value.titleFontFamily || value.fontFamily || DEFAULTS.fontFamily,
+      channelUrl: value.channelFontFamily || value.fontFamily || DEFAULTS.fontFamily
+    };
+    for (const [id, font] of Object.entries(fontById)) setFont($(id), font);
+
+    // Apply the same choices to originals and dynamically generated ticker copies.
+    const detailsForFonts = $("details");
+    if (detailsForFonts) {
+      detailsForFonts.querySelectorAll("[data-ticker-id]").forEach(element => {
+        const font = fontById[element.dataset.tickerId];
+        if (font) setFont(element, font);
+      });
     }
 
     const details = $("details");
@@ -2037,6 +2049,9 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       // Keep the preview overlay in sync immediately, not only after Save.
       saveSettings(settings);
       refreshPreview();
+      // Preview/layout refreshes can rebuild the text nodes; reapply typography
+      // after that rebuild so selected fonts remain visible in every layout.
+      applySettings(settings);
     };
     control.addEventListener("input", update);
     control.addEventListener("change", update);
