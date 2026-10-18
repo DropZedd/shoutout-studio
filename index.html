@@ -393,8 +393,8 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 #card.layout-compact #player #details #avatar { width:42px; height:42px; flex-basis:42px; }
 #card.layout-ticker #player #details { left:0; right:0; top:auto; bottom:0; transform:none; width:100%; padding:8px 14px; gap:10px; border:0; border-top:2px solid var(--accent); border-radius:0; }
 #card.layout-ticker #player #details #avatar { width:42px; height:42px; flex-basis:42px; }
-#card.layout-classic #details { position:static; width:var(--info-width,82%); max-width:100%; box-sizing:border-box; margin:16px auto 0; transform:none; }
-#card.layout-classic #player #details { position:static; width:var(--info-width,82%); max-width:100%; box-sizing:border-box; margin:16px auto 0; }
+#card.layout-classic #details { position:relative; width:var(--info-width,82%); max-width:100%; box-sizing:border-box; margin:16px auto 0; transform:none; }
+#card.layout-classic #player #details { position:relative; width:var(--info-width,82%); max-width:100%; box-sizing:border-box; margin:16px auto 0; }
 #card.layout-classic #player { overflow:hidden; }
 @media(max-width:560px) {
  #card.layout-split-left #player iframe, #card.layout-split-right #player iframe { width:62%; }
@@ -577,7 +577,12 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       <label for="fontSize">Heading size</label>
       <input id="fontSize" type="range" min="20" max="52" value="34">
       <label for="clipWidth">Maximum card width</label>
-      <input id="clipWidth" type="range" min="400" max="1000" step="20" value="760">
+      <input id="clipWidth" type="range" min="400" max="1920" step="20" value="760">
+      <div class="control-pair">
+        <div><label for="widgetWidth">Widget width (px)</label><input id="widgetWidth" type="number" min="320" max="1920" step="1" value="640"></div>
+        <div><label for="widgetHeight">Widget height (px)</label><input id="widgetHeight" type="number" min="180" max="1080" step="1" value="376"></div>
+      </div>
+      <p class="hint">Sets the widget card width and minimum height. The live dimensions readout shows the final rendered size.</p>
         </div>
       </details>
       <details class="settings-section" open>
@@ -976,6 +981,8 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     panelColor: "#171225",
     fontSize: 34,
     clipWidth: 760,
+    widgetWidth: 640,
+    widgetHeight: 376,
     duration: 30,
     clipTimeframe: "all",
     headingText: "GO CHECK OUT",
@@ -1079,7 +1086,9 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       if (!/^#[0-9a-f]{6}$/i.test(result.panelColor)) result.panelColor = DEFAULTS.panelColor;
 
       result.fontSize = clampNumber(result.fontSize, 20, 52, 34);
-      result.clipWidth = clampNumber(result.clipWidth, 400, 1000, 760);
+      result.clipWidth = clampNumber(result.clipWidth, 400, 1920, 760);
+      result.widgetWidth = clampNumber(result.widgetWidth, 320, 1920, 640);
+      result.widgetHeight = clampNumber(result.widgetHeight, 180, 1080, 376);
       result.duration = clampNumber(result.duration, 10, 120, 30);
       if (!["all","year","30days","featured"].includes(result.clipTimeframe)) result.clipTimeframe = DEFAULTS.clipTimeframe;
 
@@ -1170,7 +1179,9 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       accent: $("accent").value,
       panelColor: $("panelColor").value,
       fontSize: clampNumber($("fontSize").value, 20, 52, 34),
-      clipWidth: clampNumber($("clipWidth").value, 400, 1000, 760),
+      clipWidth: clampNumber($("clipWidth").value, 400, 1920, 760),
+      widgetWidth: clampNumber($("widgetWidth").value, 320, 1920, 640),
+      widgetHeight: clampNumber($("widgetHeight").value, 180, 1080, 376),
       duration: clampNumber($("duration").value, 10, 120, 30),
       clipTimeframe: $("clipTimeframe").value,
       headingText: $("headingText").value,
@@ -1266,7 +1277,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     const root = document.documentElement;
     root.style.setProperty("--accent", value.accent);
     root.style.setProperty("--panel", value.panelColor);
-    root.style.setProperty("--width", value.clipWidth + "px");
+    root.style.setProperty("--width", Math.min(Number(value.clipWidth ?? 760), Number(value.widgetWidth ?? 640)) + "px");
     root.style.setProperty("--heading-size", value.fontSize + "px");
     root.style.setProperty("--info-x", (value.infoX ?? 50) + "%");
     root.style.setProperty("--info-y", (value.infoY ?? 82) + "%");
@@ -1319,15 +1330,18 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     const details = $("details");
     const player = $("player");
     const card = $("card");
+    if (card) {
+      card.style.width = Math.min(Number(value.widgetWidth ?? 640), Number(value.clipWidth ?? 760)) + "px";
+      card.style.minHeight = Number(value.widgetHeight ?? 376) + "px";
+    }
     if (details) { const textBlock = details.querySelector("div"); if (textBlock) textBlock.style.textAlign = value.textAlign || "left"; }
     if (details && player && card) {
-      // Keep the info bar inside the video frame whenever it is being freely positioned.
-      // This also allows X/Y sliders to work in Classic layout; otherwise Classic places
-      // the bar outside the positioned video frame where those coordinates cannot apply.
-      if (value.layout !== "classic" || value.customPosition === true) {
-        if (details.parentElement !== player) player.appendChild(details);
-      } else if (details.parentElement !== card) {
-        card.insertBefore(details, $("overlayStatus"));
+      // Classic is intentionally a video followed by an info bar OUTSIDE the frame.
+      // Never reparent it into #player when X/Y custom positioning is enabled.
+      if (value.layout === "classic") {
+        if (details.parentElement !== card) card.insertBefore(details, $("overlayStatus"));
+      } else if (details.parentElement !== player) {
+        player.appendChild(details);
       }
       // Remove every previous layout class, including layouts added in future versions.
       [...card.classList].filter(name => name.startsWith("layout-")).forEach(name => card.classList.remove(name));
@@ -1381,13 +1395,19 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
           // X is converted to pixels relative to the card width, avoiding a
           // percentage-left jump that could move the bar over the video.
           // Y controls only the gap below the frame, never its position inside it.
-          const cardWidth = card.getBoundingClientRect().width || card.clientWidth || 0;
-          const xOffsetPx = ((Number(value.infoX ?? 50) - 50) / 100) * cardWidth;
-          const yGapPx = Math.round(((Number(value.infoY ?? 82) - 15) / 75) * 24);
+          const cardWidth = card.getBoundingClientRect().width || card.clientWidth || Number(value.widgetWidth ?? 640);
+          const barWidth = details.getBoundingClientRect().width || (cardWidth * Number(value.infoWidth ?? 82) / 100);
+          const minLeft = 0;
+          const maxLeft = Math.max(0, cardWidth - barWidth);
+          const desiredLeft = ((Number(value.infoX ?? 50) / 100) * cardWidth) - (barWidth / 2);
+          const leftPx = Math.max(minLeft, Math.min(maxLeft, desiredLeft));
+          const yGapPx = Math.round(((Number(value.infoY ?? 82) - 15) / 75) * 32);
           details.style.setProperty("position", "relative", "important");
-          details.style.setProperty("left", xOffsetPx + "px", "important");
+          details.style.setProperty("left", leftPx + "px", "important");
           details.style.setProperty("top", "0px", "important");
           details.style.setProperty("margin-top", yGapPx + "px", "important");
+          details.style.setProperty("margin-left", "0", "important");
+          details.style.setProperty("margin-right", "0", "important");
           details.style.setProperty("transform", "none", "important");
         } else {
           details.style.setProperty("position", "absolute", "important");
@@ -2175,7 +2195,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     "accent",
     "panelColor",
     "fontSize",
-    "clipWidth",
+    "clipWidth", "widgetWidth", "widgetHeight",
     "duration",
     "clipTimeframe",
     "headingText",
