@@ -1,1693 +1,1301 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Twitch Shoutout Studio</title>
-
 <style>
 :root {
-  --accent:#9147ff;
-  --card-bg:#18181b;
-  --card-bg2:#30204a;
-  --text-color:#ffffff;
-  --border-color:#9147ff;
-  --card-width:520px;
-  --card-height:480px;
-  --avatar-size:64px;
-  --card-radius:16px;
-  --card-border:2px;
-  --shadow:0 12px 35px rgba(0,0,0,.32);
+  --accent: #a970ff;
+  --panel: #171225;
+  --width: 760px;
+  --heading-size: 34px;
+  --overlay-opacity: .92;
 }
-
-* {box-sizing:border-box}
-
+* { box-sizing: border-box; }
 body {
-  margin:0;
-  padding:24px;
-  color:#f4f4f5;
-  background:#0e0e10;
-  font:15px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  color: #fff;
+  background: #0c0913;
 }
-
-button,input,select {font:inherit}
-
+button, input, select { font: inherit; }
 button {
-  border:0;
-  border-radius:9px;
-  padding:10px 14px;
-  color:white;
-  background:var(--accent);
-  cursor:pointer;
-  font-weight:650;
+  cursor: pointer;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  padding: 10px 14px;
+  font-weight: bold;
+}
+button:hover { filter: brightness(1.12); }
+input, select {
+  width: 100%;
+  padding: 10px;
+  color: white;
+  background: #211a30;
+  border: 1px solid #493761;
+  border-radius: 7px;
+}
+input[type="color"] { height: 42px; padding: 4px; }
+input[type="range"] { padding: 0; accent-color: var(--accent); }
+input[type="checkbox"] { accent-color: var(--accent); }
+label { display: block; margin: 12px 0 6px; }
+.small { color: #b9afc9; font-size: 12px; line-height: 1.5; }
+#panel { max-width: 1100px; margin: auto; padding: 24px; }
+.columns {
+  display: grid;
+  grid-template-columns: minmax(240px, 330px) minmax(0, 1fr);
+  gap: 24px;
+}
+.settings, .preview {
+  min-width: 0;
+  padding: 20px;
+  background: var(--panel);
+  border: 1px solid #382849;
+  border-radius: 14px;
+}
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.status {
+  min-height: 24px;
+  margin-top: 10px;
+  color: #d4c4f5;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.status.error { color: #ff9dba; }
+.status.success { color: #9ff0c1; }
+hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
+#overlay {
+  display: none;
+  width: 100%;
+  min-height: 100vh;
+  padding: 24px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: transparent;
+}
+#card {
+  width: min(100%, var(--width));
+  margin: auto;
+  opacity: 0;
+  transform: translateY(18px) scale(.97);
+  transition: opacity .45s, transform .45s;
+}
+#card.show { opacity: 1; transform: none; }
+#heading {
+  margin: 0 0 16px;
+  font-size: var(--heading-size);
+  font-weight: 900;
+  overflow-wrap: anywhere;
+  text-shadow: 0 3px 15px #000;
+}
+#player {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 180px;
+  overflow: hidden;
+  border: 2px solid var(--accent);
+  border-radius: 14px;
+  background: #09070d;
+  box-shadow: 0 8px 40px #0008;
+}
+#player iframe {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 180px;
+  border: 0;
+}
+#details {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 16px auto 0;
+  padding: 15px 22px;
+  max-width: 620px;
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px #0008;
 }
 
-button.secondary {background:#3f3f46}
-button.danger {background:#7f1d1d}
-button:disabled {opacity:.55;cursor:wait}
+/* Layout and motion presets */
+#player #details {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  justify-content: flex-start;
+  border: 0;
+  border-top: 2px solid var(--accent);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 -8px 28px #0008;
+  text-align: left;
+}
+#player #details #avatar { flex-basis: 62px; width: 62px; height: 62px; }
+#player #details #name { font-size: 22px; }
+#card.layout-video-bottom #details { left: 50%; right: auto; bottom: 0; transform:translateX(-50%); width:var(--info-width,82%); border-top: 2px solid var(--accent); border-radius: 0; }
+#card.layout-classic #details { position: static; width: auto; max-width: 620px; margin: 16px auto 0; border: 1px solid var(--accent); border-radius: 14px; }
+#card.layout-classic #player #details { position: static; width: auto; max-width: 620px; margin: 16px auto 0; border: 1px solid var(--accent); border-radius: 14px; }
+#card.layout-lower-third #heading { text-align: left; margin-left: 2%; }
+#card.layout-lower-third #player #details { left: 50%; right: auto; bottom: 3%; transform:translateX(-50%); width:var(--info-width,82%); border: 1px solid var(--accent); border-radius: 12px; }
+#card.layout-minimal #heading { font-size: calc(var(--heading-size) * .72); margin-bottom: 8px; letter-spacing: .08em; }
+#card.layout-minimal #player { border-width: 1px; border-radius: 4px; }
+#card.layout-minimal #player #details { padding: 8px 14px; gap: 10px; }
+#card.layout-minimal #player #details #avatar { flex-basis: 44px; width: 44px; height: 44px; }
+#card.layout-neon #player { border-width: 3px; box-shadow: 0 0 18px var(--accent), 0 0 44px color-mix(in srgb, var(--accent) 50%, transparent); }
+#card.layout-neon #player #details { border-top: 2px solid var(--accent); }
+#card.anim-fade { animation: shoutFade .6s ease both; }
+#card.anim-slide { animation: shoutSlide .65s cubic-bezier(.2,.8,.2,1) both; }
+#card.anim-zoom { animation: shoutZoom .55s cubic-bezier(.2,.8,.2,1) both; }
+#card.anim-bounce { animation: shoutBounce .8s cubic-bezier(.2,.8,.2,1) both; }
+#card.anim-glow #player { animation: shoutGlow 1.8s ease-in-out infinite alternate; }
+@keyframes shoutFade { from { opacity:0 } to { opacity:1 } }
+@keyframes shoutSlide { from { opacity:0; transform:translateY(40px) } to { opacity:1; transform:translateY(0) } }
+@keyframes shoutZoom { from { opacity:0; transform:scale(.82) } to { opacity:1; transform:scale(1) } }
+@keyframes shoutBounce { 0% { opacity:0; transform:translateY(35px) scale(.94) } 65% { opacity:1; transform:translateY(-7px) scale(1.015) } 100% { transform:translateY(0) scale(1) } }
+@keyframes shoutGlow { from { box-shadow:0 0 12px var(--accent) } to { box-shadow:0 0 34px var(--accent), 0 0 60px color-mix(in srgb, var(--accent) 45%, transparent) } }
+@media(prefers-reduced-motion: reduce) { #card, #card.anim-fade, #card.anim-slide, #card.anim-zoom, #card.anim-bounce, #card.anim-glow #player { animation:none !important; transition:none !important; } }
 
-input,select {
-  width:100%;
-  min-width:0;
-  padding:10px 11px;
-  color:#f4f4f5;
-  background:#18181b;
-  border:1px solid #3f3f46;
-  border-radius:8px;
+#avatar {
+  flex: 0 0 76px;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--accent);
+  background: #30243f;
+}
+#name { font-size: 25px; font-weight: 800; overflow-wrap: anywhere; }
+#game { margin-top: 6px; color: #d4c4f5; overflow-wrap: anywhere; }
+#clipTitle { margin-top: 5px; color: #b9afc9; font-size: 13px; overflow-wrap: anywhere; }
+#clipTitle:empty { display: none; }
+#overlayStatus {
+  max-width: 620px;
+  margin: 12px auto 0;
+  color: #ffb7c8;
+  overflow-wrap: anywhere;
+  text-shadow: 0 2px 8px #000;
+  font-size: 13px;
+  line-height: 1.5;
+}
+#overlayStatus:empty { display: none; }
+
+/* Layout designer controls */
+.preset-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:10px 0 16px; }
+.preset-grid button { min-height:44px; background:#2b203b; border:1px solid #57406e; text-align:left; }
+.preset-grid button:hover { background:#44305d; }
+.control-pair { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.control-pair label { margin-top:8px; }
+.range-value { color:#cdb6f8; font-size:12px; float:right; }
+#player.designer-position #details { position:absolute; left:50%; top:var(--info-y,82%); right:auto; bottom:auto; transform:translate(-50%,-50%); width:var(--info-width,82%); max-width:100%; min-width:0; box-sizing:border-box; margin:0; z-index:5; cursor:grab; user-select:none; touch-action:none; }
+#player.designer-position #details:active { cursor:grabbing; }
+#player.designer-position #details #avatar { pointer-events:none; }
+#player.avatar-square #avatar { border-radius:0; }
+#player.avatar-rounded #avatar { border-radius:14px; }
+#player.avatar-diamond #avatar { border-radius:10px; clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%); }
+#player.gradient-horizontal #details { background:linear-gradient(90deg, var(--panel), color-mix(in srgb, var(--accent) 45%, var(--panel))); }
+#player.gradient-diagonal #details { background:linear-gradient(135deg, var(--panel), color-mix(in srgb, var(--accent) 55%, #130d20)); }
+#player.gradient-radial #details { background:radial-gradient(ellipse at left, color-mix(in srgb, var(--accent) 55%, var(--panel)), var(--panel) 78%); }
+#player.gradient-glass #details { background:color-mix(in srgb, var(--panel) 54%, transparent); backdrop-filter:blur(16px) saturate(1.35); }
+#player.border-glow { animation:designerGlow 1.8s ease-in-out infinite alternate; }
+#player.border-pulse { animation:designerPulse 1.2s ease-in-out infinite alternate; }
+#player.border-rainbow { animation:designerRainbow 4s linear infinite; }
+#player.border-dash { border-style:dashed; animation:designerDash 1.2s linear infinite; }
+@keyframes designerGlow { from { box-shadow:0 0 8px var(--accent),0 8px 40px #0008; } to { box-shadow:0 0 30px var(--accent),0 0 52px color-mix(in srgb,var(--accent) 45%,transparent); } }
+@keyframes designerPulse { from { border-width:2px; } to { border-width:5px; } }
+@keyframes designerRainbow { 0% { border-color:#ff4f9a; box-shadow:0 0 16px #ff4f9a; } 33% { border-color:#8c5bff; box-shadow:0 0 16px #8c5bff; } 66% { border-color:#31d8ff; box-shadow:0 0 16px #31d8ff; } 100% { border-color:#ff4f9a; box-shadow:0 0 16px #ff4f9a; } }
+@keyframes designerDash { to { border-color:color-mix(in srgb,var(--accent) 35%,white); } }
+#card.layout-classic #player #details { left:auto; top:auto; transform:none; }
+@media(prefers-reduced-motion:reduce) { #player.border-glow,#player.border-pulse,#player.border-rainbow,#player.border-dash { animation:none !important; } }
+
+@media(max-width: 750px) {
+  .columns { grid-template-columns: 1fr; }
+  #heading { font-size: 26px; }
+  #details { gap: 10px; padding: 12px; }
+  
+/* Layout and motion presets */
+#player #details {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  justify-content: flex-start;
+  border: 0;
+  border-top: 2px solid var(--accent);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 -8px 28px #0008;
+  text-align: left;
+}
+#player #details #avatar { flex-basis: 62px; width: 62px; height: 62px; }
+#player #details #name { font-size: 22px; }
+#card.layout-classic #details { position: static; width: auto; max-width: 620px; margin: 16px auto 0; border: 1px solid var(--accent); border-radius: 14px; }
+#card.layout-classic #player #details { position: static; width: auto; max-width: 620px; margin: 16px auto 0; border: 1px solid var(--accent); border-radius: 14px; }
+#card.layout-lower-third #heading { text-align: left; margin-left: 2%; }
+#card.layout-lower-third #player #details { left: 50%; right: auto; bottom: 3%; transform:translateX(-50%); width:var(--info-width,82%); border: 1px solid var(--accent); border-radius: 12px; }
+#card.layout-minimal #heading { font-size: calc(var(--heading-size) * .72); margin-bottom: 8px; letter-spacing: .08em; }
+#card.layout-minimal #player { border-width: 1px; border-radius: 4px; }
+#card.layout-minimal #player #details { padding: 8px 14px; gap: 10px; }
+#card.layout-minimal #player #details #avatar { flex-basis: 44px; width: 44px; height: 44px; }
+#card.layout-neon #player { border-width: 3px; box-shadow: 0 0 18px var(--accent), 0 0 44px color-mix(in srgb, var(--accent) 50%, transparent); }
+#card.layout-neon #player #details { border-top: 2px solid var(--accent); }
+#card.anim-fade { animation: shoutFade .6s ease both; }
+#card.anim-slide { animation: shoutSlide .65s cubic-bezier(.2,.8,.2,1) both; }
+#card.anim-zoom { animation: shoutZoom .55s cubic-bezier(.2,.8,.2,1) both; }
+#card.anim-bounce { animation: shoutBounce .8s cubic-bezier(.2,.8,.2,1) both; }
+#card.anim-glow #player { animation: shoutGlow 1.8s ease-in-out infinite alternate; }
+@keyframes shoutFade { from { opacity:0 } to { opacity:1 } }
+@keyframes shoutSlide { from { opacity:0; transform:translateY(40px) } to { opacity:1; transform:translateY(0) } }
+@keyframes shoutZoom { from { opacity:0; transform:scale(.82) } to { opacity:1; transform:scale(1) } }
+@keyframes shoutBounce { 0% { opacity:0; transform:translateY(35px) scale(.94) } 65% { opacity:1; transform:translateY(-7px) scale(1.015) } 100% { transform:translateY(0) scale(1) } }
+@keyframes shoutGlow { from { box-shadow:0 0 12px var(--accent) } to { box-shadow:0 0 34px var(--accent), 0 0 60px color-mix(in srgb, var(--accent) 45%, transparent) } }
+@media(prefers-reduced-motion: reduce) { #card, #card.anim-fade, #card.anim-slide, #card.anim-zoom, #card.anim-bounce, #card.anim-glow #player { animation:none !important; transition:none !important; } }
+
+#avatar { flex-basis: 58px; width: 58px; height: 58px; }
+  #name { font-size: 20px; }
+}
+@media(prefers-reduced-motion: reduce) {
+  #card { transition: none; }
 }
 
-input[type="color"] {height:42px;padding:4px}
-input[type="checkbox"] {width:auto;accent-color:var(--accent)}
-
-label {
-  display:block;
-  margin-bottom:6px;
-  color:#d4d4d8;
-  font-size:13px;
+/* Final layout-designer overrides: responsive info width and true background alpha. */
+#card #details {
+  box-sizing: border-box;
+  width: var(--info-width, 82%);
+  max-width: 100%;
+  min-width: 0;
 }
-
-small,.d,.muted {color:#a1a1aa}
-.app {max-width:1280px;margin:0 auto}
-.top {margin-bottom:22px}
-h1 {margin:0 0 6px;font-size:clamp(24px,3vw,34px)}
-
-.layout {
-  display:grid;
-  grid-template-columns:minmax(290px,390px) minmax(0,1fr);
-  gap:20px;
-  align-items:start;
+#card.layout-classic #details,
+#card.layout-classic #player #details {
+  width: var(--info-width, 82%);
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
 }
-
-.panel {
-  min-width:0;
-  padding:18px;
-  border:1px solid #27272a;
-  border-radius:14px;
-  background:#18181b;
+#player #details {
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  width: var(--info-width, 82%);
+  max-width: 100%;
+  box-sizing: border-box;
 }
-
-.panel h2 {margin:0 0 15px;font-size:18px}
-.panel h3 {margin:20px 0 12px;font-size:15px;color:#ddd}
-.field {margin-bottom:13px}
-.field-row {display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.button-row {display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}
-.status {min-height:22px;margin-top:12px;color:#c4b5fd;overflow-wrap:anywhere}
-.check-row {display:flex;align-items:center;gap:9px;margin:10px 0}
-.check-row label {margin:0}
-details {border-top:1px solid #3f3f46;padding-top:12px;margin-top:15px}
-summary {cursor:pointer;font-weight:700;margin-bottom:14px}
-
-.hint {
-  margin-top:6px;
-  font-size:12px;
-  line-height:1.5;
-  color:#a1a1aa;
-}
-
-/* PREVIEW */
-
-.preview-wrap {
-  display:flex;
-  align-items:flex-start;
-  justify-content:center;
-  min-height:240px;
-  padding:22px;
-  overflow:auto;
-  border-radius:10px;
-  background:#09090b;
-}
-
-/* WIDGET CARD */
-
-.shoutout {
-  width:min(var(--card-width),100%);
-  height:var(--card-height);
-  min-height:0;
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-  border:var(--card-border) solid var(--border-color);
-  border-radius:var(--card-radius);
-  background:var(--card-bg);
-  color:var(--text-color);
-  box-shadow:var(--shadow);
-  position:relative;
-  isolation:isolate;
-  flex-shrink:0;
-}
-
-.shoutout::before {
-  content:"";
-  position:absolute;
-  inset:0;
-  z-index:-1;
-  pointer-events:none;
-  background:var(--background-effect,transparent);
-  opacity:var(--effect-opacity,1);
-}
-
-.shoutout.border-solid {border-style:solid}
-.shoutout.border-dashed {border-style:dashed}
-.shoutout.border-dotted {border-style:dotted}
-.shoutout.border-double {border-style:double}
-.shoutout.border-none {border-color:transparent}
-
-.shoutout.bg-gradient {
-  background:linear-gradient(135deg,var(--card-bg),var(--card-bg2));
-}
-
-.shoutout.bg-animated {
-  background:linear-gradient(270deg,var(--card-bg),var(--card-bg2),var(--accent),var(--card-bg));
-  background-size:400% 400%;
-  animation:gradientMove 12s ease infinite;
-}
-
-.shoutout.bg-glow {
-  background:var(--card-bg);
-  box-shadow:0 0 18px color-mix(in srgb,var(--accent) 45%,transparent),
-             0 0 42px color-mix(in srgb,var(--accent) 22%,transparent);
-}
-
-.shoutout.bg-glass {
-  background:linear-gradient(135deg,
-    color-mix(in srgb,var(--card-bg) 83%,white),
-    color-mix(in srgb,var(--card-bg2) 88%,transparent));
-  backdrop-filter:blur(12px);
-}
-
-.shoutout.bg-stars::before {
-  opacity:.65;
-  background-image:
-    radial-gradient(circle at 15% 25%,white 1px,transparent 2px),
-    radial-gradient(circle at 80% 20%,var(--accent) 1px,transparent 2px),
-    radial-gradient(circle at 60% 70%,white 1px,transparent 2px),
-    radial-gradient(circle at 30% 85%,var(--accent) 1px,transparent 2px);
-  background-size:80px 80px,110px 110px,130px 130px,100px 100px;
-}
-
-.shoutout.bg-scanlines::before {
-  opacity:.2;
-  background:repeating-linear-gradient(
-    to bottom,transparent 0,transparent 4px,
-    rgba(255,255,255,.3) 5px,transparent 6px
-  );
-}
-
-.shoutout.anim-border {animation:borderPulse 3s ease-in-out infinite}
-
-.shoutout.anim-rainbow {
-  border-color:transparent;
-  background:
-    linear-gradient(var(--card-bg),var(--card-bg)) padding-box,
-    linear-gradient(90deg,#ff3d81,#ffbd4a,#55f7d2,#5398ff,#b56cff,#ff3d81) border-box;
-  background-size:auto,300% 300%;
-  animation:rainbowMove 6s linear infinite;
-}
-
-.shoutout.anim-pulse {animation:cardPulse 2.5s ease-in-out infinite}
-.shoutout.anim-float {animation:cardFloat 4s ease-in-out infinite}
-
-@keyframes gradientMove {
-  0%,100% {background-position:0% 50%}
-  50% {background-position:100% 50%}
-}
-
-@keyframes borderPulse {
-  0%,100% {box-shadow:0 0 4px var(--border-color)}
-  50% {box-shadow:0 0 22px var(--border-color)}
-}
-
-@keyframes rainbowMove {to {background-position:0 0,300% 0}}
-
-@keyframes cardPulse {
-  0%,100% {box-shadow:0 0 5px color-mix(in srgb,var(--accent) 20%,transparent)}
-  50% {box-shadow:0 0 24px color-mix(in srgb,var(--accent) 65%,transparent)}
-}
-
-@keyframes cardFloat {
-  0%,100% {transform:translateY(0)}
-  50% {transform:translateY(-4px)}
-}
-
-/* VIDEO FRAME */
-
-.video-frame {
-  position:relative;
-  width:100%;
-  flex:1 1 0;
-  min-height:0;
-  background:#000;
-  overflow:hidden;
-}
-
-.video-frame iframe,
-.video-frame video {
-  display:block;
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  min-height:0;
-  border:0;
-  background:#000;
-}
-
-.video-frame video {
-  object-fit:contain;
-}
-
-.video-placeholder {
-  display:grid;
-  width:100%;
-  height:100%;
-  min-height:0;
-  padding:20px;
-  place-items:center;
-  color:#a1a1aa;
-  text-align:center;
-  overflow-wrap:anywhere;
-}
-
-.video-error {
-  color:#fca5a5;
-  font-size:13px;
-  padding:18px;
-  text-align:center;
-  overflow-wrap:anywhere;
-}
-
-/* STREAMER INFORMATION */
-
-.identity {
-  display:flex;
-  align-items:center;
-  gap:13px;
-  padding:15px 17px;
-  background:rgba(0,0,0,.12);
-  flex:0 0 auto;
-  min-width:0;
-}
-
-.avatar {
-  width:var(--avatar-size);
-  height:var(--avatar-size);
-  flex:0 0 var(--avatar-size);
-  border:2px solid var(--accent);
-  border-radius:50%;
-  background:#3f3f46;
-  object-fit:cover;
-}
-
-.identity-text {min-width:0;flex:1}
-
-.eyebrow {
-  margin-bottom:3px;
-  color:var(--accent);
-  font-size:11px;
-  font-weight:800;
-  letter-spacing:.12em;
-  text-transform:uppercase;
-}
-
-.streamer-name {
-  font-size:clamp(18px,2.5vw,25px);
-  font-weight:800;
-  line-height:1.15;
-  overflow-wrap:anywhere;
-}
-
-.streamer-handle {
-  color:color-mix(in srgb,var(--text-color) 65%,transparent);
-  font-size:13px;
-  overflow-wrap:anywhere;
-}
-
-.footer {
-  padding:10px 16px 13px;
-  border-top:1px solid color-mix(in srgb,var(--text-color) 15%,transparent);
-  color:color-mix(in srgb,var(--text-color) 75%,transparent);
-  font-size:12px;
-  text-align:center;
-  overflow-wrap:anywhere;
-  flex:0 0 auto;
-}
-
-.compact .identity {gap:10px;padding:10px 12px}
-.compact .footer {padding:7px 12px 9px}
-
-/* HORIZONTAL LAYOUT */
-
-.horizontal {
-  display:grid;
-  grid-template-columns:minmax(0,1fr) 180px;
-  grid-template-rows:minmax(0,1fr) auto;
-}
-
-.horizontal .video-frame {
-  grid-column:1;
-  grid-row:1;
-  min-height:0;
-  height:auto;
-  aspect-ratio:auto;
-  flex:none;
-}
-
-.horizontal .identity {
-  grid-column:2;
-  grid-row:1;
-  align-items:flex-start;
-  flex-direction:column;
-  justify-content:center;
-  overflow:hidden;
-}
-
-.horizontal .footer {grid-column:1 / -1;grid-row:2}
-
-.hidden {display:none!important}
-
-/* OBS MODE */
-
-body.overlay-mode {
-  padding:0;
-  overflow:hidden;
-  background:transparent;
-}
-
-body.overlay-mode .app {
-  width:100%;
-  max-width:none;
-  margin:0;
-}
-
-body.overlay-mode .top,
-body.overlay-mode #settings,
-body.overlay-mode .preview-panel > h2,
-body.overlay-mode .preview-panel > p {
-  display:none!important;
-}
-
-body.overlay-mode .layout {display:block}
-
-body.overlay-mode .preview-panel {
-  display:block!important;
-  margin:0;
-  padding:0;
-  border:0;
-  border-radius:0;
-  background:transparent;
-}
-
-body.overlay-mode .preview-wrap {
-  display:flex;
-  align-items:flex-start;
-  justify-content:flex-start;
-  width:100%;
-  height:auto;
-  min-height:0;
-  padding:0;
-  overflow:visible;
-  border-radius:0;
-  background:transparent;
-}
-
-body.overlay-mode .shoutout {
-  width:min(var(--card-width),100%);
-  height:var(--card-height);
-  box-shadow:none;
-}
-
-@media (max-width:800px) {
-  body:not(.overlay-mode) {padding:14px}
-  .layout {grid-template-columns:1fr}
-  .horizontal {grid-template-columns:minmax(0,1fr) 140px}
-}
-
-@media (prefers-reduced-motion:reduce) {
-  .shoutout {animation:none!important}
+#player.designer-position #details {
+  width: var(--info-width, 82%);
+  max-width: 100%;
 }
 </style>
 </head>
-
 <body>
-<main class="app">
-
-  <header class="top">
-    <h1>🎮 Twitch Shoutout Studio</h1>
-    <div class="muted">
-      Paste a video or embed URL, customize your shoutout, and use the generated URL as an OBS Browser Source.
-    </div>
-  </header>
-
-  <div class="layout">
-
-    <section class="panel" id="settings">
-      <h2>Shoutout settings</h2>
-
-      <div class="field">
-        <label for="username">Twitch username</label>
-        <input id="username" type="text" placeholder="Enter Twitch username" autocomplete="off">
+<div id="panel">
+  <h1>Shoutout Studio</h1>
+  <p class="small">Customize your Twitch shoutout overlay.</p>
+  <div class="columns">
+    <section class="settings">
+      <h2>Appearance</h2>
+      <label for="accent">Accent color</label>
+      <input id="accent" type="color" value="#a970ff">
+      <label for="panelColor">Information card color</label>
+      <input id="panelColor" type="color" value="#171225">
+      <label for="fontSize">Heading size</label>
+      <input id="fontSize" type="range" min="20" max="52" value="34">
+      <label for="clipWidth">Maximum card width</label>
+      <input id="clipWidth" type="range" min="400" max="1000" step="20" value="760">
+      <label for="layout">Layout design</label>
+      <select id="layout">
+        <option value="video-bottom">Video with info overlay at bottom</option>
+        <option value="lower-third">Inset lower-third overlay</option>
+        <option value="classic">Classic card below video</option>
+        <option value="minimal">Minimal / clean</option>
+        <option value="neon">Neon glow</option>
+      </select>
+      <label for="animation">Entrance / animation</label>
+      <select id="animation">
+        <option value="slide">Smooth slide-in</option>
+        <option value="fade">Fade in</option>
+        <option value="zoom">Zoom in</option>
+        <option value="bounce">Bounce in</option>
+        <option value="glow">Continuous glow</option>
+        <option value="none">No animation</option>
+      </select>
+      <h2>Layout designer</h2>
+      <p class="small">Choose a preset, then fine-tune the overlay. In the preview, drag the creator info bar to reposition it.</p>
+      <div class="preset-grid" aria-label="One-click style presets">
+        <button type="button" data-preset="neon">⚡ Neon gamer</button>
+        <button type="button" data-preset="cinematic">🎬 Cinematic</button>
+        <button type="button" data-preset="glass">🪟 Glass card</button>
+        <button type="button" data-preset="minimal">◻ Minimal</button>
+        <button type="button" data-preset="rainbow">🌈 Rainbow edge</button>
+        <button type="button" data-preset="classic">▤ Classic card</button>
       </div>
-
-      <div class="field">
-        <label for="videoUrl">Video / Embed URL</label>
-        <input id="videoUrl" type="url" placeholder="Paste a video, YouTube, or embed URL" autocomplete="url">
-        <div class="hint">
-          A supplied URL takes priority over the Twitch clip Worker. Direct MP4/WebM/OGG links use the native video player. YouTube and Twitch clip links are converted to embed URLs where recognized. Other URLs open in an iframe if the website permits embedding.
-        </div>
+      <label for="overlayOpacity">Info overlay opacity <span id="opacityValue" class="range-value">88%</span></label>
+      <input id="overlayOpacity" type="range" min="20" max="100" value="88">
+      <label for="infoWidth">Info bar width <span id="widthValue" class="range-value">82%</span></label>
+      <input id="infoWidth" type="range" min="20" max="100" value="82">
+      <label for="avatarShape">Avatar shape</label>
+      <select id="avatarShape">
+        <option value="circle">Circle</option><option value="rounded">Rounded square</option><option value="square">Square</option><option value="diamond">Diamond</option>
+      </select>
+      <label for="gradient">Info background</label>
+      <select id="gradient">
+        <option value="solid">Solid color</option><option value="horizontal">Horizontal gradient</option><option value="diagonal">Diagonal gradient</option><option value="radial">Radial glow</option><option value="glass">Glass / blur</option>
+      </select>
+      <label for="borderStyle">Video border effect</label>
+      <select id="borderStyle">
+        <option value="none">Static border</option><option value="glow">Animated glow</option><option value="pulse">Pulse</option><option value="rainbow">Rainbow cycle</option><option value="dash">Dashed shimmer</option>
+      </select>
+      <div class="control-pair">
+        <div><label for="infoX">Info position X <span id="xValue" class="range-value">50%</span></label><input id="infoX" type="range" min="10" max="90" value="50"></div>
+        <div><label for="infoY">Info position Y <span id="yValue" class="range-value">82%</span></label><input id="infoY" type="range" min="15" max="90" value="82"></div>
       </div>
-
-      <div class="field">
-        <label for="workerUrl">Cloudflare Worker URL (fallback)</label>
-        <input id="workerUrl" type="url" value="https://twitch-shoutout-clips.dropzedd.workers.dev/">
+      <label for="duration">Display duration (seconds)</label>
+      <input id="duration" type="number" min="10" max="120" value="30">
+      <label for="headingText">Heading text</label>
+      <input id="headingText" value="GO CHECK OUT">
+      <label for="fontFamily">Font</label>
+      <select id="fontFamily">
+        <option value="Arial, sans-serif">Arial</option>
+        <option value="Verdana, sans-serif">Verdana</option>
+        <option value="Georgia, serif">Georgia</option>
+        <option value="'Trebuchet MS', sans-serif">Trebuchet</option>
+      </select>
+      <label>
+        <input id="showTitle" type="checkbox" checked style="width:auto">
+        Show clip title
+      </label>
+      <div class="actions">
+        <button id="save" type="button">Save settings</button>
+        <button id="reset" type="button">Reset</button>
       </div>
-
-      <div class="field">
-        <label for="timeframe">Clip timeframe (Worker fallback)</label>
-        <select id="timeframe">
-          <option value="all">All time</option>
-          <option value="year" selected>Past year</option>
-          <option value="30days">Past 30 days</option>
-          <option value="featured">Featured clips only</option>
-        </select>
+      <hr>
+      <h2>Test shoutout</h2>
+      <label for="testUser">Twitch username</label>
+      <input id="testUser" value="dropzedd" placeholder="username">
+      <label for="clipTimeframe">Clip timeframe</label>
+      <select id="clipTimeframe">
+        <option value="all">All time</option>
+        <option value="year">Past year</option>
+        <option value="30days">Past 30 days</option>
+        <option value="featured">Featured clips only</option>
+      </select>
+      <p class="small">The selected timeframe is sent with the clip request. Your clip API worker must support the <code>timeframe</code> parameter for filtering to take effect.</p>
+      <h2>StreamElements game lookup</h2>
+      <p class="small">Chat channel: <strong>#dropzedd</strong>. Keep this page or the overlay open, then type <code>!gametest streamername</code> in your Twitch chat. When StreamElements replies with “Last game lookup: …”, the game label will update for that streamer. The browser listens to public chat read-only; it does not send chat messages.</p>
+      <p id="gameChatStatus" class="small" role="status">Game lookup listener starts when the overlay preview loads.</p>
+      <div class="actions">
+        <button id="test" type="button">Play preview</button>
+        <button id="openOverlay" type="button">Open overlay</button>
       </div>
-
-      <details open>
-        <summary>Text customization</summary>
-
-        <div class="field">
-          <label for="eyebrowText">Heading above streamer name</label>
-          <input id="eyebrowText" value="Go check them out" maxlength="100">
-        </div>
-
-        <div class="field">
-          <label for="nameOverride">Custom streamer name (optional)</label>
-          <input id="nameOverride" placeholder="Leave blank to use Twitch display name" maxlength="100">
-        </div>
-
-        <div class="field">
-          <label for="handlePrefix">Username prefix</label>
-          <input id="handlePrefix" value="@" maxlength="20">
-        </div>
-
-        <div class="field">
-          <label for="footerText">Footer message</label>
-          <input id="footerText" value="Thanks for being part of the community!" maxlength="200">
-        </div>
-
-        <div class="field">
-          <label for="placeholderText">Video placeholder message</label>
-          <input id="placeholderText" value="Your next favorite streamer starts here!" maxlength="200">
-        </div>
-
-        <div class="check-row">
-          <input id="showAvatar" type="checkbox" checked>
-          <label for="showAvatar">Show profile picture</label>
-        </div>
-
-        <div class="check-row">
-          <input id="showName" type="checkbox" checked>
-          <label for="showName">Show streamer name</label>
-        </div>
-
-        <div class="check-row">
-          <input id="showHandle" type="checkbox" checked>
-          <label for="showHandle">Show username</label>
-        </div>
-
-        <div class="check-row">
-          <input id="showEyebrow" type="checkbox" checked>
-          <label for="showEyebrow">Show heading text</label>
-        </div>
-
-        <div class="check-row">
-          <input id="showFooter" type="checkbox" checked>
-          <label for="showFooter">Show footer message</label>
-        </div>
-      </details>
-
-      <details open>
-        <summary>Colors and dimensions</summary>
-
-        <div class="field-row">
-          <div class="field">
-            <label for="accent">Accent color</label>
-            <input id="accent" type="color" value="#9147ff">
-          </div>
-          <div class="field">
-            <label for="cardBg">Background color</label>
-            <input id="cardBg" type="color" value="#18181b">
-          </div>
-        </div>
-
-        <div class="field-row">
-          <div class="field">
-            <label for="cardBg2">Second gradient color</label>
-            <input id="cardBg2" type="color" value="#30204a">
-          </div>
-          <div class="field">
-            <label for="textColor">Text color</label>
-            <input id="textColor" type="color" value="#ffffff">
-          </div>
-        </div>
-
-        <div class="field-row">
-          <div class="field">
-            <label for="borderColor">Border color</label>
-            <input id="borderColor" type="color" value="#9147ff">
-          </div>
-          <div class="field">
-            <label for="cardWidth">Card width (px)</label>
-            <input id="cardWidth" type="number" min="240" max="1200" value="520">
-          </div>
-        </div>
-
-        <div class="field">
-          <label for="cardHeight">Card height (px)</label>
-          <input id="cardHeight" type="number" min="180" max="1200" step="10" value="480">
-          <small>Controls total widget height, including the video and information.</small>
-        </div>
-
-        <div class="field-row">
-          <div class="field">
-            <label for="avatarSize">Avatar size (px)</label>
-            <input id="avatarSize" type="number" min="24" max="180" value="64">
-          </div>
-          <div class="field">
-            <label for="radius">Corner radius (px)</label>
-            <input id="radius" type="number" min="0" max="60" value="16">
-          </div>
-        </div>
-
-        <div class="field-row">
-          <div class="field">
-            <label for="border">Border thickness (px)</label>
-            <input id="border" type="number" min="0" max="16" value="2">
-          </div>
-          <div class="field">
-            <label for="layoutStyle">Card layout</label>
-            <select id="layoutStyle">
-              <option value="classic" selected>Classic: video above card</option>
-              <option value="compact">Compact: video above card</option>
-              <option value="horizontal">Horizontal card</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="field">
-          <label for="backgroundStyle">Background style</label>
-          <select id="backgroundStyle">
-            <option value="solid">Solid color</option>
-            <option value="gradient">Gradient</option>
-            <option value="animated">Animated gradient</option>
-            <option value="glow">Neon glow</option>
-            <option value="glass">Glass effect</option>
-            <option value="stars">Star particles</option>
-            <option value="scanlines">Retro scanlines</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="borderStyle">Border style</label>
-          <select id="borderStyle">
-            <option value="solid">Solid</option>
-            <option value="dashed">Dashed</option>
-            <option value="dotted">Dotted</option>
-            <option value="double">Double</option>
-            <option value="none">No border</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="animationStyle">Card animation</label>
-          <select id="animationStyle">
-            <option value="none">No animation</option>
-            <option value="border">Pulsing border</option>
-            <option value="rainbow">Animated rainbow border</option>
-            <option value="pulse">Pulsing glow</option>
-            <option value="float">Floating card</option>
-          </select>
-        </div>
-      </details>
-
-      <div class="button-row">
-        <button id="loadBtn" type="button">Load shoutout</button>
-        <button id="savePreviewBtn" type="button">Save Preview</button>
-      </div>
-
-      <div class="button-row">
-        <button id="loadSavedBtn" class="secondary" type="button">Load Saved Preview</button>
-        <button id="discardBtn" class="secondary" type="button">Discard Changes</button>
-      </div>
-
-      <div class="button-row">
-        <button id="copyBtn" class="secondary" type="button">Generate / Copy OBS URL</button>
-        <button id="resetBtn" class="secondary" type="button">Reset Design</button>
-      </div>
-
-      <div id="status" class="status" role="status" aria-live="polite"></div>
-
-      <small>
-        Settings save automatically in this browser. Save Preview stores a separate approved version. Generate a fresh OBS URL after approving your design.
-      </small>
-    </section>
-
-    <section class="panel preview-panel">
-      <h2>Live preview</h2>
-      <p class="muted">
-        Paste a URL above and click Load shoutout. The video fills the available space within your chosen widget dimensions.
+      <p class="small">
+        Use the HTTPS overlay URL as an OBS Browser Source.
+        The page does not require a local server or Python.
       </p>
-
-      <div class="preview-wrap">
-        <article id="shoutout" class="shoutout">
-          <div id="videoFrame" class="video-frame">
-            <div class="video-placeholder" id="placeholder">
-              Your next favorite streamer starts here!
-            </div>
-          </div>
-
-          <div class="identity" id="identity">
-            <img id="avatar" class="avatar" alt="Streamer profile picture">
-            <div class="identity-text">
-              <div id="eyebrow" class="eyebrow">Go check them out</div>
-              <div id="streamerName" class="streamer-name">Streamer Name</div>
-              <div id="streamerHandle" class="streamer-handle">@username</div>
-            </div>
-          </div>
-
-          <div id="footer" class="footer">Thanks for being part of the community!</div>
-        </article>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+    </section>
+    <section class="preview">
+      <h2>Live preview</h2>
+      <iframe id="preview" title="Shoutout preview"
+        style="width:100%;height:620px;border:0;border-radius:10px;background:transparent"
+        allow="autoplay; fullscreen"></iframe>
+    </section>
+  </div>
+</div>
+<div id="overlay">
+  <main id="card">
+    <h1 id="heading">GO CHECK OUT</h1>
+    <div id="player"></div>
+    <section id="details">
+      <img id="avatar" alt="Creator profile picture">
+      <div style="text-align:left;min-width:0">
+        <div id="name"></div>
+        <div id="game"></div>
+        <div id="clipTitle"></div>
       </div>
     </section>
-
-  </div>
-</main>
+    <div id="overlayStatus" role="status" aria-live="polite"></div>
+  </main>
+</div>
 
 <script>
 (() => {
   "use strict";
 
   const $ = id => document.getElementById(id);
-  const params = new URLSearchParams(window.location.search);
-  const isOverlay = params.get("overlay") === "1";
+  // Guard UI updates so a stale/partial hosted markup cannot crash a shoutout.
+  const setText = (id, value) => { const element = $(id); if (element) element.textContent = value == null ? "" : String(value); };
 
-  const SAVED_SETTINGS_KEY = "twitchShoutoutStudioSettings";
-  const SAVED_PREVIEW_KEY = "twitchShoutoutStudioSavedPreview";
-
-  const designIds = [
-    "eyebrowText","nameOverride","handlePrefix","footerText","placeholderText",
-    "showAvatar","showName","showHandle","showEyebrow","showFooter",
-    "accent","cardBg","cardBg2","textColor","borderColor",
-    "cardWidth","cardHeight","avatarSize","radius","border","layoutStyle",
-    "backgroundStyle","borderStyle","animationStyle"
-  ];
-
-  const settingsIds = [
-    "username","videoUrl","workerUrl","timeframe",...designIds
-  ];
-
-  const defaults = {
-    username:"",
-    videoUrl:"",
-    workerUrl:"https://twitch-shoutout-clips.dropzedd.workers.dev/",
-    timeframe:"year",
-    eyebrowText:"Go check them out",
-    nameOverride:"",
-    handlePrefix:"@",
-    footerText:"Thanks for being part of the community!",
-    placeholderText:"Your next favorite streamer starts here!",
-    showAvatar:true,
-    showName:true,
-    showHandle:true,
-    showEyebrow:true,
-    showFooter:true,
-    accent:"#9147ff",
-    cardBg:"#18181b",
-    cardBg2:"#30204a",
-    textColor:"#ffffff",
-    borderColor:"#9147ff",
-    cardWidth:520,
-    cardHeight:480,
-    avatarSize:64,
-    radius:16,
-    border:2,
-    layoutStyle:"classic",
-    backgroundStyle:"solid",
-    borderStyle:"solid",
-    animationStyle:"none"
+  const DEFAULTS = {
+    accent: "#a970ff",
+    panelColor: "#171225",
+    fontSize: 34,
+    clipWidth: 760,
+    duration: 30,
+    clipTimeframe: "all",
+    headingText: "GO CHECK OUT",
+    fontFamily: "Arial, sans-serif",
+    showTitle: true,
+    layout: "video-bottom",
+    animation: "slide",
+    overlayOpacity: 88,
+    avatarShape: "circle",
+    gradient: "solid",
+    borderStyle: "none",
+    infoX: 50,
+    infoY: 82,
+    infoWidth: 82
   };
 
-  function cleanUsername(value) {
-    return (value || "").trim()
-      .replace(/^@+/,"")
-      .replace(/[^a-zA-Z0-9_]/g,"");
-  }
+  const CLIP_API = "https://twitch-shoutout-clips.dropzedd.workers.dev/";
+  const SETTINGS_KEY = "soSettings";
+  const params = new URLSearchParams(location.search);
+  const mode = params.get("mode") || "panel";
 
-  function bounded(value,fallback,min,max) {
-    const n = Number(value);
-    return Number.isFinite(n)
-      ? Math.max(min,Math.min(max,n))
+  let settings = loadSettings();
+  let hideTimer = null;
+  let cleanupTimer = null;
+  let requestId = 0;
+  let currentShoutoutUsername = "";
+  let pendingGameLookup = "";
+  let chatSocket = null;
+  let chatReconnectTimer = null;
+  const GAME_CACHE_KEY = "soStreamElementsGameCache";
+  const CHAT_CHANNEL = "dropzedd";
+
+  function clampNumber(value, min, max, fallback) {
+    const number = Number(value);
+    return Number.isFinite(number)
+      ? Math.max(min, Math.min(max, number))
       : fallback;
   }
 
-  function setStatus(message,isError=false) {
-    $("status").textContent = message;
-    $("status").style.color = isError ? "#fca5a5" : "#c4b5fd";
-  }
-
-  function collectSettings() {
-    const values = {};
-
-    settingsIds.forEach(id => {
-      const element = $(id);
-      if (!element) return;
-
-      values[id] = element.type === "checkbox"
-        ? element.checked
-        : element.value;
-    });
-
-    return values;
-  }
-
-  function applySettings(values) {
-    if (!values || typeof values !== "object") return;
-
-    Object.entries(values).forEach(([id,value]) => {
-      const element = $(id);
-      if (!element || value == null) return;
-
-      if (element.type === "checkbox") {
-        element.checked = value === true || value === "true";
-      } else {
-        element.value = String(value);
+  function loadSettings() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+      if (!saved || typeof saved !== "object" || Array.isArray(saved)) {
+        return { ...DEFAULTS };
       }
-    });
 
-    $("username").value = cleanUsername($("username").value);
+      const result = { ...DEFAULTS, ...saved };
 
-    updateIdentityText();
-    applyDesign();
-  }
+      if (!/^#[0-9a-f]{6}$/i.test(result.accent)) result.accent = DEFAULTS.accent;
+      if (!/^#[0-9a-f]{6}$/i.test(result.panelColor)) result.panelColor = DEFAULTS.panelColor;
 
-  function saveSettings() {
-    if (isOverlay) return;
+      result.fontSize = clampNumber(result.fontSize, 20, 52, 34);
+      result.clipWidth = clampNumber(result.clipWidth, 400, 1000, 760);
+      result.duration = clampNumber(result.duration, 10, 120, 30);
+      if (!["all","year","30days","featured"].includes(result.clipTimeframe)) result.clipTimeframe = DEFAULTS.clipTimeframe;
 
-    try {
-      localStorage.setItem(
-        SAVED_SETTINGS_KEY,
-        JSON.stringify(collectSettings())
-      );
-    } catch (_) {}
-  }
+      if (typeof result.headingText !== "string") result.headingText = DEFAULTS.headingText;
+      if (typeof result.showTitle !== "boolean") result.showTitle = DEFAULTS.showTitle;
+      if (!["video-bottom","lower-third","classic","minimal","neon"].includes(result.layout)) result.layout = DEFAULTS.layout;
+      if (!["fade","slide","zoom","bounce","glow","none"].includes(result.animation)) result.animation = DEFAULTS.animation;
+      result.overlayOpacity = clampNumber(result.overlayOpacity, 20, 100, DEFAULTS.overlayOpacity);
+      result.infoX = clampNumber(result.infoX, 10, 90, DEFAULTS.infoX);
+      result.infoY = clampNumber(result.infoY, 15, 90, DEFAULTS.infoY);
+      result.infoWidth = clampNumber(result.infoWidth, 20, 100, DEFAULTS.infoWidth);
+      if (!["circle","rounded","square","diamond"].includes(result.avatarShape)) result.avatarShape = DEFAULTS.avatarShape;
+      if (!["solid","horizontal","diagonal","radial","glass"].includes(result.gradient)) result.gradient = DEFAULTS.gradient;
+      if (!["none","glow","pulse","rainbow","dash"].includes(result.borderStyle)) result.borderStyle = DEFAULTS.borderStyle;
 
-  function restoreSettings() {
-    if (isOverlay) return;
+      const fonts = [
+        "Arial, sans-serif",
+        "Verdana, sans-serif",
+        "Georgia, serif",
+        "'Trebuchet MS', sans-serif"
+      ];
 
-    try {
-      const saved = JSON.parse(
-        localStorage.getItem(SAVED_SETTINGS_KEY) || "{}"
-      );
+      if (!fonts.includes(result.fontFamily)) result.fontFamily = DEFAULTS.fontFamily;
 
-      applySettings(saved);
-    } catch (_) {}
-  }
-
-  function savePreview() {
-    if (isOverlay) return;
-
-    try {
-      localStorage.setItem(
-        SAVED_PREVIEW_KEY,
-        JSON.stringify(collectSettings())
-      );
-
-      saveSettings();
-      setStatus("Preview saved! Your approved design is stored in this browser.");
-    } catch (_) {
-      setStatus("Could not save the preview. Check your browser storage settings.",true);
+      return result;
+    } catch (error) {
+      console.warn("Could not read settings:", error);
+      return { ...DEFAULTS };
     }
   }
 
-  async function loadSavedPreview() {
-    if (isOverlay) return;
-
+  function saveSettings(value) {
     try {
-      const saved = localStorage.getItem(SAVED_PREVIEW_KEY);
-
-      if (!saved) {
-        setStatus(
-          "No saved preview found. Customize your design and click Save Preview first.",
-          true
-        );
-        return;
-      }
-
-      applySettings(JSON.parse(saved));
-      saveSettings();
-
-      const videoUrl = $("videoUrl").value.trim();
-      const username = cleanUsername($("username").value);
-
-      if (videoUrl || username) {
-        await loadShoutout({quiet:true});
-        setStatus("Saved preview restored. Review it before generating your OBS URL.");
-      } else {
-        setStatus("Saved preview restored. Paste a video URL or enter a Twitch username.");
-      }
-    } catch (_) {
-      setStatus("Could not restore the saved preview.",true);
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(value));
+      return true;
+    } catch (error) {
+      console.error("Could not save settings:", error);
+      return false;
     }
   }
 
-  function discardChanges() {
-    loadSavedPreview();
+  function readForm() {
+    return {
+      accent: $("accent").value,
+      panelColor: $("panelColor").value,
+      fontSize: clampNumber($("fontSize").value, 20, 52, 34),
+      clipWidth: clampNumber($("clipWidth").value, 400, 1000, 760),
+      duration: clampNumber($("duration").value, 10, 120, 30),
+      clipTimeframe: $("clipTimeframe").value,
+      headingText: $("headingText").value,
+      fontFamily: $("fontFamily").value,
+      showTitle: $("showTitle").checked,
+      layout: $("layout").value,
+      animation: $("animation").value,
+      overlayOpacity: clampNumber($("overlayOpacity").value, 20, 100, 88),
+      avatarShape: $("avatarShape").value,
+      gradient: $("gradient").value,
+      borderStyle: $("borderStyle").value,
+      infoX: clampNumber($("infoX").value, 10, 90, 50),
+      infoY: clampNumber($("infoY").value, 15, 90, 82),
+      infoWidth: clampNumber($("infoWidth").value, 20, 100, 82)
+    };
   }
 
-  function updateIdentityText() {
-    const override = $("nameOverride").value.trim();
-
-    if (override) {
-      $("streamerName").textContent = override;
-    } else if (!$("streamerName").dataset.loadedName) {
-      $("streamerName").textContent = "Streamer Name";
+  function fillForm(value) {
+    for (const [key, val] of Object.entries(value)) {
+      const element = $(key);
+      if (!element) continue;
+      if (element.type === "checkbox") element.checked = Boolean(val);
+      else element.value = val;
     }
-
-    const username = cleanUsername(
-      $("username").value || params.get("user") || ""
-    );
-
-    $("streamerHandle").textContent =
-      $("handlePrefix").value + username;
   }
 
-  function applyDesign() {
+  function applySettings(value) {
     const root = document.documentElement;
-    const card = $("shoutout");
+    root.style.setProperty("--accent", value.accent);
+    root.style.setProperty("--panel", value.panelColor);
+    root.style.setProperty("--width", value.clipWidth + "px");
+    root.style.setProperty("--heading-size", value.fontSize + "px");
+    root.style.setProperty("--info-x", (value.infoX ?? 50) + "%");
+    root.style.setProperty("--info-y", (value.infoY ?? 82) + "%");
+    root.style.setProperty("--info-width", (value.infoWidth ?? 82) + "%");
 
-    const accent = $("accent").value || defaults.accent;
-    const bg = $("cardBg").value || defaults.cardBg;
-    const bg2 = $("cardBg2").value || defaults.cardBg2;
-    const text = $("textColor").value || defaults.textColor;
-    const borderColor = $("borderColor").value || accent;
-
-    root.style.setProperty("--accent",accent);
-    root.style.setProperty("--card-bg",bg);
-    root.style.setProperty("--card-bg2",bg2);
-    root.style.setProperty("--text-color",text);
-    root.style.setProperty("--border-color",borderColor);
-
-    root.style.setProperty(
-      "--card-width",
-      bounded($("cardWidth").value,520,240,1200)+"px"
-    );
-
-    root.style.setProperty(
-      "--card-height",
-      bounded($("cardHeight").value,480,180,1200)+"px"
-    );
-
-    root.style.setProperty(
-      "--avatar-size",
-      bounded($("avatarSize").value,64,24,180)+"px"
-    );
-
-    root.style.setProperty(
-      "--card-radius",
-      bounded($("radius").value,16,0,60)+"px"
-    );
-
-    root.style.setProperty(
-      "--card-border",
-      bounded($("border").value,2,0,16)+"px"
-    );
-
-    card.className = "shoutout";
-
-    const layout = $("layoutStyle").value;
-
-    if (["classic","compact","horizontal"].includes(layout)) {
-      card.classList.add(layout);
+    const heading = $("heading");
+    if (heading) {
+      heading.textContent = value.headingText;
+      heading.style.fontFamily = value.fontFamily;
     }
 
-    const backgroundClasses = {
-      solid:"",
-      gradient:"bg-gradient",
-      animated:"bg-animated",
-      glow:"bg-glow",
-      glass:"bg-glass",
-      stars:"bg-stars",
-      scanlines:"bg-scanlines"
-    };
-
-    const backgroundClass =
-      backgroundClasses[$("backgroundStyle").value];
-
-    if (backgroundClass) card.classList.add(backgroundClass);
-
-    const borderStyle = $("borderStyle").value;
-
-    if (["solid","dashed","dotted","double","none"].includes(borderStyle)) {
-      card.classList.add("border-"+borderStyle);
-    }
-
-    const animationClasses = {
-      none:"",
-      border:"anim-border",
-      rainbow:"anim-rainbow",
-      pulse:"anim-pulse",
-      float:"anim-float"
-    };
-
-    const animationClass =
-      animationClasses[$("animationStyle").value];
-
-    if (animationClass) card.classList.add(animationClass);
-
-    $("eyebrow").textContent = $("eyebrowText").value;
-    $("footer").textContent = $("footerText").value;
-
-    const placeholder = $("videoFrame").querySelector(".video-placeholder");
-
-    if (placeholder) {
-      placeholder.textContent = $("placeholderText").value;
-    }
-
-    $("avatar").classList.toggle("hidden",!$("showAvatar").checked);
-    $("streamerName").classList.toggle("hidden",!$("showName").checked);
-    $("streamerHandle").classList.toggle("hidden",!$("showHandle").checked);
-    $("eyebrow").classList.toggle("hidden",!$("showEyebrow").checked);
-    $("footer").classList.toggle("hidden",!$("showFooter").checked);
-  }
-
-  function applyOverlaySettingsFromUrl() {
-    settingsIds.forEach(id => {
-      if (!params.has(id)) return;
-
-      const element = $(id);
-      if (!element) return;
-
-      const value = params.get(id);
-
-      if (element.type === "checkbox") {
-        element.checked = value === "true";
-      } else {
-        element.value = value;
+    const details = $("details");
+    const player = $("player");
+    const card = $("card");
+    if (details && player && card) {
+      // The info bar must be a child of the video frame for true in-video overlays.
+      if (value.layout === "video-bottom" || value.layout === "lower-third" || value.layout === "minimal" || value.layout === "neon") {
+        if (details.parentElement !== player) player.appendChild(details);
+      } else if (details.parentElement !== card) {
+        card.insertBefore(details, $("overlayStatus"));
       }
-    });
-  }
-
-  function getWorkerUrl(username) {
-    const base = ($("workerUrl").value || "").trim();
-
-    if (!base) {
-      throw new Error("Enter your Cloudflare Worker URL.");
+      card.classList.remove("layout-video-bottom", "layout-lower-third", "layout-classic", "layout-minimal", "layout-neon");
+      card.classList.add("layout-" + (value.layout || "video-bottom"));
+      card.classList.remove("anim-fade", "anim-slide", "anim-zoom", "anim-bounce", "anim-glow", "anim-none");
+      card.classList.add("anim-" + (value.animation || "slide"));
+      const toRgba = (hexColor, alpha) => {
+        const match = /^#?([0-9a-f]{6})$/i.exec(hexColor || "#171225");
+        const hex = match ? match[1] : "171225";
+        const r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), b = parseInt(hex.slice(4, 6), 16);
+        return `rgba(${r}, ${g}, ${b}, ${Math.max(0, Math.min(1, alpha))})`;
+      };
+      const alpha = Math.max(0.2, Math.min(1, Number(value.overlayOpacity ?? 88) / 100));
+      const panel = toRgba(value.panelColor, alpha);
+      const accent = toRgba(value.accent, alpha);
+      // Important inline styles win over preset CSS selectors and make the
+      // slider affect only the info-bar background, not the avatar/text.
+      details.style.setProperty("background-color", panel, "important");
+      details.style.setProperty("background-image", "none", "important");
+      details.style.setProperty("backdrop-filter", "none", "important");
+      if (value.gradient === "horizontal") {
+        details.style.setProperty("background-image", `linear-gradient(90deg, ${panel}, ${accent})`, "important");
+      } else if (value.gradient === "diagonal") {
+        details.style.setProperty("background-image", `linear-gradient(135deg, ${panel}, ${accent})`, "important");
+      } else if (value.gradient === "radial") {
+        details.style.setProperty("background-image", `radial-gradient(ellipse at left, ${accent}, ${panel} 78%)`, "important");
+      } else if (value.gradient === "glass") {
+        details.style.setProperty("background-color", toRgba(value.panelColor, alpha * 0.62), "important");
+        details.style.setProperty("backdrop-filter", "blur(16px) saturate(1.35)", "important");
+      }
+      player.classList.toggle("designer-position", value.layout !== "classic");
+      player.classList.remove("avatar-circle", "avatar-rounded", "avatar-square", "avatar-diamond");
+      player.classList.add("avatar-" + (value.avatarShape || "circle"));
+      player.classList.remove("gradient-solid", "gradient-horizontal", "gradient-diagonal", "gradient-radial", "gradient-glass");
+      player.classList.add("gradient-" + (value.gradient || "solid"));
+      player.classList.remove("border-none", "border-glow", "border-pulse", "border-rainbow", "border-dash");
+      player.classList.add("border-" + (value.borderStyle || "none"));
+      // Re-trigger entrance animations whenever the selection changes.
+      card.style.animation = "none";
+      void card.offsetWidth;
+      card.style.animation = "";
     }
 
-    const url = new URL(base);
-
-    url.searchParams.set("username",username);
-    url.searchParams.set("timeframe",$("timeframe").value || "year");
-
-    return url.toString();
+    const title = $("clipTitle");
+    if (title) title.style.display = value.showTitle ? "" : "none";
+    if ($("opacityValue")) $("opacityValue").textContent = (value.overlayOpacity ?? 88) + "%";
+    if ($("xValue")) $("xValue").textContent = (value.infoX ?? 50) + "%";
+    if ($("yValue")) $("yValue").textContent = (value.infoY ?? 82) + "%";
+    if ($("widthValue")) $("widthValue").textContent = (value.infoWidth ?? 82) + "%";
   }
 
-  function normalizeClip(data) {
-    if (!data) return null;
+  function setStatus(message, kind = "") {
+    const element = $("status");
+    if (!element) return;
+    element.textContent = message;
+    element.className = "status " + kind;
+  }
 
-    if (Array.isArray(data)) {
-      return data.length ? normalizeClip(data[0]) : null;
+  function setOverlayStatus(message) {
+    const element = $("overlayStatus");
+    if (element) element.textContent = message || "";
+  }
+
+  function validUsername(value) {
+    const username = String(value || "").trim().replace(/^@/, "");
+    if (!/^[a-zA-Z0-9_]{1,25}$/.test(username)) {
+      throw new Error("Enter a valid Twitch username.");
     }
+    return username;
+  }
 
-    if (data.error) {
+  async function fetchWithTimeout(url, timeoutMs = 10000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      return await fetch(url, {
+        signal: controller.signal,
+        mode: "cors",
+        cache: "no-store"
+      });
+    } catch (error) {
+      if (error.name === "AbortError") {
+        throw new Error("Request timed out: " + new URL(url).hostname);
+      }
       throw new Error(
-        typeof data.error === "string"
-          ? data.error
-          : "The clip service returned an error."
+        "Network request failed for " + new URL(url).hostname +
+        ". Check connection, CORS, or service availability."
       );
+    } finally {
+      clearTimeout(timer);
     }
-
-    if (data.clip) return normalizeClip(data.clip);
-
-    if (Array.isArray(data.clips)) {
-      return data.clips.length ? normalizeClip(data.clips[0]) : null;
-    }
-
-    if (Array.isArray(data.data)) {
-      return data.data.length ? normalizeClip(data.data[0]) : null;
-    }
-
-    if (data.data && typeof data.data === "object") {
-      return normalizeClip(data.data);
-    }
-
-    if (
-      data.slug || data.id || data.embed_url || data.embedUrl ||
-      data.video_url || data.videoUrl || data.clip_url || data.url
-    ) {
-      return data;
-    }
-
-    return null;
   }
 
-  function getClipSlug(clip) {
-    const direct = clip.slug || clip.id || clip.clip_slug || clip.clipSlug;
-
-    if (direct) return String(direct).trim();
-
-    for (const candidate of [
-      clip.url,
-      clip.clip_url,
-      clip.clipUrl,
-      clip.embed_url,
-      clip.embedUrl
-    ]) {
-      if (!candidate) continue;
-
-      try {
-        const url = new URL(candidate);
-        const parts = url.pathname.split("/").filter(Boolean);
-
-        if (parts.length) return parts[parts.length-1];
-      } catch (_) {}
+  async function fetchText(url) {
+    const response = await fetchWithTimeout(url);
+    if (!response.ok) {
+      throw new Error(new URL(url).hostname + " returned HTTP " + response.status);
     }
+    return (await response.text()).trim();
+  }
 
+  // Creator metadata must come from the same clip worker response. These
+  // helpers accept common field names without making any third-party lookups.
+  function firstString(values) {
+    for (const value of values) {
+      if (typeof value === "string" && value.trim()) return value.trim();
+    }
     return "";
   }
 
-  function getProfileImage(data,clip) {
-    return data.profile_image_url || data.profileImageUrl ||
-      data.broadcaster?.profile_image_url ||
-      data.broadcaster?.profileImageUrl ||
-      clip.profile_image_url || clip.profileImageUrl ||
-      clip.broadcaster?.profile_image_url ||
-      clip.broadcaster?.profileImageUrl || "";
+  function extractCreatorAvatar(data) {
+    const objects = [data, data?.user, data?.creator, data?.channel, data?.broadcaster,
+      data?.streamer, data?.profile, data?.data, data?.data?.user, data?.data?.channel,
+      data?.data?.broadcaster, data?.creatorInfo, data?.userInfo].filter(Boolean);
+    for (const item of objects) {
+      const value = firstString([
+        item.avatar, item.avatarUrl, item.avatar_url, item.profileImageUrl,
+        item.profile_image_url, item.profileImage, item.profile_image,
+        item.profilePicture, item.profile_picture, item.thumbnail
+      ]);
+      if (value && /^https:\/\//i.test(value)) return value;
+    }
+    return "";
   }
 
-  function getDisplayName(data,clip,username) {
-    return data.broadcaster_name || data.display_name || data.displayName ||
-      data.broadcaster?.display_name || data.broadcaster?.displayName ||
-      clip.broadcaster_name || clip.creator_name || clip.display_name ||
-      clip.broadcaster?.display_name || username || "Streamer";
+  function extractCreatorGame(data) {
+    const objects = [data, data?.user, data?.creator, data?.channel, data?.broadcaster,
+      data?.streamer, data?.profile, data?.data, data?.data?.user, data?.data?.channel,
+      data?.data?.broadcaster, data?.creatorInfo, data?.userInfo].filter(Boolean);
+    for (const item of objects) {
+      const value = item.game ?? item.gameName ?? item.game_name ?? item.category ??
+        item.categoryName ?? item.category_name ?? item.lastPlayedGame ??
+        item.last_played_game ?? item.lastGame ?? item.last_game;
+      if (typeof value === "string" && value.trim() && !isBadLookupResponse(value)) return value.trim();
+      if (value && typeof value === "object") {
+        const nested = firstString([value.name, value.title, value.displayName, value.display_name]);
+        if (nested && !isBadLookupResponse(nested)) return nested;
+      }
+    }
+    return "";
   }
 
-  function showPlaceholder(message) {
-    const placeholder = document.createElement("div");
-
-    placeholder.className = "video-placeholder";
-    placeholder.textContent = message || $("placeholderText").value;
-
-    $("videoFrame").replaceChildren(placeholder);
+  function isBadLookupResponse(value) {
+    const text = String(value || "").trim();
+    return !text || /^(?:not found|error|no game|none|null|n\/?a|unknown)$/i.test(text) ||
+      /error occurred retrieving data from the api|internal server error|service unavailable|rate.?limit|too many requests|temporarily unavailable/i.test(text);
   }
 
-  function showVideoError(message) {
-    const error = document.createElement("div");
-
-    error.className = "video-placeholder video-error";
-    error.textContent = message;
-
-    $("videoFrame").replaceChildren(error);
-  }
-
-  function safeHttpUrl(value) {
-    let url;
-
+  async function fetchJSON(url) {
+    const response = await fetchWithTimeout(url);
+    if (!response.ok) {
+      throw new Error(new URL(url).hostname + " returned HTTP " + response.status);
+    }
     try {
-      url = new URL(value);
-    } catch (_) {
-      throw new Error("Enter a complete URL beginning with https:// or http://.");
+      return await response.json();
+    } catch {
+      throw new Error("The clip service returned invalid JSON.");
     }
-
-    if (!["http:","https:"].includes(url.protocol)) {
-      throw new Error("Only HTTP and HTTPS URLs are supported.");
-    }
-
-    return url;
   }
 
-  function getYouTubeEmbed(url) {
-    const host = url.hostname.toLowerCase().replace(/^www\./,"");
-    let videoId = "";
-    let listId = url.searchParams.get("list") || "";
+  function setAvatar(url) {
+    const avatar = $("avatar");
+    if (!avatar) return;
 
-    if (host === "youtu.be") {
-      videoId = url.pathname.split("/").filter(Boolean)[0] || "";
-    } else if (
-      host === "youtube.com" ||
-      host === "m.youtube.com" ||
-      host === "youtube-nocookie.com"
+    avatar.onerror = () => {
+      avatar.onerror = null;
+      avatar.removeAttribute("src");
+    };
+
+    if (url && /^https:\/\//i.test(url)) avatar.src = url;
+    else avatar.removeAttribute("src");
+  }
+
+  function getParentDomain() {
+    const configured = (params.get("parent") || "").trim();
+    const parent = configured || location.hostname;
+
+    if (
+      !parent ||
+      !/^[a-zA-Z0-9.-]+$/.test(parent) ||
+      parent.startsWith(".") ||
+      parent.endsWith(".") ||
+      parent.includes("..") ||
+      parent === "localhost" ||
+      parent === "127.0.0.1"
     ) {
-      if (url.pathname === "/watch") {
-        videoId = url.searchParams.get("v") || "";
-      } else {
-        const match = url.pathname.match(
-          /^\/(?:embed|shorts|live)\/([^/?]+)/
-        );
-
-        if (match) videoId = match[1];
-      }
-    } else {
-      return null;
-    }
-
-    if (!videoId && !listId) {
-      throw new Error("That YouTube URL does not contain a recognizable video or playlist.");
-    }
-
-    if (!/^[a-zA-Z0-9_-]{6,}$/.test(videoId) && videoId) {
-      throw new Error("The YouTube video ID is not valid.");
-    }
-
-    const embed = new URL(
-      videoId
-        ? "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(videoId)
-        : "https://www.youtube-nocookie.com/embed/videoseries"
-    );
-
-    if (listId) embed.searchParams.set("list",listId);
-
-    embed.searchParams.set("autoplay","1");
-    embed.searchParams.set("playsinline","1");
-
-    if (url.searchParams.has("start")) {
-      embed.searchParams.set("start",url.searchParams.get("start"));
-    }
-
-    return embed.toString();
-  }
-
-  function getTwitchEmbed(url) {
-    const host = url.hostname.toLowerCase().replace(/^www\./,"");
-
-    const isTwitch =
-      host === "clips.twitch.tv" ||
-      host === "twitch.tv" ||
-      host === "m.twitch.tv";
-
-    if (!isTwitch) return null;
-
-    const parts = url.pathname.split("/").filter(Boolean);
-    let slug = "";
-
-    if (host === "clips.twitch.tv") {
-      slug = parts[0] || "";
-    } else {
-      const clipIndex = parts.findIndex(
-        part => part.toLowerCase() === "clip"
+      throw new Error(
+        "Twitch playback requires an HTTPS-hosted page with a valid parent domain. " +
+        "Open the hosted overlay, not a file:// URL."
       );
-
-      if (clipIndex >= 0) {
-        slug = parts[clipIndex+1] || "";
-      }
     }
 
-    if (slug) {
-      const parent = window.location.hostname;
-
-      if (!parent) {
-        throw new Error("Twitch embeds require the widget to be hosted on a website.");
-      }
-
-      const embed = new URL("https://clips.twitch.tv/embed");
-
-      embed.searchParams.set("clip",slug);
-      embed.searchParams.set("parent",parent);
-      embed.searchParams.set("autoplay","true");
-      embed.searchParams.set("muted","false");
-
-      return embed.toString();
+    if (location.protocol !== "https:") {
+      throw new Error("The overlay must be hosted over HTTPS for Twitch playback.");
     }
 
-    // Twitch channel/video pages are embedded as supplied.
-    // They may require login or may reject embedding.
-    return url.toString();
+    return parent;
   }
 
-  function isDirectVideo(url) {
-    const path = url.pathname.toLowerCase();
-
-    return /\.(mp4|webm|ogg|ogv|m4v|mov)(?:$)/i.test(path);
-  }
-
-  function showDirectVideo(url) {
-    const video = document.createElement("video");
-
-    video.controls = true;
-    video.autoplay = true;
-    video.playsInline = true;
-    video.preload = "auto";
-    video.src = url.toString();
-
-    video.addEventListener("error",() => {
-      showVideoError(
-        "The video could not be played. Check the link, file format, and the server's access permissions."
-      );
-    },{once:true});
-
-    $("videoFrame").replaceChildren(video);
-
-    // Autoplay with sound is subject to browser policy.
-    const playPromise = video.play();
-
-    if (playPromise && typeof playPromise.catch === "function") {
-      playPromise.catch(() => {
-        // Keep the native controls visible so the viewer can press Play.
-      });
+  // Play clips through Mustached Maniac's player instead of the native
+  // Twitch embed. The Worker still supplies the clip slug and creator data.
+  function makeClipPlayer(slug) {
+    if (typeof slug !== "string" || !/^[a-zA-Z0-9_-]+$/.test(slug.trim())) {
+      throw new Error("The clip service returned an invalid clip slug.");
     }
-  }
 
-  function showIframe(url,title="Embedded video") {
     const iframe = document.createElement("iframe");
-
-    iframe.title = title;
-    iframe.allow = "autoplay; fullscreen; picture-in-picture; encrypted-media";
+    iframe.title = "Twitch shoutout clip";
+    iframe.allow = "autoplay; fullscreen; picture-in-picture";
     iframe.allowFullscreen = true;
     iframe.referrerPolicy = "strict-origin-when-cross-origin";
 
-    // No sandbox is applied because many video providers need their
-    // own scripts, cookies, and player permissions to function.
-    iframe.src = url;
-
-    $("videoFrame").replaceChildren(iframe);
+    const url = new URL("https://mustachedmaniac.com/widgets/Twitch_Clip_Player/");
+    url.searchParams.set("clipId", slug.trim());
+    iframe.src = url.toString();
+    return iframe;
   }
 
-  function showExternalVideo(rawUrl) {
-    const url = safeHttpUrl(rawUrl);
-
-    // 1. Direct video files use the browser's video element.
-    if (isDirectVideo(url)) {
-      showDirectVideo(url);
-      return "direct";
-    }
-
-    // 2. YouTube URLs are changed to the provider's embed URL.
-    const youtubeEmbed = getYouTubeEmbed(url);
-
-    if (youtubeEmbed) {
-      showIframe(youtubeEmbed,"YouTube video");
-      return "youtube";
-    }
-
-    // 3. Twitch clip URLs are converted to the Twitch clip embed.
-    const twitchEmbed = getTwitchEmbed(url);
-
-    if (twitchEmbed) {
-      showIframe(twitchEmbed,"Twitch video or clip");
-      return "twitch";
-    }
-
-    // 4. Other URLs are loaded as supplied in a generic iframe.
-    showIframe(url.toString(),"External video or website");
-    return "iframe";
+  function clearTimers() {
+    clearTimeout(hideTimer);
+    clearTimeout(cleanupTimer);
+    hideTimer = null;
+    cleanupTimer = null;
   }
 
-  function applyProfile(data,clip,username) {
-    const displayName =
-      $("nameOverride").value.trim() ||
-      getDisplayName(data,clip,username);
-
-    const avatar = getProfileImage(data,clip);
-
-    $("streamerName").textContent = displayName;
-    $("streamerName").dataset.loadedName = displayName;
-
-    $("streamerHandle").textContent =
-      $("handlePrefix").value + username;
-
-    if (avatar) {
-      $("avatar").src = avatar;
-      $("avatar").alt = displayName + " profile picture";
-    } else {
-      $("avatar").removeAttribute("src");
+  // Remove only the clip/player content. The creator-info panel is sometimes
+  // positioned inside #player by the selected layout, so never clear it with
+  // replaceChildren().
+  function clearPlayerMedia() {
+    const player = $("player");
+    const details = $("details");
+    if (!player) return;
+    for (const child of Array.from(player.children)) {
+      if (child !== details) child.remove();
     }
-
-    applyDesign();
   }
 
-  async function loadWorkerProfile(username,options={}) {
-    const response = await fetch(getWorkerUrl(username));
+  function setPlayerMedia(media) {
+    const player = $("player");
+    const details = $("details");
+    if (!player) return;
+    clearPlayerMedia();
+    if (!media) return;
+    if (details && details.parentElement === player) player.insertBefore(media, details);
+    else player.appendChild(media);
+  }
 
-    let data;
+  function showFailure(message, myRequest) {
+    if (myRequest !== requestId) return;
+    console.error("Shoutout failed:", message);
+    setText("game", "Creator information may be unavailable.");
+    setOverlayStatus(message);
+    $("card").classList.add("show");
+  }
 
+  function showOverlayError(error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Shoutout failed:", error);
+    setText("heading", "SHOUTOUT ERROR");
+    clearPlayerMedia();
+    setOverlayStatus(message);
+    $("card").classList.add("show");
+  }
+
+  async function shoutout(rawUsername) {
+    const username = validUsername(rawUsername);
+    currentShoutoutUsername = username.toLowerCase();
+    const myRequest = ++requestId;
+
+    clearTimers();
+    settings = loadSettings();
+    applySettings(settings);
+
+    $("card").classList.remove("show");
+    clearPlayerMedia();
+    setText("name", username);
+    setText("game", "Loading creator information...");
+    setText("clipTitle", "");
+    setAvatar("");
+    setOverlayStatus("");
+
+    const encoded = encodeURIComponent(username);
+
+    const clipTimeframe = ["all","year","30days","featured"].includes(settings.clipTimeframe)
+      ? settings.clipTimeframe
+      : "all";
+    const clipURL = new URL(CLIP_API);
+    clipURL.searchParams.set("username", username);
+    clipURL.searchParams.set("timeframe", clipTimeframe);
+
+    let clip;
     try {
-      data = await response.json();
-    } catch (_) {
-      throw new Error("The Worker did not return valid JSON.");
-    }
-
-    if (!response.ok) {
-      throw new Error(
-        data.error || `Worker request failed (${response.status}).`
+      // One request only: clip, avatar and game metadata all come from the
+      // configured Cloudflare Worker endpoint.
+      clip = await fetchJSON(clipURL.toString());
+    } catch (reason) {
+      if (myRequest !== requestId) return;
+      showFailure(
+        "Shoutout worker request failed: " +
+        (reason instanceof Error ? reason.message : String(reason)),
+        myRequest
       );
-    }
-
-    const clip = normalizeClip(data);
-
-    if (!clip) {
-      throw new Error(
-        data.message || "No clips were returned for this username and timeframe."
-      );
-    }
-
-    applyProfile(data,clip,username);
-
-    return {
-      slug:getClipSlug(clip),
-      displayName:$("streamerName").textContent
-    };
-  }
-
-  async function loadShoutout(options={}) {
-    const username = cleanUsername(
-      $("username").value || params.get("user") || ""
-    );
-
-    const videoUrl = $("videoUrl").value.trim();
-
-    // A manually supplied URL takes priority. No Twitch Worker is
-    // required just to load this video.
-    if (videoUrl) {
-      $("username").value = username;
-
-      const button = $("loadBtn");
-
-      if (button) {
-        button.disabled = true;
-        button.textContent = "Loading…";
-      }
-
-      if (!options.quiet) {
-        setStatus("Loading your supplied video URL…");
-      }
-
-      try {
-        const type = showExternalVideo(videoUrl);
-
-        if (username) {
-          // Profile information is optional when a custom URL is used.
-          // Failure here must not replace or interrupt the video.
-          try {
-            await loadWorkerProfile(username);
-          } catch (profileError) {
-            console.warn("Optional profile lookup failed:",profileError);
-            updateIdentityText();
-          }
-        } else {
-          const override = $("nameOverride").value.trim();
-
-          if (override) {
-            $("streamerName").textContent = override;
-          } else {
-            $("streamerName").textContent = "Video";
-          }
-
-          $("streamerName").dataset.loadedName =
-            $("streamerName").textContent;
-
-          $("streamerHandle").textContent = "";
-          $("avatar").removeAttribute("src");
-        }
-
-        applyDesign();
-        saveSettings();
-
-        if (!options.quiet) {
-          const descriptions = {
-            direct:"direct video player",
-            youtube:"YouTube embed",
-            twitch:"Twitch embed",
-            iframe:"external iframe"
-          };
-
-          setStatus(
-            "Video URL loaded using the " +
-            (descriptions[type] || "video player") +
-            ". Autoplay may require viewer interaction."
-          );
-        }
-      } catch (error) {
-        console.error(error);
-
-        showVideoError(error.message || "Unable to load this video URL.");
-
-        if (!options.quiet) {
-          setStatus(error.message || "Unable to load video URL.",true);
-        }
-      } finally {
-        if (button) {
-          button.disabled = false;
-          button.textContent = "Load shoutout";
-        }
-      }
-
       return;
     }
 
-    // No custom URL: use the original Twitch clip Worker workflow.
-    if (!username) {
-      if (!options.quiet) {
-        setStatus(
-          "Paste a Video / Embed URL or enter a Twitch username.",
-          true
-        );
-      }
+    if (myRequest !== requestId) return;
 
+    const infoErrors = [];
+    const avatarURL = extractCreatorAvatar(clip);
+    let game = extractCreatorGame(clip);
+    const cachedGame = getCachedGame(username);
+    if (cachedGame) game = cachedGame;
+
+    if (avatarURL) setAvatar(avatarURL);
+    else infoErrors.push("avatar not included in worker response");
+
+    if (game) setText("game", "Game: " + game);
+    else {
+      setText("game", "Waiting for StreamElements game lookup…");
+      infoErrors.push("game not included in worker response yet");
+    }
+
+    if (!clip || typeof clip.slug !== "string" || !clip.slug.trim()) {
+      console.error("No usable clip in Worker response:", clip);
+      // Keep the avatar and game metadata visible even if this streamer has
+      // no clips matching the selected timeframe.
+      setOverlayStatus(clip?.error || "No usable clip was returned for this streamer.");
+      $("card").classList.add("show");
       return;
     }
 
-    $("username").value = username;
-
-    const button = $("loadBtn");
-
-    if (button) {
-      button.disabled = true;
-      button.textContent = "Loading…";
-    }
-
-    if (!options.quiet) {
-      setStatus("Loading Twitch clip and profile information…");
-    }
-
     try {
-      const result = await loadWorkerProfile(username);
-
-      if (!result.slug) {
-        throw new Error("No usable Twitch clip ID was found.");
-      }
-
-      const host = window.location.hostname;
-
-      if (!host) {
-        throw new Error(
-          "Twitch clips require the widget to be hosted on a website."
-        );
-      }
-
-      const clipUrl = new URL("https://clips.twitch.tv/embed");
-
-      clipUrl.searchParams.set("clip",result.slug);
-      clipUrl.searchParams.set("parent",host);
-      clipUrl.searchParams.set("autoplay","true");
-      clipUrl.searchParams.set("muted","false");
-
-      showIframe(clipUrl.toString(),"Twitch clip");
-
-      if (!options.quiet) {
-        setStatus(
-          `Loaded Twitch shoutout for ${result.displayName}.`
-        );
-      }
-
-      saveSettings();
+      const iframe = makeClipPlayer(clip.slug.trim());
+      setPlayerMedia(iframe);
     } catch (error) {
-      console.error(error);
+      showFailure(error.message, myRequest);
+      return;
+    }
 
-      if (!options.quiet) {
-        setStatus(error.message || "Unable to load shoutout.",true);
-      }
+    setText("name", username);
+    setText("clipTitle",
+      settings.showTitle && typeof clip.title === "string"
+        ? clip.title
+        : "");
 
-      showPlaceholder(
-        "Could not load a clip. Check the username, Worker URL, and Worker response."
-      );
-    } finally {
-      if (button) {
-        button.disabled = false;
-        button.textContent = "Load shoutout";
-      }
+    if (infoErrors.length) {
+      setOverlayStatus("Shoutout loaded; " + infoErrors.join(", ") + ".");
+    }
+
+    $("card").classList.add("show");
+
+    hideTimer = setTimeout(() => {
+      if (myRequest !== requestId) return;
+
+      $("card").classList.remove("show");
+
+      cleanupTimer = setTimeout(() => {
+        if (
+          myRequest === requestId &&
+          !$("card").classList.contains("show")
+        ) {
+          clearPlayerMedia();
+        }
+      }, 500);
+    }, settings.duration * 1000);
+  }
+
+  function getCachedGame(username) {
+    try {
+      const cache = JSON.parse(localStorage.getItem(GAME_CACHE_KEY) || "{}");
+      const entry = cache[String(username || "").toLowerCase()];
+      // Keep the locally cached result for up to 30 days.
+      if (entry && entry.game && entry.savedAt && Date.now() - entry.savedAt < 30 * 86400000) return entry.game;
+    } catch {}
+    return "";
+  }
+
+  function saveCachedGame(username, game) {
+    try {
+      const cache = JSON.parse(localStorage.getItem(GAME_CACHE_KEY) || "{}");
+      cache[String(username).toLowerCase()] = { game, savedAt: Date.now() };
+      localStorage.setItem(GAME_CACHE_KEY, JSON.stringify(cache));
+    } catch (error) {
+      console.warn("Could not cache StreamElements game lookup:", error);
     }
   }
 
-  function buildOverlayUrl() {
-    const username = cleanUsername(
-      $("username").value || params.get("user") || ""
-    );
-
-    const videoUrl = $("videoUrl").value.trim();
-
-    if (!username && !videoUrl) {
-      throw new Error(
-        "Enter a Twitch username or paste a video URL before generating the OBS URL."
-      );
+  function applyStreamElementsGame(username, game) {
+    if (!username || !game || isBadLookupResponse(game)) return;
+    saveCachedGame(username, game);
+    if (currentShoutoutUsername === username.toLowerCase()) {
+      setText("game", "Game: " + game);
+      const status = $("overlayStatus");
+      if (status && /game information unavailable|waiting for streamelements game lookup/i.test(status.textContent)) {
+        setOverlayStatus("Game updated from StreamElements.");
+      }
     }
+    // Notify another local tab/overlay without requiring a server or KV.
+    try { localStorage.setItem("soGameUpdate", JSON.stringify({ username: username.toLowerCase(), game, at: Date.now() })); } catch {}
+  }
 
-    const url = new URL(window.location.href);
+  function startStreamElementsChatListener() {
+    if (mode !== "overlay" || chatSocket) return;
+    const status = $("overlayStatus");
+    const setChatState = message => {
+      const panelStatus = $("gameChatStatus");
+      if (panelStatus) panelStatus.textContent = message;
+      if (status && !status.textContent) status.textContent = message;
+    };
+    try {
+      const nick = "justinfan" + Math.floor(Math.random() * 900000 + 100000);
+      chatSocket = new WebSocket("wss://irc-ws.chat.twitch.tv:443");
+      chatSocket.addEventListener("open", () => {
+        chatSocket.send("PASS SCHMOOPIIE");
+        chatSocket.send("NICK " + nick);
+        chatSocket.send("JOIN #" + CHAT_CHANNEL);
+        setChatState("Connected read-only to Twitch chat #" + CHAT_CHANNEL + ". Run !gametest username in chat.");
+      });
+      chatSocket.addEventListener("message", event => {
+        const raw = String(event.data || "");
+        for (const line of raw.split("\r\n")) {
+          if (!line) continue;
+          if (line.startsWith("PING ")) {
+            try { chatSocket?.send("PONG " + line.slice(5)); } catch {}
+            continue;
+          }
+          const match = line.match(/^:([^! ]+)!.* PRIVMSG #[^ ]+ :(.*)$/i);
+          if (!match) continue;
+          const speaker = match[1].toLowerCase();
+          const message = match[2].trim();
+          const command = message.match(/^!gametest\s+([a-z0-9_]{1,25})\s*$/i);
+          if (command && speaker !== "streamelements") {
+            pendingGameLookup = command[1].toLowerCase();
+            continue;
+          }
+          if (speaker === "streamelements" && pendingGameLookup) {
+            const reply = message.match(/^Last game lookup:\s*(.+?)\s*$/i);
+            if (reply && !isBadLookupResponse(reply[1])) {
+              applyStreamElementsGame(pendingGameLookup, reply[1].trim());
+              setChatState("StreamElements returned a game for @" + pendingGameLookup + ".");
+              pendingGameLookup = "";
+            } else if (reply) {
+              setChatState("StreamElements did not return a usable game for @" + pendingGameLookup + ".");
+              pendingGameLookup = "";
+            }
+          }
+        }
+      });
+      chatSocket.addEventListener("close", () => {
+        chatSocket = null;
+        setChatState("Twitch chat disconnected. Reconnecting…");
+        if (!chatReconnectTimer) chatReconnectTimer = setTimeout(() => {
+          chatReconnectTimer = null;
+          startStreamElementsChatListener();
+        }, 5000);
+      });
+      chatSocket.addEventListener("error", () => setChatState("Could not connect to Twitch chat. The game lookup may not update automatically."));
+    } catch (error) {
+      chatSocket = null;
+      setChatState("Twitch chat listener unavailable in this browser.");
+    }
+  }
 
+  window.addEventListener("storage", event => {
+    if (event.key === "soGameUpdate" && event.newValue) {
+      try {
+        const update = JSON.parse(event.newValue);
+        if (update.username === currentShoutoutUsername && update.game) setText("game", "Game: " + update.game);
+      } catch {}
+    }
+  });
+
+  function overlayURL(username) {
+    const url = new URL(location.href);
     url.search = "";
     url.hash = "";
+    url.searchParams.set("mode", "overlay");
+    url.searchParams.set("username", username);
+    return url.href;
+  }
 
-    url.searchParams.set("overlay","1");
+  // Drag the info bar directly inside the overlay preview. Persist normalized coordinates.
+  const details = $("details");
+  if (details) {
+    let dragging = false;
+    let dragStart = null;
+    details.addEventListener("pointerdown", event => {
+      const player = $("player");
+      if (!player || !player.classList.contains("designer-position") || mode !== "overlay") return;
+      if (event.target.closest("a,button,input,select")) return;
+      const rect = player.getBoundingClientRect();
+      const box = details.getBoundingClientRect();
+      dragging = true;
+      dragStart = { rect, pointerId:event.pointerId };
+      details.setPointerCapture(event.pointerId);
+      settings = loadSettings();
+      settings.infoX = Math.max(10, Math.min(90, ((box.left + box.width/2 - rect.left) / rect.width) * 100));
+      settings.infoY = Math.max(15, Math.min(90, ((box.top + box.height/2 - rect.top) / rect.height) * 100));
+      event.preventDefault();
+    });
+    details.addEventListener("pointermove", event => {
+      if (!dragging || !dragStart) return;
+      const rect = dragStart.rect;
+      settings.infoX = Math.round(Math.max(10, Math.min(90, ((event.clientX - rect.left) / rect.width) * 100)));
+      settings.infoY = Math.round(Math.max(15, Math.min(90, ((event.clientY - rect.top) / rect.height) * 100)));
+      applySettings(settings);
+    });
+    const stopDrag = () => {
+      if (!dragging) return;
+      dragging = false;
+      dragStart = null;
+      saveSettings(settings);
+    };
+    details.addEventListener("pointerup", stopDrag);
+    details.addEventListener("pointercancel", stopDrag);
+  }
+
+
+  // Overlay mode: hide the editor and show the requested shoutout.
+  if (mode === "overlay") {
+    $("panel").style.display = "none";
+    $("overlay").style.display = "flex";
+
+    settings = loadSettings();
+    applySettings(settings);
+    startStreamElementsChatListener();
+
+    const username = params.get("username");
 
     if (username) {
-      url.searchParams.set("user",username);
+      shoutout(username).catch(showOverlayError);
+    } else {
+      showOverlayError(new Error(
+        "No username supplied. Add ?mode=overlay&username=USERNAME to the URL."
+      ));
     }
 
-    const values = collectSettings();
-
-    Object.entries(values).forEach(([key,value]) => {
-      url.searchParams.set(key,String(value));
-    });
-
-    return url.toString();
+    return;
   }
 
-  async function copyOverlayLink() {
+  fillForm(settings);
+  applySettings(settings);
+
+  function refreshPreview() {
+    let username;
+
     try {
-      const link = buildOverlayUrl();
-
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(link);
-      } else {
-        const temporary = document.createElement("textarea");
-
-        temporary.value = link;
-        temporary.style.position = "fixed";
-        temporary.style.opacity = "0";
-
-        document.body.appendChild(temporary);
-        temporary.select();
-
-        const copied = document.execCommand("copy");
-
-        temporary.remove();
-
-        if (!copied) {
-          throw new Error(
-            "Clipboard access failed. Copy this link manually: " + link
-          );
-        }
-      }
-
-      setStatus(
-        "OBS URL generated and copied. Your video URL and current design are included."
-      );
-    } catch (error) {
-      setStatus(error.message,true);
+      username = validUsername($("testUser").value || "dropzedd");
+    } catch {
+      username = "dropzedd";
     }
+
+    $("preview").src = overlayURL(username);
   }
 
-  function resetDesign() {
-    const currentUsername = cleanUsername($("username").value);
-    const currentVideoUrl = $("videoUrl").value.trim();
+  $("save").addEventListener("click", () => {
+    settings = readForm();
+    const saved = saveSettings(settings);
 
-    Object.entries(defaults).forEach(([id,value]) => {
-      const element = $(id);
-      if (!element) return;
-
-      if (element.type === "checkbox") {
-        element.checked = Boolean(value);
-      } else {
-        element.value = String(value);
-      }
-    });
-
-    $("username").value = currentUsername;
-    $("videoUrl").value = currentVideoUrl;
-
-    applyDesign();
-    updateIdentityText();
-    saveSettings();
+    applySettings(settings);
+    refreshPreview();
 
     setStatus(
-      "Design reset to defaults. Your username, video URL, and separately saved preview were preserved."
+      saved
+        ? "Settings saved."
+        : "Could not save settings. Check browser storage permissions.",
+      saved ? "success" : "error"
     );
-  }
+  });
 
-  function setupOverlayMode() {
-    document.body.classList.add("overlay-mode");
+  $("reset").addEventListener("click", () => {
+    settings = { ...DEFAULTS };
+    fillForm(settings);
 
-    // URL parameters define the OBS overlay. Do not replace them
-    // with local editor settings.
-    applyOverlaySettingsFromUrl();
+    const saved = saveSettings(settings);
 
-    const username = cleanUsername(
-      params.get("user") || $("username").value || ""
+    applySettings(settings);
+    refreshPreview();
+
+    setStatus(
+      saved
+        ? "Settings reset."
+        : "Settings reset for this page, but could not be saved.",
+      saved ? "success" : "error"
     );
+  });
 
-    $("username").value = username;
+  $("test").addEventListener("click", () => {
+    let username;
 
-    updateIdentityText();
-    applyDesign();
-
-    if ($("videoUrl").value.trim() || username) {
-      loadShoutout({quiet:true});
-    } else {
-      showPlaceholder(
-        "The OBS URL needs a video URL or Twitch username."
-      );
+    try {
+      username = validUsername($("testUser").value);
+    } catch (error) {
+      setStatus(error.message, "error");
+      return;
     }
+
+    settings = readForm();
+    saveSettings(settings);
+    applySettings(settings);
+    refreshPreview();
+
+    const opened = window.open(overlayURL(username), "_blank");
+
+    setStatus(
+      opened
+        ? "Opened the shoutout in a new tab. Check the overlay for errors."
+        : "Popup blocked. Allow popups for this page and try again.",
+      opened ? "success" : "error"
+    );
+  });
+
+  $("openOverlay").addEventListener("click", () => {
+    let username;
+
+    try {
+      username = validUsername($("testUser").value || "dropzedd");
+    } catch (error) {
+      setStatus(error.message, "error");
+      return;
+    }
+
+    const opened = window.open(overlayURL(username), "_blank");
+
+    setStatus(
+      opened
+        ? "Overlay opened for @" + username + "."
+        : "Popup blocked. Allow popups for this page.",
+      opened ? "success" : "error"
+    );
+  });
+
+  $("testUser").addEventListener("change", refreshPreview);
+
+  for (const id of [
+    "accent",
+    "panelColor",
+    "fontSize",
+    "clipWidth",
+    "duration",
+    "clipTimeframe",
+    "headingText",
+    "fontFamily",
+    "showTitle",
+    "layout",
+    "animation",
+    "overlayOpacity",
+    "avatarShape",
+    "gradient",
+    "borderStyle",
+    "infoX",
+    "infoY",
+    "infoWidth"
+  ]) {
+    const control = $(id);
+    const update = () => {
+      settings = readForm();
+      applySettings(settings);
+      // Keep the preview overlay in sync immediately, not only after Save.
+      saveSettings(settings);
+      refreshPreview();
+    };
+    control.addEventListener("input", update);
+    control.addEventListener("change", update);
   }
 
-  // Restore local settings for the editor, then initialize the preview.
-  restoreSettings();
-  applyDesign();
-  updateIdentityText();
-
-  // Design controls update the preview immediately.
-  designIds.forEach(id => {
-    $(id).addEventListener("input",() => {
-      applyDesign();
-      updateIdentityText();
-      saveSettings();
-    });
-
-    $(id).addEventListener("change",() => {
-      applyDesign();
-      updateIdentityText();
-      saveSettings();
+  const PRESETS = {
+    neon: { layout:"neon", animation:"glow", accent:"#00eaff", panelColor:"#101525", overlayOpacity:88, avatarShape:"rounded", gradient:"diagonal", borderStyle:"glow", infoX:50, infoY:82, infoWidth:82, fontSize:36 },
+    cinematic: { layout:"video-bottom", animation:"fade", accent:"#e4b86a", panelColor:"#17120d", overlayOpacity:92, avatarShape:"circle", gradient:"horizontal", borderStyle:"none", infoX:50, infoY:82, infoWidth:100, fontSize:32 },
+    glass: { layout:"video-bottom", animation:"zoom", accent:"#8bdcff", panelColor:"#182332", overlayOpacity:72, avatarShape:"rounded", gradient:"glass", borderStyle:"glow", infoX:50, infoY:80, infoWidth:88, fontSize:34 },
+    minimal: { layout:"minimal", animation:"slide", accent:"#ffffff", panelColor:"#101010", overlayOpacity:90, avatarShape:"circle", gradient:"solid", borderStyle:"none", infoX:50, infoY:84, infoWidth:76, fontSize:28 },
+    rainbow: { layout:"neon", animation:"bounce", accent:"#b65cff", panelColor:"#171225", overlayOpacity:86, avatarShape:"diamond", gradient:"radial", borderStyle:"rainbow", infoX:50, infoY:80, infoWidth:82, fontSize:36 },
+    classic: { layout:"classic", animation:"fade", accent:"#a970ff", panelColor:"#171225", overlayOpacity:100, avatarShape:"circle", gradient:"solid", borderStyle:"none", infoX:50, infoY:82, infoWidth:82, fontSize:34 }
+  };
+  document.querySelectorAll("[data-preset]").forEach(button => {
+    button.addEventListener("click", () => {
+      settings = { ...readForm(), ...PRESETS[button.dataset.preset] };
+      fillForm(settings);
+      applySettings(settings);
+      saveSettings(settings);
+      refreshPreview();
+      setStatus("Applied the " + button.textContent.trim() + " preset. You can keep customizing it.", "success");
     });
   });
 
-  // Save URL inputs without automatically reloading the video on every keystroke.
-  ["username","videoUrl","workerUrl","timeframe"].forEach(id => {
-    $(id).addEventListener("input",() => {
-      if (id === "username") updateIdentityText();
-      saveSettings();
-    });
-
-    $(id).addEventListener("change",() => {
-      if (id === "username") updateIdentityText();
-      saveSettings();
-    });
+  window.addEventListener("storage", event => {
+    if (event.key === SETTINGS_KEY) {
+      settings = loadSettings();
+      fillForm(settings);
+      applySettings(settings);
+      refreshPreview();
+    }
   });
 
-  $("loadBtn").addEventListener("click",() => loadShoutout());
-  $("savePreviewBtn").addEventListener("click",savePreview);
-  $("loadSavedBtn").addEventListener("click",loadSavedPreview);
-  $("discardBtn").addEventListener("click",discardChanges);
-  $("copyBtn").addEventListener("click",copyOverlayLink);
-  $("resetBtn").addEventListener("click",resetDesign);
+  refreshPreview();
 
-  if (isOverlay) {
-    setupOverlayMode();
-  } else {
-    const videoUrl = $("videoUrl").value.trim();
-    const username = cleanUsername($("username").value);
-
-    if (videoUrl || username) {
-      loadShoutout({quiet:true});
-    }
-  }
 })();
 </script>
 </body>
