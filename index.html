@@ -216,16 +216,25 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 #player.gradient-diagonal #details { background:linear-gradient(135deg, var(--panel), color-mix(in srgb, var(--accent) 55%, #130d20)); }
 #player.gradient-radial #details { background:radial-gradient(ellipse at left, color-mix(in srgb, var(--accent) 55%, var(--panel)), var(--panel) 78%); }
 #player.gradient-glass #details { background:color-mix(in srgb, var(--panel) 54%, transparent); backdrop-filter:blur(16px) saturate(1.35); }
-#player.border-glow { animation:designerGlow 1.8s ease-in-out infinite alternate; }
-#player.border-pulse { animation:designerPulse 1.2s ease-in-out infinite alternate; }
-#player.border-rainbow { animation:designerRainbow 4s linear infinite; }
-#player.border-dash { border-style:dashed; animation:designerDash 1.2s linear infinite; }
+#player.border-glow, #details.border-glow { animation:designerGlow 1.8s ease-in-out infinite alternate; }
+#player.border-pulse, #details.border-pulse { animation:designerPulse 1.2s ease-in-out infinite alternate; }
+#player.border-rainbow, #details.border-rainbow { animation:designerRainbow 4s linear infinite; }
+#player.border-dash, #details.border-dash { border-style:dashed; animation:designerDash 1.2s linear infinite; }
+/* The shared border control must remain visible on layouts whose info panel normally has no border. */
+#details.border-glow, #details.border-pulse, #details.border-rainbow, #details.border-dash {
+  border-width: 2px;
+  border-color: var(--accent);
+}
+#details.border-dash { border-style: dashed; }
+#details.border-glow { box-shadow: 0 0 8px color-mix(in srgb,var(--accent) 60%,transparent); }
+#details.border-pulse { box-shadow: 0 0 8px color-mix(in srgb,var(--accent) 45%,transparent); }
+#details.border-rainbow { box-shadow: 0 0 12px #ff4f9a; }
 @keyframes designerGlow { from { box-shadow:0 0 8px var(--accent),0 8px 40px #0008; } to { box-shadow:0 0 30px var(--accent),0 0 52px color-mix(in srgb,var(--accent) 45%,transparent); } }
 @keyframes designerPulse { from { border-width:2px; } to { border-width:5px; } }
 @keyframes designerRainbow { 0% { border-color:#ff4f9a; box-shadow:0 0 16px #ff4f9a; } 33% { border-color:#8c5bff; box-shadow:0 0 16px #8c5bff; } 66% { border-color:#31d8ff; box-shadow:0 0 16px #31d8ff; } 100% { border-color:#ff4f9a; box-shadow:0 0 16px #ff4f9a; } }
 @keyframes designerDash { to { border-color:color-mix(in srgb,var(--accent) 35%,white); } }
 #card.layout-classic #player #details { left:auto; top:auto; transform:none; }
-@media(prefers-reduced-motion:reduce) { #player.border-glow,#player.border-pulse,#player.border-rainbow,#player.border-dash { animation:none !important; } }
+@media(prefers-reduced-motion:reduce) { #player.border-glow,#player.border-pulse,#player.border-rainbow,#player.border-dash,#details.border-glow,#details.border-pulse,#details.border-rainbow,#details.border-dash { animation:none !important; } }
 
 @media(max-width: 750px) {
   .columns { grid-template-columns: 1fr; }
@@ -473,6 +482,36 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 #card.layout-neon #player { border:3px solid var(--accent); box-shadow:0 0 10px var(--accent),0 0 26px color-mix(in srgb,var(--accent) 55%,transparent),inset 0 0 20px color-mix(in srgb,var(--accent) 12%,transparent); }
 #card.layout-neon #player #details { border-top:2px solid var(--accent); background:linear-gradient(90deg,color-mix(in srgb,var(--panel) 96%,transparent),color-mix(in srgb,var(--accent) 24%,var(--panel))) !important; }
 
+
+/* Organized settings navigation: collapsible, clearly named control groups. */
+.settings { padding:16px; }
+.settings > h2 { margin:0 0 14px; }
+.settings-intro { margin:0 0 14px; }
+.settings-section { margin:0 0 10px; border:1px solid #443256; border-radius:11px; background:#120d1c; overflow:hidden; }
+.settings-section[open] { border-color:#684a88; box-shadow:0 4px 16px #0002; }
+.settings-section > summary { display:flex; align-items:center; gap:11px; padding:12px; cursor:pointer; list-style:none; user-select:none; background:linear-gradient(110deg,#21172f,#171120); }
+.settings-section > summary::-webkit-details-marker { display:none; }
+.settings-section > summary::after { content:'+'; margin-left:auto; color:#d5b9ff; font-size:22px; line-height:1; font-weight:400; }
+.settings-section[open] > summary::after { content:'−'; }
+.settings-section > summary:hover { background:linear-gradient(110deg,#302043,#1c1428); }
+.section-number { display:grid; place-items:center; flex:0 0 32px; height:32px; border-radius:9px; color:#eadcff; background:#39264f; border:1px solid #634583; font-size:11px; font-weight:800; letter-spacing:.04em; }
+.settings-section summary strong { display:block; color:#f3eaff; font-size:13px; }
+.settings-section summary small { display:block; margin-top:3px; color:#b9afc9; font-size:10px; line-height:1.35; font-weight:400; }
+.section-content { padding:5px 12px 14px; }
+.section-content > label:first-child { margin-top:9px; }
+.section-content > h3 { margin-top:16px; }
+.settings-actions { display:flex; gap:8px; margin:12px 0; }
+.settings-actions .actions { width:100%; margin:0; }
+.settings-actions button { flex:1; }
+.settings-section .preset-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.settings-section .control-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.settings-section .control-pair { grid-template-columns:1fr 1fr; }
+@media(max-width:750px) {
+  .settings { padding:12px; }
+  .settings-section > summary { padding:10px; }
+  .settings-section .control-grid { grid-template-columns:1fr; }
+}
+
 </style>
 </head>
 <body>
@@ -481,7 +520,10 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   <p class="small">Customize your Twitch shoutout overlay.</p>
   <div class="columns">
     <section class="settings">
-      <h2>Appearance & themes</h2>
+      <p class="small settings-intro">All options are still here, grouped into collapsible sections. Open only the controls you need.</p>
+      <details class="settings-section" open>
+        <summary><span class="section-number">01</span><span><strong>Theme & colors</strong><small>Theme, background effects, accent and card colors</small></span></summary>
+        <div class="section-content">
       <label for="theme">Theme</label>
       <select id="theme">
         <option value="gothic">Gothic</option><option value="steel">Steel / Industrial</option>
@@ -509,6 +551,11 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       <input id="fontSize" type="range" min="20" max="52" value="34">
       <label for="clipWidth">Maximum card width</label>
       <input id="clipWidth" type="range" min="400" max="1000" step="20" value="760">
+        </div>
+      </details>
+      <details class="settings-section" open>
+        <summary><span class="section-number">02</span><span><strong>Layout & animation</strong><small>Choose the composition and entrance behavior</small></span></summary>
+        <div class="section-content">
       <label for="layout">Layout design</label>
       <select id="layout">
         <optgroup label="Classic & clean">
@@ -543,7 +590,11 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
         <option value="glow">Continuous glow</option>
         <option value="none">No animation</option>
       </select>
-      <h2>Layout designer</h2>
+        </div>
+      </details>
+      <details class="settings-section">
+        <summary><span class="section-number">03</span><span><strong>Layout designer</strong><small>Presets, card placement, borders and backgrounds</small></span></summary>
+        <div class="section-content">
       <p class="small">Choose a preset, then fine-tune the overlay. In the preview, drag the creator info bar to reposition it.</p>
       <div class="preset-grid" aria-label="One-click style presets">
         <button type="button" data-preset="neon">⚡ Neon gamer</button>
@@ -572,7 +623,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       <select id="gradient">
         <option value="solid">Solid color</option><option value="horizontal">Horizontal gradient</option><option value="diagonal">Diagonal gradient</option><option value="radial">Radial glow</option><option value="glass">Glass / blur</option>
       </select>
-      <label for="borderStyle">Video border effect</label>
+      <label for="borderStyle">Shared border effect (video + info)</label>
       <select id="borderStyle">
         <option value="none">Static border</option><option value="glow">Animated glow</option><option value="pulse">Pulse</option><option value="rainbow">Rainbow cycle</option><option value="dash">Dashed shimmer</option>
       </select>
@@ -580,6 +631,11 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
         <div><label for="infoX">Info position X <span id="xValue" class="range-value">50%</span></label><input id="infoX" type="range" min="10" max="90" value="50"></div>
         <div><label for="infoY">Info position Y <span id="yValue" class="range-value">82%</span></label><input id="infoY" type="range" min="15" max="90" value="82"></div>
       </div>
+        </div>
+      </details>
+      <details class="settings-section">
+        <summary><span class="section-number">04</span><span><strong>Text & content</strong><small>Heading, typography, labels and visibility</small></span></summary>
+        <div class="section-content">
       <label for="duration">Display duration (seconds)</label>
       <input id="duration" type="number" min="10" max="120" value="30">
       <label for="headingText">Heading text</label>
@@ -610,6 +666,15 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
         <div><label><input id="showGame" type="checkbox" checked style="width:auto"> Show game text</label></div>
         <div><label><input id="showChannelUrl" type="checkbox" checked style="width:auto"> Show channel URL</label></div>
       </div>
+      <label>
+        <input id="showTitle" type="checkbox" checked style="width:auto">
+        Show clip title
+      </label>
+        </div>
+      </details>
+      <details class="settings-section">
+        <summary><span class="section-number">05</span><span><strong>Avatar & card styling</strong><small>Profile picture, corners, spacing and effect strength</small></span></summary>
+        <div class="section-content">
       <h3>Profile picture & card</h3>
       <div class="control-grid">
         <div><label for="avatarSize">Profile picture size</label><input id="avatarSize" type="range" min="40" max="160" value="76"></div>
@@ -619,15 +684,18 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
         <div><label for="detailGap">Avatar/text spacing</label><input id="detailGap" type="range" min="4" max="36" value="16"></div>
         <div><label for="fxOpacity">Effect opacity</label><input id="fxOpacity" type="range" min="10" max="100" value="85"></div>
       </div>
-      <label>
-        <input id="showTitle" type="checkbox" checked style="width:auto">
-        Show clip title
-      </label>
+        </div>
+      </details>
+      <div class="settings-actions">
       <div class="actions">
         <button id="save" type="button">Save settings</button>
         <button id="reset" type="button">Reset</button>
       </div>
       <hr>
+      </div>
+      <details class="settings-section">
+        <summary><span class="section-number">06</span><span><strong>Testing & integrations</strong><small>Test shoutouts, clip filters and StreamElements lookup</small></span></summary>
+        <div class="section-content">
       <h2>Test shoutout</h2>
       <label for="testUser">Twitch username</label>
       <input id="testUser" value="dropzedd" placeholder="username">
@@ -651,6 +719,8 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
         The page does not require a local server or Python.
       </p>
       <div id="status" class="status" role="status" aria-live="polite"></div>
+        </div>
+      </details>
     </section>
     <section class="preview">
       <h2>Live preview</h2>
@@ -1023,8 +1093,12 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       details.classList.add("avatar-" + (value.avatarShape || "circle"));
       player.classList.remove("gradient-solid", "gradient-horizontal", "gradient-diagonal", "gradient-radial", "gradient-glass");
       player.classList.add("gradient-" + (value.gradient || "solid"));
-      player.classList.remove("border-none", "border-glow", "border-pulse", "border-rainbow", "border-dash");
-      player.classList.add("border-" + (value.borderStyle || "none"));
+      const borderClasses = ["border-none", "border-glow", "border-pulse", "border-rainbow", "border-dash"];
+      player.classList.remove(...borderClasses);
+      details.classList.remove(...borderClasses);
+      const sharedBorderClass = "border-" + (value.borderStyle || "none");
+      player.classList.add(sharedBorderClass);
+      details.classList.add(sharedBorderClass);
       // Re-trigger entrance animations whenever the selection changes.
       card.style.animation = "none";
       void card.offsetWidth;
