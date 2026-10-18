@@ -488,6 +488,27 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 #card.layout-neon #player #details { border-top:2px solid var(--accent); background:linear-gradient(90deg,color-mix(in srgb,var(--panel) 96%,transparent),color-mix(in srgb,var(--accent) 24%,var(--panel))) !important; }
 
 
+/* Preview is a true 1920×1080 overlay canvas scaled only for display. */
+#previewStage {
+  position:relative; width:100%; aspect-ratio:16 / 9; overflow:hidden;
+  border:1px solid #493761; border-radius:10px; background:#08060d;
+  isolation:isolate;
+}
+#preview {
+  position:absolute; top:0; left:0; display:block; width:1920px; height:1080px;
+  border:0; background:transparent; transform-origin:top left;
+}
+.dimensions-panel {
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px;
+  margin-top:12px; padding:14px; border:1px solid #493761; border-radius:10px;
+  background:#120d1c;
+}
+.dimensions-panel > div { min-width:0; display:flex; flex-direction:column; gap:5px; }
+.dimensions-label { color:#b9afc9; font-size:11px; text-transform:uppercase; letter-spacing:.06em; }
+.dimensions-panel strong { font-size:18px; overflow-wrap:anywhere; }
+.dimensions-panel p { grid-column:1 / -1; margin:0; }
+@media(max-width:750px) { .dimensions-panel { grid-template-columns:1fr; } .dimensions-panel p { grid-column:auto; } }
+
 /* Organized settings navigation: collapsible, clearly named control groups. */
 .settings { padding:16px; }
 .settings > h2 { margin:0 0 14px; }
@@ -909,9 +930,16 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     </section>
     <section class="preview">
       <h2>Live preview</h2>
-      <iframe id="preview" title="Shoutout preview"
-        style="width:100%;height:620px;border:0;border-radius:10px;background:transparent"
-        allow="autoplay; fullscreen"></iframe>
+      <p class="small">Preview uses a 1920 × 1080 OBS canvas scaled to fit this panel. The dimensions below are measured from the actual overlay card, not estimated from the preview size.</p>
+      <div id="previewStage" aria-label="Scaled overlay preview canvas">
+        <iframe id="preview" title="Shoutout preview"
+          allow="autoplay; fullscreen"></iframe>
+      </div>
+      <div class="dimensions-panel" aria-live="polite">
+        <div><span class="dimensions-label">Widget dimensions</span><strong id="widgetDimensions">Measuring…</strong></div>
+        <div><span class="dimensions-label">OBS canvas</span><strong id="canvasDimensions">1920 × 1080 px</strong></div>
+        <p id="dimensionsNote" class="small">Waiting for the overlay to report its rendered size.</p>
+      </div>
     </section>
   </div>
 </div>
@@ -1302,6 +1330,13 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       [...card.classList].filter(name => name.startsWith("layout-")).forEach(name => card.classList.remove(name));
       card.classList.add("layout-" + (value.layout || "video-bottom"));
       syncTickerMarkup(details, value.layout === "ticker");
+      // Layout/ticker switching can create cloned text nodes after the first font pass.
+      // Reapply the selected family after that DOM work so every visible copy updates.
+      for (const [id, font] of Object.entries(fontById)) setFont($(id), font);
+      details.querySelectorAll("[data-ticker-id]").forEach(element => {
+        const font = fontById[element.dataset.tickerId];
+        if (font) setFont(element, font);
+      });
       card.classList.remove("anim-fade", "anim-slide", "anim-zoom", "anim-bounce", "anim-glow", "anim-none");
       card.classList.add("anim-" + (value.animation || "slide"));
       const toRgba = (hexColor, alpha) => {
@@ -1846,15 +1881,66 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     }
   });
 
+  // Report intrinsic widget dimensions from the overlay document to Studio.
+  // offsetWidth/offsetHeight intentionally ignore entrance-animation transforms.
+  let dimensionObserver = null;
+  function reportWidgetDimensions() {
+    if (mode !== "overlay" || !window.parent || window.parent === window) return;
+    const card = $("card");
+    if (!card) return;
+    const width = Math.round(card.offsetWidth);
+    const height = Math.round(card.offsetHeight);
+    window.parent.postMessage({
+      type: "shoutout-widget-dimensions", width, height,
+      canvasWidth: 1920, canvasHeight: 1080
+    }, "*");
+  }
+  function startDimensionReporting() {
+    if (mode !== "overlay") return;
+    const card = $("card");
+    if (!card) return;
+    if (typeof ResizeObserver !== "undefined") {
+      dimensionObserver = new ResizeObserver(() => requestAnimationFrame(reportWidgetDimensions));
+      dimensionObserver.observe(card);
+      const player = $("player"); if (player) dimensionObserver.observe(player);
+    }
+    window.addEventListener("resize", reportWidgetDimensions);
+    requestAnimationFrame(() => requestAnimationFrame(reportWidgetDimensions));
+  }
+
+  function getOverlaySettingsSnapshot() {
+    // Start with the complete in-memory settings object so non-control/future
+    // settings are not silently dropped, then overwrite every editor-controlled
+    // value with the current form state. This is the single source of truth for
+    // both saved settings and every generated overlay URL.
+    const formValues = mode === "panel" ? readForm() : {};
+    const snapshot = normalizeThemeSettings({
+      ...DEFAULTS,
+      ...(settings && typeof settings === "object" && !Array.isArray(settings) ? settings : {}),
+      ...formValues
+    });
+
+    // Persist the exact same normalized snapshot that is embedded in the URL.
+    // If storage is unavailable, the URL still carries the full snapshot.
+    if (mode === "panel") {
+      settings = snapshot;
+      saveSettings(snapshot);
+    }
+    return snapshot;
+  }
+
   function overlayURL(username) {
     const url = new URL(location.href);
     url.search = "";
     url.hash = "";
     url.searchParams.set("mode", "overlay");
     url.searchParams.set("username", username);
-    // Embed the currently selected design. OBS has its own localStorage, so
-    // this snapshot is the reliable way to carry Studio settings into OBS.
-    const currentSettings = normalizeThemeSettings(mode === "panel" ? readForm() : settings);
+
+    // OBS Browser Sources may have separate storage from Studio. Always embed
+    // a complete JSON snapshot of the normalized editor settings; URLSearchParams
+    // safely encodes it, and overlay loadSettings() gives this snapshot priority
+    // over localStorage so the opened overlay matches the editor exactly.
+    const currentSettings = getOverlaySettingsSnapshot();
     url.searchParams.set("settings", JSON.stringify(currentSettings));
     return url.href;
   }
@@ -1908,6 +1994,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 
     settings = loadSettings();
     applySettings(settings);
+    startDimensionReporting();
     startStreamElementsChatListener();
 
     const username = params.get("username");
@@ -1927,17 +2014,45 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   fillForm(settings);
   applySettings(settings);
 
+  let previewRefreshTimer = null;
   function refreshPreview() {
+    if (previewRefreshTimer !== null) { clearTimeout(previewRefreshTimer); previewRefreshTimer = null; }
     let username;
+    try { username = validUsername($("testUser").value || "dropzedd"); }
+    catch { username = "dropzedd"; }
 
-    try {
-      username = validUsername($("testUser").value || "dropzedd");
-    } catch {
-      username = "dropzedd";
-    }
-
-    $("preview").src = overlayURL(username);
+    const preview = $("preview");
+    const nextUrl = overlayURL(username);
+    // Avoid reloading the Twitch clip and chat listener when nothing changed.
+    if (preview && preview.src !== nextUrl) preview.src = nextUrl;
+    updatePreviewScale();
   }
+  function schedulePreviewRefresh(delay = 280) {
+    if (previewRefreshTimer !== null) clearTimeout(previewRefreshTimer);
+    previewRefreshTimer = setTimeout(() => { previewRefreshTimer = null; refreshPreview(); }, delay);
+  }
+  function updatePreviewScale() {
+    const stage = $("previewStage");
+    const frame = $("preview");
+    if (!stage || !frame) return;
+    const scale = Math.max(0.01, stage.clientWidth / 1920);
+    frame.style.transform = "scale(" + scale + ")";
+  }
+  window.addEventListener("message", event => {
+    if (event.source !== $("preview")?.contentWindow) return;
+    const data = event.data;
+    if (!data || data.type !== "shoutout-widget-dimensions") return;
+    const width = Number(data.width), height = Number(data.height);
+    if (!Number.isFinite(width) || !Number.isFinite(height) || width < 1 || height < 1) return;
+    $("widgetDimensions").textContent = width + " × " + height + " px";
+    $("canvasDimensions").textContent = (Number(data.canvasWidth) || 1920) + " × " + (Number(data.canvasHeight) || 1080) + " px";
+    $("dimensionsNote").textContent = "Measured from the overlay card in the preview iframe. OBS Browser Source canvas: 1920 × 1080 px.";
+  });
+  if (typeof ResizeObserver !== "undefined") {
+    const previewStageObserver = new ResizeObserver(updatePreviewScale);
+    previewStageObserver.observe($("previewStage"));
+  }
+  window.addEventListener("resize", updatePreviewScale);
 
   $("save").addEventListener("click", () => {
     settings = readForm();
@@ -2048,13 +2163,12 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       applySettings(settings);
       // Keep the preview overlay in sync immediately, not only after Save.
       saveSettings(settings);
-      refreshPreview();
-      // Preview/layout refreshes can rebuild the text nodes; reapply typography
-      // after that rebuild so selected fonts remain visible in every layout.
+      schedulePreviewRefresh();
+      // Reapply typography after layout/ticker DOM changes so each selected font
+      // remains attached to original and cloned ticker text.
       applySettings(settings);
     };
     control.addEventListener("input", update);
-    control.addEventListener("change", update);
   }
 
   $("theme").addEventListener("change", () => {
@@ -2072,13 +2186,13 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       if (selected === "fire") Object.assign(settings,{gradient:"diagonal",borderStyle:"glow",animation:"glow"});
     }
     settings = normalizeThemeSettings(settings);
-    fillForm(settings); applySettings(settings); saveSettings(settings); refreshPreview();
+    fillForm(settings); applySettings(settings); saveSettings(settings); schedulePreviewRefresh();
     setStatus("Applied " + $("theme").selectedOptions[0].text + " theme. You can customize its text, colors, avatar, and card settings below.", "success");
   });
   $("backgroundEffect").addEventListener("change", () => {
     settings = readForm();
     if (settings.theme !== "custom") { settings.backgroundEffect = THEME_EFFECT[settings.theme]; fillForm(settings); }
-    applySettings(settings); saveSettings(settings); refreshPreview();
+    applySettings(settings); saveSettings(settings); schedulePreviewRefresh();
   });
 
   const PRESETS = {
@@ -2102,7 +2216,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       fillForm(settings);
       applySettings(settings);
       saveSettings(settings);
-      refreshPreview();
+      schedulePreviewRefresh();
       setStatus("Applied the " + button.textContent.trim() + " preset. You can keep customizing it.", "success");
     });
   });
