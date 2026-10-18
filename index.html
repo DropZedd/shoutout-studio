@@ -1370,15 +1370,27 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       // Apply X/Y directly to the info bar in custom-position mode so no layout
       // preset selector can override the sliders. Clear these overrides when disabled.
       if (value.customPosition === true) {
-        details.style.setProperty("position", "absolute", "important");
-        details.style.setProperty("left", (value.infoX ?? 50) + "%", "important");
         details.style.setProperty("right", "auto", "important");
-        details.style.setProperty("top", (value.infoY ?? 82) + "%", "important");
         details.style.setProperty("bottom", "auto", "important");
-        details.style.setProperty("transform", "translate(-50%, -50%)", "important");
         details.style.setProperty("margin", "0", "important");
         details.style.setProperty("max-width", "100%", "important");
         details.style.setProperty("z-index", "5", "important");
+        if (value.layout === "classic") {
+          // Classic keeps the info bar in normal flow BELOW the video frame.
+          // X nudges it horizontally; Y adjusts the gap below the frame instead
+          // of pulling the bar on top of the video.
+          const xOffset = (Number(value.infoX ?? 50) - 50);
+          const yOffset = Math.round(((Number(value.infoY ?? 82) - 15) / 75) * 24);
+          details.style.setProperty("position", "relative", "important");
+          details.style.setProperty("left", xOffset + "%", "important");
+          details.style.setProperty("top", yOffset + "px", "important");
+          details.style.setProperty("transform", "none", "important");
+        } else {
+          details.style.setProperty("position", "absolute", "important");
+          details.style.setProperty("left", (value.infoX ?? 50) + "%", "important");
+          details.style.setProperty("top", (value.infoY ?? 82) + "%", "important");
+          details.style.setProperty("transform", "translate(-50%, -50%)", "important");
+        }
       } else {
         ["position", "left", "right", "top", "bottom", "transform", "margin", "z-index"].forEach(prop => details.style.removeProperty(prop));
       }
