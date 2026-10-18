@@ -152,8 +152,8 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 #player #details #avatar { flex-basis: 62px; width: 62px; height: 62px; }
 #player #details #name { font-size: 22px; }
 #card.layout-video-bottom #details { left: 50%; right: auto; bottom: 0; transform:translateX(-50%); width:var(--info-width,82%); border-top: 2px solid var(--accent); border-radius: 0; }
-#card.layout-classic #details { position: static; width: auto; max-width: 620px; margin: 16px auto 0; border: 1px solid var(--accent); border-radius: 14px; }
-#card.layout-classic #player #details { position: static; width: auto; max-width: 620px; margin: 16px auto 0; border: 1px solid var(--accent); border-radius: 14px; }
+#card.layout-classic #details { position: static; width: var(--info-width,82%); max-width: 94%; box-sizing: border-box; margin: 16px auto 0; border: 1px solid var(--accent); border-radius: 14px; }
+#card.layout-classic #player #details { position: static; width: var(--info-width,82%); max-width: 94%; box-sizing: border-box; margin: 16px auto 0; border: 1px solid var(--accent); border-radius: 14px; }
 #card.layout-lower-third #heading { text-align: left; margin-left: 2%; }
 #card.layout-lower-third #player #details { left: 50%; right: auto; bottom: 3%; transform:translateX(-50%); width:var(--info-width,82%); border: 1px solid var(--accent); border-radius: 12px; }
 #card.layout-minimal #heading { font-size: calc(var(--heading-size) * .72); margin-bottom: 8px; letter-spacing: .08em; }
@@ -265,8 +265,8 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 }
 #player #details #avatar { flex-basis: 62px; width: 62px; height: 62px; }
 #player #details #name { font-size: 22px; }
-#card.layout-classic #details { position: static; width: auto; max-width: 620px; margin: 16px auto 0; border: 1px solid var(--accent); border-radius: 14px; }
-#card.layout-classic #player #details { position: static; width: auto; max-width: 620px; margin: 16px auto 0; border: 1px solid var(--accent); border-radius: 14px; }
+#card.layout-classic #details { position: static; width: var(--info-width,82%); max-width: 94%; box-sizing: border-box; margin: 16px auto 0; border: 1px solid var(--accent); border-radius: 14px; }
+#card.layout-classic #player #details { position: static; width: var(--info-width,82%); max-width: 94%; box-sizing: border-box; margin: 16px auto 0; border: 1px solid var(--accent); border-radius: 14px; }
 #card.layout-lower-third #heading { text-align: left; margin-left: 2%; }
 #card.layout-lower-third #player #details { left: 50%; right: auto; bottom: 3%; transform:translateX(-50%); width:var(--info-width,82%); border: 1px solid var(--accent); border-radius: 12px; }
 #card.layout-minimal #heading { font-size: calc(var(--heading-size) * .72); margin-bottom: 8px; letter-spacing: .08em; }
@@ -392,8 +392,8 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 #card.layout-compact #player #details #avatar { width:42px; height:42px; flex-basis:42px; }
 #card.layout-ticker #player #details { left:0; right:0; top:auto; bottom:0; transform:none; width:100%; padding:8px 14px; gap:10px; border:0; border-top:2px solid var(--accent); border-radius:0; }
 #card.layout-ticker #player #details #avatar { width:42px; height:42px; flex-basis:42px; }
-#card.layout-classic #details { position:static; width:auto; max-width:620px; margin:16px auto 0; transform:none; }
-#card.layout-classic #player #details { position:static; width:auto; max-width:620px; margin:16px auto 0; }
+#card.layout-classic #details { position:static; width:var(--info-width,82%); max-width:94%; box-sizing:border-box; margin:16px auto 0; transform:none; }
+#card.layout-classic #player #details { position:static; width:var(--info-width,82%); max-width:94%; box-sizing:border-box; margin:16px auto 0; }
 #card.layout-classic #player { overflow:hidden; }
 @media(max-width:560px) {
  #card.layout-split-left #player iframe, #card.layout-split-right #player iframe { width:62%; }
@@ -2015,6 +2015,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
   applySettings(settings);
 
   let previewRefreshTimer = null;
+  let previewRevision = 0;
   function refreshPreview() {
     if (previewRefreshTimer !== null) { clearTimeout(previewRefreshTimer); previewRefreshTimer = null; }
     let username;
@@ -2022,9 +2023,13 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     catch { username = "dropzedd"; }
 
     const preview = $("preview");
-    const nextUrl = overlayURL(username);
-    // Avoid reloading the Twitch clip and chat listener when nothing changed.
-    if (preview && preview.src !== nextUrl) preview.src = nextUrl;
+    if (!preview) return;
+    // Always send a fresh, complete settings snapshot to the iframe. Comparing
+    // signatures here proved fragile when controls were normalized or updated
+    // rapidly; a unique revision guarantees the preview receives every edit.
+    const url = new URL(overlayURL(username));
+    url.searchParams.set("_previewRevision", String(++previewRevision));
+    preview.src = url.href;
     updatePreviewScale();
   }
   function schedulePreviewRefresh(delay = 280) {
@@ -2169,6 +2174,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       applySettings(settings);
     };
     control.addEventListener("input", update);
+    control.addEventListener("change", update);
   }
 
   $("theme").addEventListener("change", () => {
