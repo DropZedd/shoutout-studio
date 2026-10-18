@@ -95,6 +95,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 }
 #player {
   position: relative;
+  box-sizing: border-box;
   width: 100%;
   aspect-ratio: 16 / 9;
   min-height: 180px;
@@ -392,8 +393,8 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 #card.layout-compact #player #details #avatar { width:42px; height:42px; flex-basis:42px; }
 #card.layout-ticker #player #details { left:0; right:0; top:auto; bottom:0; transform:none; width:100%; padding:8px 14px; gap:10px; border:0; border-top:2px solid var(--accent); border-radius:0; }
 #card.layout-ticker #player #details #avatar { width:42px; height:42px; flex-basis:42px; }
-#card.layout-classic #details { position:static; width:var(--info-width,82%); max-width:94%; box-sizing:border-box; margin:16px auto 0; transform:none; }
-#card.layout-classic #player #details { position:static; width:var(--info-width,82%); max-width:94%; box-sizing:border-box; margin:16px auto 0; }
+#card.layout-classic #details { position:static; width:var(--info-width,82%); max-width:100%; box-sizing:border-box; margin:16px auto 0; transform:none; }
+#card.layout-classic #player #details { position:static; width:var(--info-width,82%); max-width:100%; box-sizing:border-box; margin:16px auto 0; }
 #card.layout-classic #player { overflow:hidden; }
 @media(max-width:560px) {
  #card.layout-split-left #player iframe, #card.layout-split-right #player iframe { width:62%; }
@@ -1376,14 +1377,17 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
         details.style.setProperty("max-width", "100%", "important");
         details.style.setProperty("z-index", "5", "important");
         if (value.layout === "classic") {
-          // Classic keeps the info bar in normal flow BELOW the video frame.
-          // X nudges it horizontally; Y adjusts the gap below the frame instead
-          // of pulling the bar on top of the video.
-          const xOffset = (Number(value.infoX ?? 50) - 50);
-          const yOffset = Math.round(((Number(value.infoY ?? 82) - 15) / 75) * 24);
+          // Classic keeps the info bar OUTSIDE and below the video frame.
+          // X is converted to pixels relative to the card width, avoiding a
+          // percentage-left jump that could move the bar over the video.
+          // Y controls only the gap below the frame, never its position inside it.
+          const cardWidth = card.getBoundingClientRect().width || card.clientWidth || 0;
+          const xOffsetPx = ((Number(value.infoX ?? 50) - 50) / 100) * cardWidth;
+          const yGapPx = Math.round(((Number(value.infoY ?? 82) - 15) / 75) * 24);
           details.style.setProperty("position", "relative", "important");
-          details.style.setProperty("left", xOffset + "%", "important");
-          details.style.setProperty("top", yOffset + "px", "important");
+          details.style.setProperty("left", xOffsetPx + "px", "important");
+          details.style.setProperty("top", "0px", "important");
+          details.style.setProperty("margin-top", yGapPx + "px", "important");
           details.style.setProperty("transform", "none", "important");
         } else {
           details.style.setProperty("position", "absolute", "important");
