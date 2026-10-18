@@ -1320,8 +1320,10 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     const card = $("card");
     if (details) { const textBlock = details.querySelector("div"); if (textBlock) textBlock.style.textAlign = value.textAlign || "left"; }
     if (details && player && card) {
-      // The info bar must be a child of the video frame for true in-video overlays.
-      if (value.layout !== "classic") {
+      // Keep the info bar inside the video frame whenever it is being freely positioned.
+      // This also allows X/Y sliders to work in Classic layout; otherwise Classic places
+      // the bar outside the positioned video frame where those coordinates cannot apply.
+      if (value.layout !== "classic" || value.customPosition === true) {
         if (details.parentElement !== player) player.appendChild(details);
       } else if (details.parentElement !== card) {
         card.insertBefore(details, $("overlayStatus"));
@@ -1364,7 +1366,22 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
         details.style.setProperty("backdrop-filter", "blur(16px) saturate(1.35)");
       }
       player.classList.toggle("designer-position", value.layout !== "classic");
-      player.classList.toggle("custom-position", value.customPosition === true && value.layout !== "classic");
+      player.classList.toggle("custom-position", value.customPosition === true);
+      // Apply X/Y directly to the info bar in custom-position mode so no layout
+      // preset selector can override the sliders. Clear these overrides when disabled.
+      if (value.customPosition === true) {
+        details.style.setProperty("position", "absolute", "important");
+        details.style.setProperty("left", (value.infoX ?? 50) + "%", "important");
+        details.style.setProperty("right", "auto", "important");
+        details.style.setProperty("top", (value.infoY ?? 82) + "%", "important");
+        details.style.setProperty("bottom", "auto", "important");
+        details.style.setProperty("transform", "translate(-50%, -50%)", "important");
+        details.style.setProperty("margin", "0", "important");
+        details.style.setProperty("max-width", "100%", "important");
+        details.style.setProperty("z-index", "5", "important");
+      } else {
+        ["position", "left", "right", "top", "bottom", "transform", "margin", "z-index"].forEach(prop => details.style.removeProperty(prop));
+      }
       const shapes = ["circle", "rounded", "square", "diamond", "hexagon", "squircle", "pill", "cut"];
       player.classList.remove(...shapes.map(x => "avatar-" + x));
       player.classList.add("avatar-" + (value.avatarShape || "circle"));
@@ -1952,7 +1969,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     let dragStart = null;
     details.addEventListener("pointerdown", event => {
       const player = $("player");
-      if (!player || !player.classList.contains("designer-position") || mode !== "overlay") return;
+      if (!player || (!player.classList.contains("designer-position") && !player.classList.contains("custom-position")) || mode !== "overlay") return;
       if (event.target.closest("a,button,input,select")) return;
       const rect = player.getBoundingClientRect();
       const box = details.getBoundingClientRect();
