@@ -490,7 +490,22 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 
   function loadSettings() {
     try {
-      const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+      // OBS Browser Sources have storage separate from the browser running
+      // Studio. Overlay URLs therefore carry a settings snapshot so OBS can
+      // render the exact saved design without relying on shared localStorage.
+      let saved = null;
+      if (mode === "overlay") {
+        const encodedSettings = params.get("settings");
+        if (encodedSettings) {
+          try {
+            const parsed = JSON.parse(encodedSettings);
+            if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) saved = parsed;
+          } catch (error) {
+            console.warn("Could not read settings embedded in overlay URL:", error);
+          }
+        }
+      }
+      if (!saved) saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
       if (!saved || typeof saved !== "object" || Array.isArray(saved)) {
         return { ...DEFAULTS };
       }
@@ -1074,6 +1089,10 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     url.hash = "";
     url.searchParams.set("mode", "overlay");
     url.searchParams.set("username", username);
+    // Embed the currently selected design. OBS has its own localStorage, so
+    // this snapshot is the reliable way to carry Studio settings into OBS.
+    const currentSettings = mode === "panel" ? readForm() : settings;
+    url.searchParams.set("settings", JSON.stringify(currentSettings));
     return url.href;
   }
 
