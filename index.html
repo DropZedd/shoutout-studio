@@ -335,6 +335,66 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 .settings .hint { margin:4px 0 10px; color:#b9afc9; font-size:11px; line-height:1.45; }
 @media(max-width:750px){ .settings .control-grid { grid-template-columns:1fr; } }
 
+
+
+/* Layout designer v2: distinct, responsive compositions. Every option uses the same
+   #details element so user content, drag positioning and saved settings stay in sync. */
+#card[class*="layout-"] #player { isolation:isolate; }
+#card.layout-video-bottom #player #details { left:50%; right:auto; top:auto; bottom:0; transform:translateX(-50%); width:var(--info-width,82%); max-width:100%; border-radius:var(--card-radius,14px) var(--card-radius,14px) 0 0; }
+#card.layout-lower-third #player #details { left:50%; right:auto; top:auto; bottom:4%; transform:translateX(-50%); width:var(--info-width,82%); max-width:100%; border:1px solid var(--accent); border-radius:12px; }
+#card.layout-minimal #player #details { left:50%; right:auto; top:auto; bottom:0; transform:translateX(-50%); width:var(--info-width,82%); padding:8px 14px; border-width:1px; }
+#card.layout-neon #player #details { left:50%; right:auto; top:auto; bottom:0; transform:translateX(-50%); width:var(--info-width,82%); border-top:2px solid var(--accent); box-shadow:0 0 22px color-mix(in srgb,var(--accent) 35%,transparent); }
+#card.layout-top-bar #player #details, #card.layout-top-overlay #player #details { left:50%; right:auto; top:0; bottom:auto; transform:translateX(-50%); width:100%; border-top:0; border-bottom:2px solid var(--accent); }
+#card.layout-cinematic #player #details { left:0; right:0; top:auto; bottom:0; transform:none; width:100%; padding:24px 28px; border:0; border-top:1px solid #ffffff55; background:linear-gradient(0deg,#05040bf2,#171225b8 70%,transparent) !important; border-radius:0; }
+#card.layout-corner-left #player #details { left:2%; right:auto; top:auto; bottom:3%; transform:none; width:min(var(--info-width,82%),72%); border:1px solid var(--accent); border-radius:12px; }
+#card.layout-corner-right #player #details { left:auto; right:2%; top:auto; bottom:3%; transform:none; width:min(var(--info-width,82%),72%); border:1px solid var(--accent); border-radius:12px; }
+#card.layout-floating #player #details { left:50%; right:auto; top:var(--info-y,78%); bottom:auto; transform:translate(-50%,-50%); width:min(var(--info-width,82%),94%); border:1px solid #ffffff55; border-radius:999px; box-shadow:0 12px 34px #0009; }
+#card.layout-badge #player #details { left:3%; right:auto; top:auto; bottom:4%; transform:none; width:auto; max-width:94%; padding:10px 16px; border:2px solid var(--accent); border-radius:999px; }
+#card.layout-hologram #player #details { left:50%; right:auto; top:var(--info-y,78%); bottom:auto; transform:translate(-50%,-50%); width:var(--info-width,82%); border:1px solid color-mix(in srgb,var(--accent) 80%,white); background:color-mix(in srgb,var(--panel) 72%,transparent) !important; box-shadow:inset 0 0 18px color-mix(in srgb,var(--accent) 20%,transparent),0 0 20px color-mix(in srgb,var(--accent) 35%,transparent); }
+#card.layout-frame #player #details { left:3%; right:3%; top:3%; bottom:3%; transform:none; width:auto; max-width:none; align-self:stretch; border:1px solid var(--accent); background:color-mix(in srgb,var(--panel) 74%,transparent) !important; }
+#card.layout-split-left #player, #card.layout-split-right #player { background:var(--panel); }
+#card.layout-split-left #player iframe, #card.layout-split-right #player iframe { width:68%; }
+#card.layout-split-left #player iframe { left:32%; }
+#card.layout-split-right #player iframe { left:0; }
+#card.layout-split-left #player #details, #card.layout-split-right #player #details { top:0; bottom:0; left:0; right:auto; transform:none; width:32%; max-width:32%; min-width:0; padding:10px; flex-direction:column; justify-content:center; text-align:center; border:0; border-radius:0; overflow:hidden; }
+#card.layout-split-right #player #details { left:auto; right:0; }
+#card.layout-split-left #player #details #avatar, #card.layout-split-right #player #details #avatar { flex:0 0 auto; width:min(72px,var(--avatar-size,76px)); height:min(72px,var(--avatar-size,76px)); }
+#card.layout-video-left #player #details, #card.layout-video-right #player #details { top:0; bottom:0; left:0; right:auto; transform:none; width:22%; max-width:22%; padding:8px; flex-direction:column; justify-content:center; text-align:center; border:0; border-right:2px solid var(--accent); border-radius:0; }
+#card.layout-video-right #player #details { left:auto; right:0; border-right:0; border-left:2px solid var(--accent); }
+#card.layout-video-left #player iframe { left:22%; width:78%; }
+#card.layout-video-right #player iframe { width:78%; }
+#card.layout-video-left #player #details #avatar, #card.layout-video-right #player #details #avatar { flex:0 0 auto; width:min(62px,var(--avatar-size,76px)); height:min(62px,var(--avatar-size,76px)); }
+#card.layout-center-card #player #details { left:50%; right:auto; top:50%; bottom:auto; transform:translate(-50%,-50%); width:min(var(--info-width,82%),94%); border:1px solid #ffffff66; border-radius:16px; box-shadow:0 12px 40px #000b; }
+#card.layout-stacked #player #details { left:50%; right:auto; top:auto; bottom:0; transform:translateX(-50%); width:100%; flex-direction:column; gap:6px; text-align:center; border:0; border-top:2px solid var(--accent); border-radius:0; }
+#card.layout-stacked #player #details #avatar { margin-bottom:2px; }
+#card.layout-avatar-focus #player #details { left:50%; right:auto; top:50%; bottom:auto; transform:translate(-50%,-50%); width:min(var(--info-width,82%),94%); flex-direction:column; text-align:center; background:color-mix(in srgb,var(--panel) 84%,transparent) !important; border:1px solid var(--accent); }
+#card.layout-avatar-focus #player #details #avatar { width:min(120px,var(--avatar-size,76px)); height:min(120px,var(--avatar-size,76px)); }
+#card.layout-diagonal #player #details { left:0; right:0; top:auto; bottom:0; transform:none; width:100%; border:0; border-radius:0; clip-path:polygon(0 15%,100% 0,100% 100%,0 100%); padding:22px 24px 12px; }
+#card.layout-pill #player #details { left:50%; right:auto; top:auto; bottom:4%; transform:translateX(-50%); width:min(var(--info-width,82%),94%); border:1px solid #ffffff44; border-radius:999px; }
+#card.layout-poster #player { border-width:8px; border-style:double; }
+#card.layout-poster #player #details { left:0; right:0; top:auto; bottom:0; transform:none; width:100%; border:0; border-top:3px double var(--accent); border-radius:0; text-align:left; }
+#card.layout-spotlight #player #details { left:50%; right:auto; top:var(--info-y,78%); bottom:auto; transform:translate(-50%,-50%); width:min(var(--info-width,82%),94%); border:2px solid var(--accent); box-shadow:0 0 0 100vmax #0002,0 0 32px color-mix(in srgb,var(--accent) 45%,transparent); }
+#card.layout-compact #player #details { left:50%; right:auto; top:auto; bottom:0; transform:translateX(-50%); width:100%; padding:7px 12px; gap:10px; border:0; border-top:1px solid var(--accent); border-radius:0; }
+#card.layout-compact #player #details #avatar { width:42px; height:42px; flex-basis:42px; }
+#card.layout-ticker #player #details { left:0; right:0; top:auto; bottom:0; transform:none; width:100%; padding:8px 14px; gap:10px; border:0; border-top:2px solid var(--accent); border-radius:0; }
+#card.layout-ticker #player #details #avatar { width:42px; height:42px; flex-basis:42px; }
+#card.layout-classic #details { position:static; width:auto; max-width:620px; margin:16px auto 0; transform:none; }
+#card.layout-classic #player #details { position:static; width:auto; max-width:620px; margin:16px auto 0; }
+#card.layout-classic #player { overflow:hidden; }
+@media(max-width:560px) {
+ #card.layout-split-left #player iframe, #card.layout-split-right #player iframe { width:62%; }
+ #card.layout-split-left #player iframe { left:38%; }
+ #card.layout-split-left #player #details, #card.layout-split-right #player #details { width:38%; max-width:38%; padding:6px; }
+ #card.layout-video-left #player #details, #card.layout-video-right #player #details { width:27%; max-width:27%; padding:5px; }
+ #card.layout-video-left #player iframe { left:27%; width:73%; }
+ #card.layout-video-right #player iframe { width:73%; }
+ #card.layout-floating #player #details, #card.layout-hologram #player #details, #card.layout-center-card #player #details { width:96%; }
+}
+
+
+/* Explicit custom-position mode: X/Y sliders and drag movement now override preset placement. */
+#card #player.custom-position #details { left:var(--info-x,50%); right:auto; top:var(--info-y,82%); bottom:auto; transform:translate(-50%,-50%); width:var(--info-width,82%); max-width:100%; min-width:0; margin:0; }
+
 </style>
 </head>
 <body>
@@ -373,11 +433,28 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       <input id="clipWidth" type="range" min="400" max="1000" step="20" value="760">
       <label for="layout">Layout design</label>
       <select id="layout">
-        <option value="video-bottom">Video with info overlay at bottom</option>
-        <option value="lower-third">Inset lower-third overlay</option>
-        <option value="classic">Classic card below video</option>
-        <option value="minimal">Minimal / clean</option>
-        <option value="neon">Neon glow</option>
+        <optgroup label="Classic & clean">
+          <option value="video-bottom">Bottom glass bar</option><option value="classic">Classic card below video</option>
+          <option value="minimal">Minimal / clean</option><option value="compact">Compact info strip</option>
+          <option value="ticker">Scrolling-news style strip</option>
+        </optgroup>
+        <optgroup label="Cinematic & broadcast">
+          <option value="lower-third">Broadcast lower third</option><option value="cinematic">Cinematic title plate</option>
+          <option value="top-bar">Top information bar</option><option value="corner-left">Bottom-left corner card</option>
+          <option value="corner-right">Bottom-right corner card</option><option value="poster">Poster / title-card frame</option>
+        </optgroup>
+        <optgroup label="Bold & animated">
+          <option value="neon">Neon glow</option><option value="hologram">Holographic HUD</option>
+          <option value="frame">Inset frame overlay</option><option value="floating">Floating glass capsule</option>
+          <option value="badge">Creator badge</option><option value="spotlight">Spotlight nameplate</option>
+        </optgroup>
+        <optgroup label="Different compositions">
+          <option value="split-left">Split panel — info left</option><option value="split-right">Split panel — info right</option>
+          <option value="video-left">Left-side vertical rail</option><option value="video-right">Right-side vertical rail</option>
+          <option value="top-overlay">Top overlay card</option><option value="center-card">Centered floating card</option>
+          <option value="stacked">Stacked creator details</option><option value="avatar-focus">Avatar spotlight</option>
+          <option value="diagonal">Diagonal accent plate</option><option value="pill">Pill-shaped info bar</option>
+        </optgroup>
       </select>
       <label for="animation">Entrance / animation</label>
       <select id="animation">
@@ -397,6 +474,13 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
         <button type="button" data-preset="minimal">◻ Minimal</button>
         <button type="button" data-preset="rainbow">🌈 Rainbow edge</button>
         <button type="button" data-preset="classic">▤ Classic card</button>
+        <button type="button" data-preset="broadcast">📺 Broadcast</button>
+        <button type="button" data-preset="split">◧ Split screen</button>
+        <button type="button" data-preset="hologram">🛸 Hologram HUD</button>
+        <button type="button" data-preset="floating">☁ Floating glass</button>
+        <button type="button" data-preset="poster">🎞 Movie poster</button>
+        <button type="button" data-preset="spotlight">✨ Spotlight</button>
+        <button type="button" data-preset="ocean">🌊 Deep ocean</button>
       </div>
       <label for="overlayOpacity">Info overlay opacity <span id="opacityValue" class="range-value">88%</span></label>
       <input id="overlayOpacity" type="range" min="20" max="100" value="88">
@@ -543,6 +627,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     infoX: 50,
     infoY: 82,
     infoWidth: 82,
+    customPosition: false,
     theme: "gothic", backgroundEffect: "fog",
     headingColor: "#ffffff", textColor: "#dddddd", nameColor: "#ffffff", channelColor: "#c9b5e8", titleColor: "#dddddd",
     bodySize: 14, nameSize: 20, headingWeight: "900", textAlign: "left", headingTransform: "none",
@@ -632,7 +717,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 
       if (typeof result.headingText !== "string") result.headingText = DEFAULTS.headingText;
       if (typeof result.showTitle !== "boolean") result.showTitle = DEFAULTS.showTitle;
-      if (!["video-bottom","lower-third","classic","minimal","neon"].includes(result.layout)) result.layout = DEFAULTS.layout;
+      if (!["video-bottom", "lower-third", "classic", "minimal", "neon", "compact", "ticker", "top-bar", "cinematic", "corner-left", "corner-right", "floating", "badge", "hologram", "frame", "split-left", "split-right", "video-left", "video-right", "top-overlay", "center-card", "stacked", "avatar-focus", "diagonal", "pill", "poster", "spotlight"].includes(result.layout)) result.layout = DEFAULTS.layout;
       if (!["fade","slide","zoom","bounce","glow","none"].includes(result.animation)) result.animation = DEFAULTS.animation;
       result.overlayOpacity = clampNumber(result.overlayOpacity, 20, 100, DEFAULTS.overlayOpacity);
       result.infoX = clampNumber(result.infoX, 10, 90, DEFAULTS.infoX);
@@ -702,6 +787,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       infoX: clampNumber($("infoX").value, 10, 90, 50),
       infoY: clampNumber($("infoY").value, 15, 90, 82),
       infoWidth: clampNumber($("infoWidth").value, 20, 100, 82),
+      customPosition: Boolean(settings && settings.customPosition),
       theme: $("theme").value, backgroundEffect: $("backgroundEffect").value,
       headingColor: $("headingColor").value, textColor: $("textColor").value, nameColor: $("nameColor").value,
       channelColor: $("channelColor").value, titleColor: $("titleColor").value,
@@ -750,7 +836,6 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     root.style.setProperty("--card-radius", (value.cardRadius ?? 14) + "px");
     root.style.setProperty("--detail-gap", (value.detailGap ?? 16) + "px");
     root.style.setProperty("--fx-opacity", (value.fxOpacity ?? 85) / 100);
-
     const heading = $("heading");
     if (heading) {
       heading.textContent = value.headingText;
@@ -768,12 +853,13 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     if (details) { const textBlock = details.querySelector("div"); if (textBlock) textBlock.style.textAlign = value.textAlign || "left"; }
     if (details && player && card) {
       // The info bar must be a child of the video frame for true in-video overlays.
-      if (value.layout === "video-bottom" || value.layout === "lower-third" || value.layout === "minimal" || value.layout === "neon") {
+      if (value.layout !== "classic") {
         if (details.parentElement !== player) player.appendChild(details);
       } else if (details.parentElement !== card) {
         card.insertBefore(details, $("overlayStatus"));
       }
-      card.classList.remove("layout-video-bottom", "layout-lower-third", "layout-classic", "layout-minimal", "layout-neon");
+      // Remove every previous layout class, including layouts added in future versions.
+      [...card.classList].filter(name => name.startsWith("layout-")).forEach(name => card.classList.remove(name));
       card.classList.add("layout-" + (value.layout || "video-bottom"));
       card.classList.remove("anim-fade", "anim-slide", "anim-zoom", "anim-bounce", "anim-glow", "anim-none");
       card.classList.add("anim-" + (value.animation || "slide"));
@@ -802,6 +888,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
         details.style.setProperty("backdrop-filter", "blur(16px) saturate(1.35)", "important");
       }
       player.classList.toggle("designer-position", value.layout !== "classic");
+      player.classList.toggle("custom-position", value.customPosition === true && value.layout !== "classic");
       const shapes = ["circle", "rounded", "square", "diamond", "hexagon", "squircle", "pill", "cut"];
       player.classList.remove(...shapes.map(x => "avatar-" + x));
       player.classList.add("avatar-" + (value.avatarShape || "circle"));
@@ -1345,6 +1432,7 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       const rect = dragStart.rect;
       settings.infoX = Math.round(Math.max(10, Math.min(90, ((event.clientX - rect.left) / rect.width) * 100)));
       settings.infoY = Math.round(Math.max(15, Math.min(90, ((event.clientY - rect.top) / rect.height) * 100)));
+      settings.customPosition = true;
       applySettings(settings);
     });
     const stopDrag = () => {
@@ -1504,6 +1592,8 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     const control = $(id);
     const update = () => {
       settings = normalizeThemeSettings(readForm());
+      if (id === "infoX" || id === "infoY") settings.customPosition = true;
+      if (id === "layout") settings.customPosition = false;
       applySettings(settings);
       // Keep the preview overlay in sync immediately, not only after Save.
       saveSettings(settings);
@@ -1543,11 +1633,18 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     glass: { theme:"glass", layout:"video-bottom", animation:"zoom", accent:"#8bdcff", panelColor:"#182332", overlayOpacity:72, avatarShape:"rounded", gradient:"glass", borderStyle:"glow", infoX:50, infoY:80, infoWidth:88, fontSize:34 },
     minimal: { theme:"minimal", layout:"minimal", animation:"slide", accent:"#ffffff", panelColor:"#101010", overlayOpacity:90, avatarShape:"circle", gradient:"solid", borderStyle:"none", infoX:50, infoY:84, infoWidth:76, fontSize:28 },
     rainbow: { theme:"synthwave", layout:"neon", animation:"bounce", accent:"#b65cff", panelColor:"#171225", overlayOpacity:86, avatarShape:"diamond", gradient:"radial", borderStyle:"rainbow", infoX:50, infoY:80, infoWidth:82, fontSize:36 },
-    classic: { theme:"custom", backgroundEffect:"none", layout:"classic", animation:"fade", accent:"#a970ff", panelColor:"#171225", overlayOpacity:100, avatarShape:"circle", gradient:"solid", borderStyle:"none", infoX:50, infoY:82, infoWidth:82, fontSize:34 }
+    classic: { theme:"custom", backgroundEffect:"none", layout:"classic", animation:"fade", accent:"#a970ff", panelColor:"#171225", overlayOpacity:100, avatarShape:"circle", gradient:"solid", borderStyle:"none", infoX:50, infoY:82, infoWidth:82, fontSize:34 },
+    broadcast: { theme:"steel", layout:"lower-third", animation:"slide", accent:"#aab8c8", panelColor:"#111923", overlayOpacity:94, avatarShape:"square", gradient:"horizontal", borderStyle:"dash", infoX:50, infoY:82, infoWidth:96, fontSize:30 },
+    split: { theme:"space", layout:"split-left", animation:"zoom", accent:"#8b8cff", panelColor:"#101126", overlayOpacity:96, avatarShape:"hexagon", gradient:"diagonal", borderStyle:"glow", infoX:50, infoY:50, infoWidth:82, fontSize:30 },
+    hologram: { theme:"neon", layout:"hologram", animation:"glow", accent:"#00f0ff", panelColor:"#071521", overlayOpacity:76, avatarShape:"hexagon", gradient:"glass", borderStyle:"rainbow", infoX:50, infoY:76, infoWidth:82, fontSize:34 },
+    floating: { theme:"glass", layout:"floating", animation:"zoom", accent:"#9de7ff", panelColor:"#1b2939", overlayOpacity:70, avatarShape:"rounded", gradient:"glass", borderStyle:"glow", infoX:50, infoY:78, infoWidth:82, fontSize:32 },
+    poster: { theme:"synthwave", layout:"poster", animation:"fade", accent:"#ff4fcb", panelColor:"#1b1030", overlayOpacity:96, avatarShape:"diamond", gradient:"diagonal", borderStyle:"rainbow", infoX:50, infoY:82, infoWidth:100, fontSize:36 },
+    spotlight: { theme:"fire", layout:"spotlight", animation:"bounce", accent:"#ff7a27", panelColor:"#24120d", overlayOpacity:86, avatarShape:"circle", gradient:"radial", borderStyle:"glow", infoX:50, infoY:78, infoWidth:80, fontSize:36 },
+    ocean: { theme:"ocean", layout:"pill", animation:"slide", accent:"#28c8ed", panelColor:"#071c2a", overlayOpacity:80, avatarShape:"pill", gradient:"glass", borderStyle:"glow", infoX:50, infoY:82, infoWidth:90, fontSize:32 }
   };
   document.querySelectorAll("[data-preset]").forEach(button => {
     button.addEventListener("click", () => {
-      settings = normalizeThemeSettings({ ...readForm(), ...PRESETS[button.dataset.preset] });
+      settings = normalizeThemeSettings({ ...readForm(), ...PRESETS[button.dataset.preset], customPosition:false });
       fillForm(settings);
       applySettings(settings);
       saveSettings(settings);
