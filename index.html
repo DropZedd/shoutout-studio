@@ -1624,17 +1624,224 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     }
   }
 
-  function setAvatar(url) {
+  // Shared Twitch avatar cache. Uses the same key and entry format as
+  // the StreamElements widgets; localStorage is the fallback for this
+  // standalone GitHub-hosted Studio and its same-origin overlay.
+  const AVATAR_STORE_KEY = "dropzeddTwitchAvatarCache";
+  const AVATAR_WORKER_URL = "https://twitch-avatar-fetcher.dropzedd.workers.dev/avatar?user=";
+  const AVATAR_CACHE_TTL = 24 * 60 * 60 * 1000;
+  const avatarMemoryCache = new Map();
+  const avatarInflight = new Map();
+  let sharedAvatarCache = {};
+  let avatarCacheReady = false;
+  let avatarCacheLoading = null;
+
+  function validTwitchAvatarURL(url) {
+    if (typeof url !== "string") return false;
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === "https:" && parsed.hostname === "static-cdn.jtvnw.net";
+    } catch {
+      return false;
+    }
+  }
+
+  async function loadSharedAvatarCache() {
+    if (avatarCacheReady) return sharedAvatarCache;
+    if (avatarCacheLoading) return avatarCacheLoading;
+
+    avatarCacheLoading = (async () => {
+      let saved = null;
+
+      try {
+        if (typeof SE_API !== "undefined" && SE_API.store &&
+            typeof SE_API.store.get === "function") {
+          saved = await SE_API.store.get(AVATAR_STORE_KEY);
+        }
+      } catch (error) {
+        console.warn("Could not read StreamElements avatar cache:", error);
+      }
+
+      if (!saved) {
+        try {
+          const raw = localStorage.getItem(AVATAR_STORE_KEY);
+          if (raw) saved = JSON.parse(raw);
+        } catch (error) {
+          console.warn("Could not read local avatar cache:", error);
+        }
+      }
+
+      if (saved && typeof saved === "object" && !Array.isArray(saved)) {
+        sharedAvatarCache = saved;
+      }
+
+      avatarCacheReady = true;
+      return sharedAvatarCache;
+    })();
+
+    return avatarCacheLoading;
+  }
+
+  async function saveSharedAvatarCache() {
+    try {
+      localStorage.setItem(AVATAR_STORE_KEY, JSON.stringify(sharedAvatarCache));
+    } catch (error) {
+      // Storage can be unavailable in private browsing or restricted embeds.
+    }
+
+    try {
+      if (typeof SE_API !== "undefined" && SE_API.store &&
+          typeof SE_API.store.set === "function") {
+        await SE_API.store.set(AVATAR_STORE_KEY, sharedAvatarCache);
+      }
+    } catch (error) {
+      console.warn("Could not save StreamElements avatar cache:", error);
+    }
+  }
+
+  function getCachedTwitchAvatar(username) {
+    const key = String(username || "").trim().toLowerCase();
+    const memoryEntry = avatarMemoryCache.get(key);
+
+    if (memoryEntry) {
+      if (memoryEntry.expiresAt > Date.now() && validTwitchAvatarURL(memoryEntry.url)) {
+        return memoryEntry.url;
+      }
+      avatarMemoryCache.delete(key);
+    }
+
+    const entry = sharedAvatarCache[key];
+    if (!entry) return "";
+
+    if (!entry.url || !entry.expiresAt ||
+        entry.expiresAt <= Date.now() || !validTwitchAvatarURL(entry.url)) {
+      delete sharedAvatarCache[key];
+      saveSharedAvatarCache();
+      return "";
+    }
+
+    avatarMemoryCache.set(key, entry);
+    return entry.url;
+  }
+
+  async function storeTwitchAvatar(username, url) {
+    const key = String(username || "").trim().toLowerCase();
+    if (!key || !validTwitchAvatarURL(url)) return;
+
+    const entry = { url, expiresAt: Date.now() + AVATAR_CACHE_TTL };
+    avatarMemoryCache.set(key, entry);
+    sharedAvatarCache[key] = entry;
+    await saveSharedAvatarCache();
+  }
+
+  async function removeTwitchAvatar(username) {
+    const key = String(username || "").trim().toLowerCase();
+    avatarMemoryCache.delete(key);
+    delete sharedAvatarCache[key];
+    await saveSharedAvatarCache();
+  }
+
+  async function fetchTwitchAvatar(username) {
+    const response = await fetchWithTimeout(
+      AVATAR_WORKER_URL + encodeURIComponent(username),
+      10000
+    );
+
+    if (!response.ok) {
+      throw new Error("Avatar Worker returned HTTP " + response.status);
+    }
+
+    const url = (await response.text()).trim();
+    if (!validTwitchAvatarURL(url)) {
+      throw new Error("Avatar Worker returned an invalid Twitch avatar URL.");
+    }
+
+    // Confirm the image loads before adding it to the shared cache.
+    await new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = resolve;
+      image.onerror = () => reject(new Error("Twitch avatar image failed to load."));
+      image.src = url;
+    });
+
+    return url;
+  }
+
+  async function getTwitchAvatar(username, forceRefresh = false) {
+    const key = String(username || "").trim().toLowerCase();
+    if (!key) throw new Error("Missing Twitch username.");
+
+    await loadSharedAvatarCache();
+
+    if (forceRefresh) {
+      await removeTwitchAvatar(key);
+    } else {
+      const cached = getCachedTwitchAvatar(key);
+      if (cached) return cached;
+    }
+
+    if (!avatarInflight.has(key)) {
+      const request = fetchTwitchAvatar(key)
+        .then(async url => {
+          await storeTwitchAvatar(key, url);
+          return url;
+        })
+        .finally(() => avatarInflight.delete(key));
+
+      avatarInflight.set(key, request);
+    }
+
+    return avatarInflight.get(key);
+  }
+
+  function setAvatar(url, username, myRequest, allowRefresh = true) {
     const avatar = $("avatar");
     if (!avatar) return;
 
-    avatar.onerror = () => {
+    avatar.onerror = async () => {
       avatar.onerror = null;
+
+      if (allowRefresh && username && myRequest === requestId) {
+        try {
+          const refreshed = await getTwitchAvatar(username, true);
+          if (myRequest !== requestId) return;
+          setAvatar(refreshed, username, myRequest, false);
+          return;
+        } catch (error) {
+          console.warn("Could not refresh broken Twitch avatar:", error);
+        }
+      }
+
       avatar.removeAttribute("src");
     };
 
     if (url && /^https:\/\//i.test(url)) avatar.src = url;
     else avatar.removeAttribute("src");
+  }
+
+  async function loadCreatorAvatar(username, myRequest, avatarRequest, fallbackURL = "") {
+    try {
+      let url;
+
+      try {
+        url = await avatarRequest;
+      } catch (error) {
+        // Retain the clip worker's avatar as a fallback if the avatar worker
+        // is temporarily unavailable. It is not written to the shared cache.
+        if (fallbackURL && /^https:\/\//i.test(fallbackURL)) {
+          url = fallbackURL;
+        } else {
+          throw error;
+        }
+      }
+
+      if (myRequest !== requestId) return;
+      setAvatar(url, username, myRequest, validTwitchAvatarURL(url));
+    } catch (error) {
+      if (myRequest !== requestId) return;
+      console.warn("Could not load Twitch avatar for @" + username + ":", error);
+      setAvatar("", username, myRequest, false);
+    }
   }
 
   function getParentDomain() {
@@ -1743,8 +1950,12 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
     setText("channelUrl", (settings.channelPrefix || "") + "https://www.twitch.tv/" + username);
     setText("game", (settings.gamePrefix || "") + "Loading creator information...");
     setText("clipTitle", "");
-    setAvatar("");
+    setAvatar("", username, myRequest, false);
     setOverlayStatus("");
+
+    // Start the avatar lookup immediately, in parallel with the clip request.
+    // A warm shared cache can therefore display the profile picture quickly.
+    const avatarRequest = getTwitchAvatar(username);
 
     const encoded = encodeURIComponent(username);
 
@@ -1774,12 +1985,10 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
 
     const infoErrors = [];
     const avatarURL = extractCreatorAvatar(clip);
+    loadCreatorAvatar(username, myRequest, avatarRequest, avatarURL);
     let game = extractCreatorGame(clip);
     const cachedGame = getCachedGame(username);
     if (cachedGame) game = cachedGame;
-
-    if (avatarURL) setAvatar(avatarURL);
-    else infoErrors.push("avatar not included in worker response");
 
     if (game) setText("game", (settings.gamePrefix || "") + game);
     else {
