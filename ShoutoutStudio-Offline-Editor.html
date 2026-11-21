@@ -2348,10 +2348,14 @@ hr { border: 0; border-top: 1px solid #382849; margin-top: 20px; }
       if (!defaultsPattern.test(OFFLINE_BASE_HTML)) {
         throw new Error("Could not locate the default settings block in the embedded source.");
       }
-      const exportedHtml = OFFLINE_BASE_HTML.replace(
-        defaultsPattern,
-        "const DEFAULTS = " + JSON.stringify(snapshot, null, 2) + ";"
-      );
+      const exportedSettingsKey = "soSettings_export_" + Date.now();
+      const exportedHtml = OFFLINE_BASE_HTML
+        .replace(
+          defaultsPattern,
+          "const DEFAULTS = " + JSON.stringify(snapshot, null, 2) + ";"
+        )
+        .replace('const SETTINGS_KEY = "soSettings";',
+          'const SETTINGS_KEY = "' + exportedSettingsKey + '";');
 
       const blob = new Blob([exportedHtml], { type: "text/html;charset=utf-8" });
       const url = URL.createObjectURL(blob);
